@@ -4,8 +4,8 @@ export type UserRole = "customer" | "admin" | "superadmin";
 export type Language = "en" | "hi" | "mr" | "ta";
 
 export interface IUser {
-  // Immutable after registration
-  name: string;
+  // Set at registration, immutable after that
+  name?: string;
   mobile: string;
 
   // Mutable profile fields
@@ -17,7 +17,7 @@ export interface IUser {
 
   role: UserRole;
 
-  referralCode: string;
+  referralCode?: string;
   rewardPoints: number;
 
   wishlist: mongoose.Types.ObjectId[];
@@ -40,7 +40,7 @@ export interface IUser {
 
 const userSchema = new mongoose.Schema<IUser>(
   {
-    name: { type: String, required: true },
+    name: { type: String },
     mobile: { type: String, required: true, unique: true },
 
     email: { type: String, lowercase: true, sparse: true },
@@ -59,7 +59,7 @@ const userSchema = new mongoose.Schema<IUser>(
       default: "customer",
     },
 
-    referralCode: { type: String, required: true, unique: true },
+    referralCode: { type: String, unique: true, sparse: true },
     rewardPoints: { type: Number, default: 0 },
 
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
