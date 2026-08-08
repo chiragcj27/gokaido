@@ -1,0 +1,29 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# builds
+dist
+.next
+out
+build
+
+# turbo
+.turbo
+
+# env
+.env
+.env.local
+.env.*.local
+
+# editor
+.DS_Store
+*.pem
+.idea
+.vscode
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
