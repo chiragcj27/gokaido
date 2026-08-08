@@ -48,8 +48,8 @@ const cartItemSchema = new mongoose.Schema<ICartItem>(
 
 const cartSchema = new mongoose.Schema<ICart>(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", sparse: true },
-    guestId: { type: String, sparse: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    guestId: { type: String },
 
     items: [cartItemSchema],
 
