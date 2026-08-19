@@ -2,6 +2,10 @@ import "dotenv/config";
 import express from "express";
 import { connectDB } from "@gokaido/database";
 import authRouter from "./routes/auth.js";
+import productRouter from "./routes/product.js";
+import cartRouter from "./routes/cart.js";
+import addressRouter from "./routes/address.js";
+import couponRouter from "./routes/coupon.js";
 
 const app = express();
 
@@ -15,6 +19,10 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/products", productRouter);
+app.use("/api/cart", cartRouter);
+app.use("/api/addresses", addressRouter);
+app.use("/api/coupons", couponRouter);
 
 const port = Number(process.env.PORT) || 3001;
 

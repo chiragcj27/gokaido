@@ -19,6 +19,7 @@ export interface ICart {
   items: ICartItem[];
 
   appliedCoupon?: string;
+  couponDiscount: number;
   rewardPointsToRedeem: number;
 
   // TTL index will remove abandoned guest carts after 30 days
@@ -54,6 +55,7 @@ const cartSchema = new mongoose.Schema<ICart>(
     items: [cartItemSchema],
 
     appliedCoupon: String,
+    couponDiscount: { type: Number, default: 0 },
     rewardPointsToRedeem: { type: Number, default: 0 },
 
     expiresAt: {
