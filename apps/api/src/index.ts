@@ -1,13 +1,31 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import { connectDB } from "@gokaido/database";
 import authRouter from "./routes/auth.js";
 import productRouter from "./routes/product.js";
 import cartRouter from "./routes/cart.js";
 import addressRouter from "./routes/address.js";
 import couponRouter from "./routes/coupon.js";
+import feedRouter from "./routes/feed.js";
 
 const app = express();
+
+// The storefront and admin portal are separate origins from this API (even
+// in dev — different ports), so every real request is cross-origin.
+const allowedOrigins = (
+  process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:3002"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
@@ -23,6 +41,7 @@ app.use("/api/products", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/coupons", couponRouter);
+app.use("/api/feeds", feedRouter);
 
 const port = Number(process.env.PORT) || 3001;
 

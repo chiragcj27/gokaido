@@ -6,11 +6,11 @@ import {
   updateProduct,
   deleteProduct,
 } from "../controllers/product.controller.js";
-import { requireAuth, requireRole } from "../middleware/auth.js";
+import { requireAuth, requireRole, optionalAuth } from "../middleware/auth.js";
 
 const router: express.Router = Router();
 
-router.get("/", listProducts);
+router.get("/", optionalAuth, listProducts);
 router.get("/:slug", getProductBySlug);
 
 router.post("/", requireAuth, requireRole("admin", "superadmin"), createProduct);

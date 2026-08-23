@@ -6,7 +6,8 @@ Gokaido is a martial arts equipment brand (Karate, Boxing, Taekwondo) building a
 
 ```
 apps/
-  web/        — Next.js 15 (React 19) frontend, port 3000
+  web/        — Next.js 15 (React 19) customer storefront, port 3000
+  admin/      — Next.js 15 (React 19) internal admin portal, port 3002
   api/        — Express.js backend, port 3001
 packages/
   database/   — Shared Mongoose models, built to dist/
@@ -40,6 +41,43 @@ packages/
 - Dojo creation (IKEA-style room builder) — **out of scope**
 - Screenshot restriction — **not possible on web**
 - Languages: **English, Hindi, Marathi, Tamil** (`/en`, `/hi`, `/mr`, `/ta`)
+
+## Product URLs, Variants & Google Shopping Feed
+
+Decided ahead of the PDP build (frontend not started yet, blocked on Figma) so the routing, JSON-LD, and feed all agree on one model. Researched against Google's own ecommerce SEO docs and Merchant Center spec — see sources in the conversation that decided this, or re-verify at https://developers.google.com/search/docs/specialty/ecommerce/designing-a-url-structure-for-ecommerce-sites and https://support.google.com/merchants/answer/6324507.
+
+**One `Product` document per style, holding every color × size as `variants[]`** (already the shape of `packages/database/src/models/product.ts` — no schema change needed for any of this).
+
+**Color gets its own URL path segment; size stays a query param, never a path segment.** Color has real search intent ("red karate gi") and usually a distinct photo; size doesn't ("gi size M" isn't a search anyone does), so giving it a URL only dilutes ranking for no benefit.
+
+```
+/en/products/{slug}                       — base product, canonical, default color
+/en/products/{slug}/{colorSlug}           — color-specific, own OG image/title, canonicalizes back to base
+/en/products/{slug}/{colorSlug}?size={s}  — deep-link target for ads/feed, still canonical → base
+```
+
+Note this is `/{slug}/{colorSlug}` (a real path segment), **not** `/{slug}-{colorSlug}` (hyphen-concatenated) — CLAUDE.md originally sketched the hyphenated form as an illustrative example, but resolving a hyphenated composite back into `{slug, color}` at request time is ambiguous (colors with hyphens, slug-prefix collisions) unless the composite is precomputed and stored. A real path segment needs no parsing and no extra stored field. If the hyphenated look is wanted for branding, it's still doable — just needs the composite slug stored per color at write time rather than parsed at read time.
+
+Every color page's `<link rel="canonical">` points at the base `/en/products/{slug}` — this is Google's own recommendation for variant URLs (consolidate ranking signal on one page rather than having variants "fight each other"). Repeat the same base+color+size structure under `/hi/`, `/mr/`, `/ta/` with per-language self-canonical + hreflang cross-links.
+
+**JSON-LD** on each color page: one `Product` block, `offers: []` with one `Offer` per size-SKU on that color (sku, price, availability, deep-link URL) — same shape as the feed below, one source of truth.
+
+**Google Shopping feed** — live at `GET /api/feeds/google-shopping.xml` (`apps/api/src/controllers/feed.controller.ts`), public/unauthenticated since Google's fetcher can't hold a token. One feed `<item>` per **SKU** (Google requires variants as separate entries, not consolidated — a 3-size × 3-color product is 9 items):
+
+| Feed field | Source |
+|---|---|
+| `g:id` | `variant.sku` |
+| `g:item_group_id` | `product.slug` — ties all colors/sizes of one style together, drives the swatch UI in Shopping results |
+| `link` | `{SITE_URL}/products/{slug}/{colorSlug}?size={size}` |
+| `g:image_link` | `variant.images[0]` falling back to `product.images[0]` |
+| `g:price` | `variant.basePrice` — the default/national price, **not** a region override. GMC feeds are single-price-per-country; region-based pricing stays a site-only feature |
+| `g:availability` | `in_stock` if `stock > 0 && isActive`, else `out_of_stock` |
+| `g:color`, `g:size` | direct from the variant |
+| `g:brand` | `"Gokaido"` |
+| `g:mpn` | `variant.sku`, with `g:identifier_exists: no` (no GTINs for a small manufacturer's own gear) |
+| `g:google_product_category` | `apps/api/src/utils/googleCategory.ts` — mapped from `productType`; currently coarse (uniform vs. equipment) and **flagged in that file's own comment** to be refined against Google's taxonomy browser once there's a real catalog to test against |
+
+Inactive variants are excluded entirely; out-of-stock-but-active variants stay in the feed as `out_of_stock` (don't drop them — that loses the listing rather than just pausing it).
 
 ## Phase 1 — Go Live (Must Have)
 
@@ -85,10 +123,15 @@ pnpm --filter @gokaido/web dev      # web only
 API needs:
 - `PORT` — defaults to 3001
 - `MONGODB_URI` — MongoDB connection string
+- `CORS_ORIGINS` — comma-separated browser origins allowed to call the API (storefront + admin)
+- `SITE_URL` — public storefront base URL, used to build absolute links/images in the Google Shopping feed
 - `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE`
 - `RESEND_API_KEY`
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET`
+
+Admin (`apps/admin`) needs:
+- `NEXT_PUBLIC_API_URL` — defaults to `http://localhost:3001`
 
 ## Data Models Needed (MongoDB)
 

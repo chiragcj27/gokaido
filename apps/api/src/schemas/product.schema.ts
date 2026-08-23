@@ -28,6 +28,9 @@ export const productListQuerySchema = z.object({
   featured: z.coerce.boolean().optional(),
   newArrival: z.coerce.boolean().optional(),
   bestseller: z.coerce.boolean().optional(),
+  // Only honored for admin/superadmin callers — see listProducts. Public
+  // listings always see active-only regardless of this value.
+  status: z.enum(["active", "inactive", "all"]).optional(),
 });
 
 export const productDetailQuerySchema = z.object({

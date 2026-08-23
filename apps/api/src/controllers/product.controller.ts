@@ -30,8 +30,12 @@ function withEffectivePrice(variant: LeanVariant, region?: string) {
 
 type ListQuery = ReturnType<typeof productListQuerySchema.parse>;
 
-function buildMatch(query: ListQuery) {
-  const match: Record<string, unknown> = { isActive: true };
+function buildMatch(query: ListQuery, canSeeInactive: boolean) {
+  const match: Record<string, unknown> = {};
+  const status = canSeeInactive ? (query.status ?? "active") : "active";
+  if (status === "active") match.isActive = true;
+  else if (status === "inactive") match.isActive = false;
+  // status === "all" -> no isActive filter
 
   if (query.sport) match.sport = query.sport;
   if (query.category) match.category = query.category;
@@ -94,7 +98,8 @@ export async function listProducts(req: Request, res: Response): Promise<void> {
   }
 
   const query = parsed.data;
-  const match = buildMatch(query);
+  const canSeeInactive = req.user?.role === "admin" || req.user?.role === "superadmin";
+  const match = buildMatch(query, canSeeInactive);
   const hasSearch = Boolean(query.search);
 
   const pipeline: mongoose.PipelineStage[] = [{ $match: match }];

@@ -32,12 +32,12 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [ ] Floating WhatsApp button
 
 ### 4. Product Pages
-- [x] SEO slug URLs — backend
+- [x] SEO slug URLs — backend. **Routing approach decided** — see "Product URLs, Variants & Google Shopping Feed" in CLAUDE.md before building the PDP: `/products/{slug}` canonical, `/products/{slug}/{colorSlug}` for color, `?size=` query param for size (never a path segment)
 - [x] Region-based pricing — backend
 - [ ] Image gallery + zoom — frontend
-- [ ] Size/colour selector — frontend
+- [ ] Size/colour selector — frontend (colour switch = real navigation to the colour's URL; size = in-page only)
 - [ ] Reviews/ratings display — frontend (Review model exists, no API yet)
-- [ ] JSON-LD structured data
+- [ ] JSON-LD structured data — frontend; same offer-per-SKU shape as the Shopping feed (see CLAUDE.md), no new backend work
 - [ ] WhatsApp share button
 
 ### 5. Search & Discovery
@@ -87,12 +87,14 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [ ] Language switcher — frontend
 - [x] Language field on User — backend
 
-### 11. Super Admin Panel
+### 11. Super Admin Panel — `apps/admin`, port 3002, OTP-gated to admin/superadmin
 - [ ] Review moderation — backend + UI
-- [x] Coupon management — backend done (create/list/get/update/deactivate); UI pending
+- [x] Coupon management — full stack (list/create/edit/deactivate)
+- [x] Product management — full stack (list incl. inactive/create/edit/deactivate/reactivate)
+- [ ] Order management — backend + UI, blocked on Order/Checkout API
 - [ ] CRM campaign management — backend + UI
 - [ ] Blog/content management — backend + UI
-- [ ] Google Shopping feed export
+- [x] Google Shopping feed export — `GET /api/feeds/google-shopping.xml`, public/unauthenticated, one item per SKU. `google_product_category` mapping is deliberately coarse for now — flagged in `apps/api/src/utils/googleCategory.ts` to refine once there's a real catalog. No admin UI needed (it's a machine-fetched feed, not something an admin edits)
 - [ ] Popup/banner management
 - [ ] Flash sale timers
 
@@ -106,7 +108,7 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 ## Phase 2 — Post Launch
 
 - [ ] SEO (sitemap.xml, robots.txt, meta per page)
-- [ ] Google Shopping Feed
+- [x] Google Shopping Feed — done in Phase 1 (see Super Admin Panel above); this line is about the feed already existing, not new work
 - [ ] Open Graph + Twitter Cards
 - [ ] Referral program UTM tracking
 - [ ] Flash sale banners
