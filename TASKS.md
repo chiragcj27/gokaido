@@ -19,7 +19,7 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [ ] Guest browsing (no login wall) — frontend
 - [ ] Persistent cart — backend done (guest cart via `X-Guest-Id` + merge-on-login), needs frontend wiring
 - [ ] Recently viewed — backend + frontend
-- [ ] Wishlist — `User.wishlist` field exists, no endpoints yet
+- [x] Wishlist — backend done (see User Account below), needs frontend UI
 - [ ] "Continue where you left off" — frontend
 
 ### 3. Homepage — frontend, blocked on design
@@ -62,10 +62,11 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [x] Registration — backend
 - [ ] My Orders (track + cancel) — backend
 - [x] My Addresses — backend
-- [ ] Reward Points dashboard — backend
-- [ ] Refer & Earn dashboard — signup bonus logic exists, no history/dashboard endpoint
-- [ ] Edit Profile (mutable fields only — name/mobile stay immutable) — backend
-- [ ] Language settings — backend
+- [ ] Reward Points dashboard — backend (ledger/expiry endpoints not built; distinct from the referral totals below)
+- [x] Refer & Earn dashboard — `GET /api/users/me/referrals` (referral code, referral history, total points earned)
+- [x] Edit Profile (mutable fields only — name/mobile stay immutable) — `PATCH /api/users/me`
+- [x] Language settings — covered by `PATCH /api/users/me` (`language` field)
+- [x] Wishlist — `GET/POST/DELETE /api/users/me/wishlist` (also listed under Customer Journey above, backend now done)
 
 ### 8. Product Reviews
 - [ ] Star rating + written review submission — backend

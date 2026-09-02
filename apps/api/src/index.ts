@@ -8,6 +8,7 @@ import cartRouter from "./routes/cart.js";
 import addressRouter from "./routes/address.js";
 import couponRouter from "./routes/coupon.js";
 import feedRouter from "./routes/feed.js";
+import userRouter from "./routes/user.js";
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/cart", cartRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/coupons", couponRouter);
 app.use("/api/feeds", feedRouter);
+app.use("/api/users", userRouter);
 
 const port = Number(process.env.PORT) || 3001;
 
