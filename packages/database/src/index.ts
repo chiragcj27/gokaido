@@ -3,6 +3,15 @@ export { connectDB, disconnectDB, mongoose } from "./client.js";
 export { Product } from "./models/product.js";
 export type { IProduct, IProductVariant, Sport, ProductType } from "./models/product.js";
 
+export { Category } from "./models/category.js";
+export type { ICategory } from "./models/category.js";
+
+export { Subcategory } from "./models/subcategory.js";
+export type { ISubcategory } from "./models/subcategory.js";
+
+export { Asset } from "./models/asset.js";
+export type { IAsset } from "./models/asset.js";
+
 export { User } from "./models/user.js";
 export type { IUser, UserRole, Language } from "./models/user.js";
 

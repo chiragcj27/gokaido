@@ -24,3 +24,8 @@ export const registerSchema = z.object({
   name: nameSchema,
   referralCode: z.string().trim().toUpperCase().optional(),
 });
+
+export const adminLoginSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});

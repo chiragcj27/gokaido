@@ -21,3 +21,14 @@ export const otpVerifyLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Keyed by email so limit applies per-account, not per-IP
+export const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req: Request) =>
+    (req.body?.email as string | undefined)?.toLowerCase() ?? ipKeyGenerator(req.ip ?? ""),
+  message: { error: "Too many failed login attempts. Please wait 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

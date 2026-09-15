@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api";
-import type { Product, ProductVariant } from "../lib/types";
+import type { Category, Product, ProductVariant, Subcategory } from "../lib/types";
+import MultiImageUpload from "./MultiImageUpload";
 
 const SPORTS = ["karate", "taekwondo", "kickboxing", "boxing", "mma"];
 const PRODUCT_TYPES = ["uniform", "equipment"];
@@ -13,16 +14,25 @@ interface Props {
   onCancel: () => void;
 }
 
-type VariantDraft = { sku: string; color: string; size: string; stock: string; basePrice: string };
+type VariantDraft = {
+  sku: string;
+  color: string;
+  size: string;
+  stock: string;
+  basePrice: string;
+  images: string[];
+};
 
 function toVariantDrafts(variants: ProductVariant[]): VariantDraft[] {
-  if (variants.length === 0) return [{ sku: "", color: "", size: "", stock: "", basePrice: "" }];
+  if (variants.length === 0)
+    return [{ sku: "", color: "", size: "", stock: "", basePrice: "", images: [] }];
   return variants.map((v) => ({
     sku: v.sku,
     color: v.color,
     size: v.size,
     stock: String(v.stock),
     basePrice: String(v.basePrice),
+    images: v.images ?? [],
   }));
 }
 
@@ -46,16 +56,46 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
   const [isFeatured, setIsFeatured] = useState(product?.isFeatured ?? false);
   const [isNewArrival, setIsNewArrival] = useState(product?.isNewArrival ?? false);
   const [isBestseller, setIsBestseller] = useState(product?.isBestseller ?? false);
+  const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [variants, setVariants] = useState<VariantDraft[]>(toVariantDrafts(product?.variants ?? []));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function updateVariant(index: number, field: keyof VariantDraft, value: string) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+
+  useEffect(() => {
+    api
+      .get<{ categories: Category[] }>("/api/categories")
+      .then((res) => setCategories(res.categories))
+      .catch(() => setCategories([]));
+  }, []);
+
+  useEffect(() => {
+    const selected = categories.find((c) => c.slug === category);
+    if (!selected) {
+      setSubcategories([]);
+      return;
+    }
+    api
+      .get<{ subcategories: Subcategory[] }>(`/api/subcategories?category=${selected._id}`)
+      .then((res) => setSubcategories(res.subcategories))
+      .catch(() => setSubcategories([]));
+  }, [category, categories]);
+
+  function updateVariant(index: number, field: keyof Omit<VariantDraft, "images">, value: string) {
     setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: value } : v)));
   }
 
+  function updateVariantImages(index: number, urls: string[]) {
+    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, images: urls } : v)));
+  }
+
   function addVariant() {
-    setVariants((prev) => [...prev, { sku: "", color: "", size: "", stock: "", basePrice: "" }]);
+    setVariants((prev) => [
+      ...prev,
+      { sku: "", color: "", size: "", stock: "", basePrice: "", images: [] },
+    ]);
   }
 
   function removeVariant(index: number) {
@@ -74,6 +114,7 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
       subcategory: subcategory || undefined,
       productType,
       description,
+      images,
       isFeatured,
       isNewArrival,
       isBestseller,
@@ -83,6 +124,7 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
         size: v.size,
         stock: Number(v.stock) || 0,
         basePrice: Number(v.basePrice) || 0,
+        images: v.images,
       })),
     };
 
@@ -147,17 +189,49 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
         </label>
         <label>
           Category
-          <input value={category} onChange={(e) => setCategory(e.target.value)} required />
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setSubcategory("");
+            }}
+            required
+          >
+            <option value="" disabled>
+              Select a category
+            </option>
+            {categories.map((c) => (
+              <option key={c._id} value={c.slug}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Subcategory
-          <input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} />
+          <select
+            value={subcategory}
+            onChange={(e) => setSubcategory(e.target.value)}
+            disabled={subcategories.length === 0}
+          >
+            <option value="">None</option>
+            {subcategories.map((s) => (
+              <option key={s._id} value={s.slug}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
       <label className="full-width">
         Description
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
+      </label>
+
+      <label className="full-width">
+        Images
+        <MultiImageUpload purpose="product" values={images} onChange={setImages} />
       </label>
 
       <div className="checkbox-row">
@@ -193,6 +267,7 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
               <th>Size</th>
               <th>Stock</th>
               <th>Price (₹)</th>
+              <th>Images</th>
               <th></th>
             </tr>
           </thead>
@@ -229,6 +304,14 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
                     value={v.basePrice}
                     onChange={(e) => updateVariant(i, "basePrice", e.target.value)}
                     required
+                  />
+                </td>
+                <td>
+                  <MultiImageUpload
+                    purpose="product"
+                    values={v.images}
+                    onChange={(urls) => updateVariantImages(i, urls)}
+                    compact
                   />
                 </td>
                 <td>

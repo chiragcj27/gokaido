@@ -9,7 +9,7 @@ export type OrderStatus =
   | "refund_initiated"
   | "refunded";
 
-export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "cancelled";
 
 export interface IOrderItem {
   product: mongoose.Types.ObjectId;
@@ -54,9 +54,19 @@ export interface IOrder {
   total: number;
 
   payment: {
-    razorpayOrderId?: string;
-    razorpayPaymentId?: string;
-    razorpaySignature?: string;
+    gateway: "icici";
+    // merchantTxnNo sent on the most recent initiateSale attempt — regenerated
+    // on each retry since ICICI requires a unique value per attempt. The
+    // permanent, customer-facing identifier is orderNumber, not this.
+    merchantTxnNo?: string;
+    // Transaction context returned by initiateSale; needed to build the
+    // redirect URL for the current in-flight attempt only.
+    tranCtx?: string;
+    // ICICI's own identifiers for the attempt that actually completed.
+    txnID?: string;
+    paymentID?: string;
+    paymentMode?: string;
+    responseCode?: string;
     status: PaymentStatus;
     paidAt?: Date;
   };
@@ -125,12 +135,16 @@ const orderSchema = new mongoose.Schema<IOrder>(
     total: { type: Number, required: true },
 
     payment: {
-      razorpayOrderId: String,
-      razorpayPaymentId: String,
-      razorpaySignature: String,
+      gateway: { type: String, enum: ["icici"], default: "icici" },
+      merchantTxnNo: String,
+      tranCtx: String,
+      txnID: String,
+      paymentID: String,
+      paymentMode: String,
+      responseCode: String,
       status: {
         type: String,
-        enum: ["pending", "paid", "failed", "refunded"],
+        enum: ["pending", "paid", "failed", "refunded", "cancelled"],
         default: "pending",
       },
       paidAt: Date,
@@ -167,7 +181,7 @@ const orderSchema = new mongoose.Schema<IOrder>(
 
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
-orderSchema.index({ "payment.razorpayOrderId": 1 });
+orderSchema.index({ "payment.txnID": 1 });
 
 export const Order =
   mongoose.models.Order ?? mongoose.model<IOrder>("Order", orderSchema);

@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { isOwnPublicUrl } from "../services/s3.js";
+
+const assetUrlSchema = z.string().url().refine(isOwnPublicUrl, "Must be an uploaded asset URL");
 
 export const sportSchema = z.enum(["karate", "taekwondo", "kickboxing", "boxing", "mma"]);
 export const productTypeSchema = z.enum(["uniform", "equipment"]);
@@ -48,7 +51,7 @@ const variantInputSchema = z.object({
   stock: z.coerce.number().int().min(0).optional(),
   basePrice: z.coerce.number().min(0),
   regionPrices: z.record(z.string(), z.coerce.number().min(0)).optional(),
-  images: z.array(z.string()).optional(),
+  images: z.array(assetUrlSchema).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -65,8 +68,8 @@ export const createProductSchema = z.object({
   productType: productTypeSchema,
 
   description: z.string().trim().optional(),
-  images: z.array(z.string()).optional(),
-  videos: z.array(z.string()).optional(),
+  images: z.array(assetUrlSchema).optional(),
+  videos: z.array(assetUrlSchema).optional(),
   tags: z.array(z.string()).optional(),
 
   variants: z.array(variantInputSchema).min(1, "At least one variant is required"),

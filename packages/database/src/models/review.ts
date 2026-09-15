@@ -4,8 +4,17 @@ export type ReviewStatus = "pending" | "approved" | "rejected";
 
 export interface IReview {
   product: mongoose.Types.ObjectId;
-  user: mongoose.Types.ObjectId;
-  order: mongoose.Types.ObjectId;
+  // Absent for reviews an admin enters manually on a customer's behalf (e.g.
+  // one collected over phone/WhatsApp) — see guestName below for that case.
+  user?: mongoose.Types.ObjectId;
+  // Absent for the same admin-manual case; every customer-submitted review
+  // (via POST /api/reviews) has a real order, enforced at the controller level.
+  order?: mongoose.Types.ObjectId;
+  // Freeform reviewer name for an admin-manual review with no linked account.
+  guestName?: string;
+  // Which admin manually created this review, if any (unset for
+  // customer-submitted reviews).
+  createdBy?: mongoose.Types.ObjectId;
 
   rating: number;
   title?: string;
@@ -36,20 +45,20 @@ const reviewSchema = new mongoose.Schema<IReview>(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     order: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
-      required: true,
     },
+    guestName: String,
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     rating: { type: Number, required: true, min: 1, max: 5 },
     title: String,
     body: String,
     mediaUrls: [{ type: String }],
 
-    isVerifiedPurchase: { type: Boolean, default: true },
+    isVerifiedPurchase: { type: Boolean, default: false },
 
     helpfulVotes: { type: Number, default: 0 },
     helpfulVotedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
@@ -68,8 +77,15 @@ const reviewSchema = new mongoose.Schema<IReview>(
 
 reviewSchema.index({ product: 1, status: 1 });
 reviewSchema.index({ user: 1 });
-// One review per order item
-reviewSchema.index({ order: 1, product: 1 }, { unique: true });
+// One review per order item. A plain `sparse` index only skips a document
+// when it's missing *every* indexed field — since `product` is always
+// present, admin-manual reviews (no `order`) would still collide with each
+// other under `sparse`. A partial index scoped to "has an order" is the
+// correct tool: it only enforces uniqueness where `order` actually exists.
+reviewSchema.index(
+  { order: 1, product: 1 },
+  { unique: true, partialFilterExpression: { order: { $exists: true } } }
+);
 
 export const Review =
   mongoose.models.Review ?? mongoose.model<IReview>("Review", reviewSchema);

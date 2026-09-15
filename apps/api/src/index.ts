@@ -4,11 +4,19 @@ import cors from "cors";
 import { connectDB } from "@gokaido/database";
 import authRouter from "./routes/auth.js";
 import productRouter from "./routes/product.js";
+import categoryRouter from "./routes/category.js";
+import subcategoryRouter from "./routes/subcategory.js";
 import cartRouter from "./routes/cart.js";
 import addressRouter from "./routes/address.js";
 import couponRouter from "./routes/coupon.js";
 import feedRouter from "./routes/feed.js";
 import userRouter from "./routes/user.js";
+import orderRouter from "./routes/order.js";
+import adminOrderRouter from "./routes/adminOrder.js";
+import reviewRouter from "./routes/review.js";
+import adminReviewRouter from "./routes/adminReview.js";
+import uploadRouter from "./routes/upload.js";
+import assetRouter from "./routes/asset.js";
 
 const app = express();
 
@@ -39,11 +47,19 @@ app.get("/health", (_req, res) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
+app.use("/api/categories", categoryRouter);
+app.use("/api/subcategories", subcategoryRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/coupons", couponRouter);
 app.use("/api/feeds", feedRouter);
 app.use("/api/users", userRouter);
+app.use("/api/orders", orderRouter);
+app.use("/api/admin/orders", adminOrderRouter);
+app.use("/api/reviews", reviewRouter);
+app.use("/api/admin/reviews", adminReviewRouter);
+app.use("/api/uploads", uploadRouter);
+app.use("/api/assets", assetRouter);
 
 const port = Number(process.env.PORT) || 3001;
 

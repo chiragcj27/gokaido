@@ -9,10 +9,12 @@ import {
   verifyTempToken,
 } from "../utils/jwt.js";
 import { sendOtpSms } from "../services/sms.js";
+import { comparePassword } from "../utils/password.js";
 import {
   sendOtpSchema,
   verifyOtpSchema,
   registerSchema,
+  adminLoginSchema,
 } from "../schemas/auth.schema.js";
 
 const REFERRER_POINTS = 100;
@@ -142,6 +144,48 @@ export async function register(req: Request, res: Response): Promise<void> {
   });
 }
 
+const ADMIN_ROLES = ["admin", "superadmin"] as const;
+
+export async function adminLogin(req: Request, res: Response): Promise<void> {
+  const parsed = adminLoginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid email or password" });
+    return;
+  }
+
+  const { email, password } = parsed.data;
+
+  const user = (await User.findOne({
+    email,
+    role: { $in: ADMIN_ROLES },
+  }).select("+password")) as mongoose.HydratedDocument<IUser> | null;
+
+  if (!user?.password || !(await comparePassword(password, user.password))) {
+    res.status(401).json({ error: "Invalid email or password" });
+    return;
+  }
+
+  if (!user.isActive) {
+    res.status(403).json({ error: "This account has been deactivated." });
+    return;
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  const userId = String(user._id);
+  res.json({
+    accessToken: signAccessToken(userId),
+    refreshToken: signRefreshToken(userId),
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  });
+}
+
 export async function refreshToken(req: Request, res: Response): Promise<void> {
   const { refreshToken: token } = req.body as { refreshToken?: string };
   if (!token) {
@@ -223,7 +267,7 @@ async function applyReferral(
 type PublicUserSource = {
   _id: unknown;
   name?: string;
-  mobile: string;
+  mobile?: string;
   email?: string;
   region?: string;
   language: string;

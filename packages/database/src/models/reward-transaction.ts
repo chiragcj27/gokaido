@@ -3,6 +3,7 @@ import { mongoose } from "../client.js";
 export type RewardTransactionType =
   | "earned_order"
   | "redeemed"
+  | "redemption_reversed"
   | "referral_bonus"
   | "signup_bonus"
   | "expired"
@@ -36,6 +37,7 @@ const rewardTransactionSchema = new mongoose.Schema<IRewardTransaction>(
       enum: [
         "earned_order",
         "redeemed",
+        "redemption_reversed",
         "referral_bonus",
         "signup_bonus",
         "expired",

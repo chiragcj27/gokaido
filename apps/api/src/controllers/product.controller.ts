@@ -7,6 +7,7 @@ import {
   updateProductSchema,
 } from "../schemas/product.schema.js";
 import { getEffectivePrice } from "../utils/pricing.js";
+import { escapeRegex } from "../utils/regex.js";
 
 export type LeanVariant = {
   sku: string;
@@ -18,10 +19,6 @@ export type LeanVariant = {
   images: string[];
   isActive: boolean;
 };
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 function withEffectivePrice(variant: LeanVariant, region?: string) {
   const { regionPrices, ...rest } = variant;

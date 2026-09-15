@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { User, Product, Referral, mongoose } from "@gokaido/database";
-import { updateProfileSchema } from "../schemas/user.schema.js";
+import { User, Product, Referral, RewardTransaction, mongoose } from "@gokaido/database";
+import { updateProfileSchema, rewardTransactionsQuerySchema } from "../schemas/user.schema.js";
 
 export async function updateProfile(req: Request, res: Response): Promise<void> {
   const parsed = updateProfileSchema.safeParse(req.body);
@@ -69,6 +69,32 @@ export async function removeFromWishlist(req: Request, res: Response): Promise<v
 
   await User.findByIdAndUpdate(req.user!.id, { $pull: { wishlist: productId } });
   res.json({ success: true });
+}
+
+export async function getRewardTransactions(req: Request, res: Response): Promise<void> {
+  const parsed = rewardTransactionsQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid query" });
+    return;
+  }
+  const { page, limit } = parsed.data;
+  const userId = req.user!.id;
+
+  const [user, transactions, total] = await Promise.all([
+    User.findById(userId).select("rewardPoints").lean() as Promise<{ rewardPoints: number } | null>,
+    RewardTransaction.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    RewardTransaction.countDocuments({ user: userId }),
+  ]);
+
+  res.json({
+    balance: user?.rewardPoints ?? 0,
+    transactions,
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  });
 }
 
 export async function getReferralDashboard(req: Request, res: Response): Promise<void> {

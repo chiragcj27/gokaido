@@ -49,31 +49,34 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [x] Persistent cart, guest + user, merge on login — backend
 - [ ] One-page checkout — frontend
 - [ ] Progress indicator — frontend
-- [ ] Reward points redemption — backend
+- [x] Reward points redemption — backend, redeemed at checkout via `rewardPointsToRedeem`, capped/atomic/race-tested. Rate & cap are placeholder defaults, not a client-confirmed spec — see "Reward Points" in CLAUDE.md
 - [x] Promo/coupon codes — backend (admin CRUD + cart apply/remove, min-order/expiry/usage-limit/per-user-limit/product-category restriction all enforced)
 - [x] Multiple saved addresses — backend
-- [ ] Razorpay payment integration
-- [ ] Order creation from cart
+- [x] Payment integration — **ICICI Bank PG, not Razorpay** (client switched providers). Standard/redirect flow, secureHash verified live against UAT. See "Payment Gateway" section in CLAUDE.md
+- [x] Order creation from cart — atomic stock reservation (race-tested), guest + authenticated checkout, coupon consumption on payment success
+- [x] Retry payment for a failed order — `POST /api/orders/:id/retry-payment`, re-reserves stock/points, fresh gateway attempt
 - [ ] Invoice generation/download
 - [ ] Success sound on payment return — frontend
 
 ### 7. User Account
-- [x] OTP login (SMS via Twilio) — backend
+- [x] OTP login (SMS via Twilio) — backend, customer-facing only. Admin portal (`apps/admin`) uses email+password instead, not OTP — see Super Admin Panel below
 - [x] Registration — backend
-- [ ] My Orders (track + cancel) — backend
+- [x] My Orders (track + cancel) — `GET /api/orders`, `GET /api/orders/:id`, `POST /api/orders/:id/cancel` (refunds via ICICI if already paid, releases stock either way)
 - [x] My Addresses — backend
-- [ ] Reward Points dashboard — backend (ledger/expiry endpoints not built; distinct from the referral totals below)
+- [x] Reward Points dashboard — `GET /api/users/me/reward-transactions` (balance + paginated ledger). Point *expiry* sweep not built — needs a cron/scheduler this codebase doesn't have yet
 - [x] Refer & Earn dashboard — `GET /api/users/me/referrals` (referral code, referral history, total points earned)
 - [x] Edit Profile (mutable fields only — name/mobile stay immutable) — `PATCH /api/users/me`
 - [x] Language settings — covered by `PATCH /api/users/me` (`language` field)
 - [x] Wishlist — `GET/POST/DELETE /api/users/me/wishlist` (also listed under Customer Journey above, backend now done)
 
 ### 8. Product Reviews
-- [ ] Star rating + written review submission — backend
-- [ ] Photo/video upload — needs S3 presign utility
-- [ ] Purchase-verified badge — backend
-- [ ] Helpful votes — backend
-- [ ] Admin moderation (approve/reject) — backend
+- [x] Star rating + written review submission — `POST /api/reviews`. Gated on the order actually being `delivered` and containing that product; one review per (order, product) via a unique index
+- [x] Photo/video upload — `mediaUrls`, via the existing `review` upload purpose (S3 presign, any authenticated user)
+- [x] Purchase-verified badge — `isVerifiedPurchase` is always true here since creation requires a real delivered order; no unverified-review path exists yet
+- [x] Helpful votes — `POST /api/reviews/:id/helpful`, toggles on/off per user, only on approved reviews
+- [x] Admin moderation (approve/reject) — `GET/PATCH /api/admin/reviews`, `apps/api/src/controllers/adminReview.controller.ts`. `Product.avgRating`/`reviewCount` recomputed from scratch (not incremented) on every approve/reject so it can't drift
+- [x] Admin can add a review manually — `POST /api/admin/reviews` (e.g. one collected over phone/WhatsApp, no real order). `Review.order`/`user` are now optional; `guestName` + `createdBy` added for this path. Defaults to `approved` status (skips the moderation queue) unless the admin picks otherwise. Uniqueness on (order, product) is now a **partial** index (`{ order: { $exists: true } }`), not a plain sparse one — a sparse compound index only skips a doc missing *every* indexed field, and `product` is always present, so a naive sparse index still collided across multiple order-less admin reviews on the same product (caught live during testing)
+- [x] Review moderation UI in `apps/admin` — `apps/admin/app/(dashboard)/reviews`, status filter + approve/reject actions + "New review" manual-entry form (`ReviewForm.tsx`, reuses `MultiImageUpload`)
 
 ### 9. CRM & Notifications
 - [x] SMS OTP — backend
@@ -88,11 +91,14 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [ ] Language switcher — frontend
 - [x] Language field on User — backend
 
-### 11. Super Admin Panel — `apps/admin`, port 3002, OTP-gated to admin/superadmin
-- [ ] Review moderation — backend + UI
+### 11. Super Admin Panel — `apps/admin`, port 3002, email+password login gated to admin/superadmin (`POST /api/auth/admin/login` — not OTP, that's customer-only). Seed an admin via `pnpm --filter @gokaido/api seed:admin`
+- [x] Review moderation UI — see Product Reviews above (list, approve/reject, manual add)
 - [x] Coupon management — full stack (list/create/edit/deactivate)
-- [x] Product management — full stack (list incl. inactive/create/edit/deactivate/reactivate)
-- [ ] Order management — backend + UI, blocked on Order/Checkout API
+- [x] Product management — full stack (list incl. inactive/create/edit/deactivate/reactivate). Category/subcategory picked from dropdowns, not freetext — see below. Product-level and per-variant image uploads wired via the reusable `MultiImageUpload` component (`apps/admin/components/MultiImageUpload.tsx`) — same `uploadImage()` presign+PUT helper as Category/Subcategory's `ImageUpload`
+- [x] Category & subcategory management — full stack (`Category`/`Subcategory` models, `/api/categories`, `/api/subcategories`, admin list+form pages with image upload). Product's `category`/`subcategory` fields are still plain slug strings (unchanged shape), now expected to match a real Category/Subcategory slug rather than freetext
+- [x] Order management — full stack: `GET/PATCH /api/admin/orders`, filter by status/payment/search, order detail with items/customer/shipping/history, tracking info, guarded status-transition dropdown (server re-validates regardless), cancel/refund via the same ICICI path as customer-initiated cancellation
+- [x] Asset store — full stack. `Asset` model (name tag + S3 url/key), `GET/POST/DELETE /api/assets` (name search, admin/superadmin only), `apps/admin/app/(dashboard)/assets` page (upload with a name tag, copy URL, delete). Reuses the existing presign+PUT `uploadImage()` helper via a new `asset` upload purpose. Purpose: pre-upload images once and paste the resulting S3 URL into the product bulk-upload spreadsheet's image columns instead of re-uploading per row
+- [x] Product bulk upload via Excel — `POST /api/products/bulk` (multer + `exceljs`, admin/superadmin only), `GET /api/products/bulk-template` for a starter `.xlsx`. One row = one variant, grouped into a product by matching `slug`. `category`/`subcategory` columns are matched case-insensitively against existing active `Category`/`Subcategory` names (not freetext, not created on the fly) — unmatched rows are reported as per-row errors, not silently dropped. A `slug` that already exists on a `Product` is skipped (reported, not overwritten/merged) — re-running a sheet is safe but won't update existing products; that needs a separate edit. Wired into the Products admin page (download template / upload spreadsheet / created-skipped-errors summary)
 - [ ] CRM campaign management — backend + UI
 - [ ] Blog/content management — backend + UI
 - [x] Google Shopping feed export — `GET /api/feeds/google-shopping.xml`, public/unauthenticated, one item per SKU. `google_product_category` mapping is deliberately coarse for now — flagged in `apps/api/src/utils/googleCategory.ts` to refine once there's a real catalog. No admin UI needed (it's a machine-fetched feed, not something an admin edits)
@@ -124,6 +130,6 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 
 ## Infra / Cross-cutting
 
-- [ ] AWS S3 bucket + upload plumbing
+- [x] AWS S3 bucket + upload plumbing — `gokaido-web-storage` bucket (versioned, SSE-S3, public reads under `public/*` only) + CORS for browser presigned uploads + scoped `gokaido-api-runtime` IAM user (PutObject on `public/*` only) wired into `apps/api/.env`. Verified live end-to-end (presign → PUT → public GET). Unblocks Reviews photo/video upload — Product, Category, and Subcategory image uploads are now all wired in the admin panel
 - [ ] AWS EC2 deployment pipeline
 - [ ] CI (lint/type-check on push)

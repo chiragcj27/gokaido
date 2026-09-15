@@ -5,8 +5,13 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
+  { href: "/orders", label: "Orders" },
   { href: "/products", label: "Products" },
+  { href: "/assets", label: "Asset store" },
+  { href: "/categories", label: "Categories" },
+  { href: "/subcategories", label: "Subcategories" },
   { href: "/coupons", label: "Coupons" },
+  { href: "/reviews", label: "Reviews" },
 ];
 
 export default function Sidebar({

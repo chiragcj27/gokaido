@@ -6,7 +6,8 @@ import { api, TOKEN_KEY, REFRESH_KEY } from "./api";
 export interface AdminUser {
   id: string;
   name?: string;
-  mobile: string;
+  email?: string;
+  mobile?: string;
   role: string;
 }
 
