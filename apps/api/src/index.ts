@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express from "express";
+import express, { type Express } from "express";
 import cors from "cors";
 import { connectDB } from "@gokaido/database";
 import authRouter from "./routes/auth.js";
@@ -20,12 +20,13 @@ import adminReviewRouter from "./routes/adminReview.js";
 import uploadRouter from "./routes/upload.js";
 import assetRouter from "./routes/asset.js";
 
-const app = express();
+const app: Express = express();
 
 // The storefront and admin portal are separate origins from this API (even
 // in dev — different ports), so every real request is cross-origin.
 const allowedOrigins = (
-  process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:3002"
+  process.env.CORS_ORIGINS ??
+    "http://localhost:3000,http://localhost:3002,https://gokaido-admin.vercel.app"
 )
   .split(",")
   .map((origin) => origin.trim().replace(/\/+$/, ""))
@@ -39,6 +40,19 @@ app.use(
 );
 
 app.use(express.json());
+
+// Serverless (Vercel) never runs the boot-time connect below, so connect on
+// demand; connectDB is a no-op once connected.
+app.use(async (_req, res, next) => {
+  if (!process.env.VERCEL) return next();
+  try {
+    await connectDB(process.env.MONGODB_URI ?? "");
+    next();
+  } catch (err) {
+    console.error("Failed to connect to MongoDB:", err);
+    res.status(503).json({ error: "Database unavailable" });
+  }
+});
 
 // Trust proxy — needed for rate limiter to read real IP behind load balancer
 app.set("trust proxy", 1);
@@ -65,22 +79,27 @@ app.use("/api/admin/reviews", adminReviewRouter);
 app.use("/api/uploads", uploadRouter);
 app.use("/api/assets", assetRouter);
 
-const port = Number(process.env.PORT) || 3001;
-
 const mongoUri = process.env.MONGODB_URI;
-if (!mongoUri) {
-  console.error("MONGODB_URI is not set");
-  process.exit(1);
-}
 
-connectDB(mongoUri)
-  .then(() => {
-    console.log("Connected to MongoDB");
-    app.listen(port, () => {
-      console.log(`API running on http://localhost:${port}`);
-    });
-  })
-  .catch((err: unknown) => {
-    console.error("Failed to connect to MongoDB:", err);
+export default app;
+
+if (!process.env.VERCEL) {
+  const port = Number(process.env.PORT) || 3001;
+
+  if (!mongoUri) {
+    console.error("MONGODB_URI is not set");
     process.exit(1);
-  });
+  }
+
+  connectDB(mongoUri)
+    .then(() => {
+      console.log("Connected to MongoDB");
+      app.listen(port, () => {
+        console.log(`API running on http://localhost:${port}`);
+      });
+    })
+    .catch((err: unknown) => {
+      console.error("Failed to connect to MongoDB:", err);
+      process.exit(1);
+    });
+}
