@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001").replace(/\/+$/, "");
 
 export const TOKEN_KEY = "gokaido_admin_token";
 export const REFRESH_KEY = "gokaido_admin_refresh_token";

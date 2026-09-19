@@ -28,7 +28,7 @@ const allowedOrigins = (
   process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:3002"
 )
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
   .filter(Boolean);
 
 app.use(

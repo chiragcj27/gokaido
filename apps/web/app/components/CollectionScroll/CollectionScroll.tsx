@@ -158,7 +158,7 @@ export default function CollectionScroll({
 
       <div
         ref={containerRef}
-        className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
+        className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {subcategories.map((subcategory, index) => (
           <CollectionSlide key={subcategory.key} subcategory={subcategory} isActive={index === activeIndex} />
