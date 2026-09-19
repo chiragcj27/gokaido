@@ -11,6 +11,31 @@
   --color-red: #c8102e;
 }
 
+/* Hide every scrollbar (Windows shows chunky always-on bars; scrolling still works). */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Never let a stray element create a horizontal page scroll. */
+html,
+body {
+  overflow-x: clip;
+}
+
+/* Windows laptops usually run at 125-150% display scaling, so the same layout gets
+   fewer CSS pixels than on a Mac and everything (rem-based) looks oversized.
+   Scale the root size fluidly on desktop widths so it matches the Mac look. */
+@media (min-width: 1024px) {
+  html {
+    font-size: clamp(13px, 1.1vw, 16px);
+  }
+}
+
 @keyframes hero-card-expand {
   from {
     clip-path: inset(0 25% 0 25%);
