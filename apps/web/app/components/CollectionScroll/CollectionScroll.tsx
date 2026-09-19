@@ -32,13 +32,19 @@ interface CollectionSlideProps {
 
 function CollectionSlide({ subcategory, isActive }: CollectionSlideProps) {
   return (
-    <section className="flex min-h-full w-full shrink-0 snap-start flex-col gap-10 px-6 py-16 md:grid md:grid-cols-[594fr_896fr] md:items-center md:gap-12 lg:px-10">
-      <div
-        className={`w-full shrink-0 transition-all duration-700 ease-out ${
-          isActive ? "translate-y-0 opacity-100" : "translate-y-14 opacity-0"
-        }`}
-      >
-        <PoppedCard
+    <section
+      data-collection-slide
+      className="flex min-h-full w-full flex-col gap-10 px-6 pt-16 md:grid md:grid-cols-[594fr_896fr] md:items-start md:gap-12 md:pt-0 lg:px-10"
+    >
+      {/* Pinned to the top of the scroll pane while this section's grid scrolls past;
+          releases with the section once its last product is reached. */}
+      <div className="md:sticky md:top-0 md:flex md:h-[var(--pane-h)] md:items-center">
+        <div
+          className={`w-full shrink-0 transition-all duration-700 ease-out ${
+            isActive ? "translate-y-0 opacity-100" : "translate-y-14 opacity-0"
+          }`}
+        >
+          <PoppedCard
           variant="subcategory"
           imageSrc={subcategory.imageSrc}
           imageAlt={subcategory.title}
@@ -46,11 +52,12 @@ function CollectionSlide({ subcategory, isActive }: CollectionSlideProps) {
           title={subcategory.title}
           description={subcategory.description}
           href={subcategory.href}
-        />
+          />
+        </div>
       </div>
 
       <div
-        className={`grid grid-cols-2 gap-x-5 gap-y-10 transition-all delay-100 duration-700 ease-out sm:grid-cols-3 ${
+        className={`grid grid-cols-2 gap-x-5 gap-y-10 pb-16 transition-all delay-100 duration-700 ease-out sm:grid-cols-3 md:py-16 ${
           isActive ? "translate-y-0 opacity-100" : "translate-y-14 opacity-0"
         }`}
       >
@@ -88,21 +95,40 @@ export default function CollectionScroll({
     const container = containerRef.current;
     if (!container) return;
 
+    const slides = () => Array.from(container.querySelectorAll<HTMLElement>("[data-collection-slide]"));
+
+    const update = () => {
+      container.style.setProperty("--pane-h", `${container.clientHeight}px`);
+      const els = slides();
+      if (!els.length) return;
+      // Sections have varying heights, so progress is measured against each section's
+      // own top edge rather than a fixed slide height.
+      const tops = els.map((el) => el.offsetTop);
+      const y = container.scrollTop;
+      let i = tops.length - 1;
+      while (i > 0 && tops[i] > y) i--;
+      const next = tops[i + 1];
+      // The pinned card only changes while the section is scrolling away, i.e. over the
+      // final pane-height before the next section's top.
+      const pane = container.clientHeight;
+      const fraction = next === undefined ? 0 : Math.min(Math.max((y - (next - pane)) / pane, 0), 1);
+      setProgress(Math.min(Math.max(i + fraction, 0), els.length - 1));
+    };
+
     let raf = 0;
     const handleScroll = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const slideHeight = container.clientHeight;
-        if (!slideHeight) return;
-        const maxIndex = subcategories.length - 1;
-        const raw = container.scrollTop / slideHeight;
-        setProgress(Math.min(Math.max(raw, 0), maxIndex));
-      });
+      raf = requestAnimationFrame(update);
     };
 
+    update();
     container.addEventListener("scroll", handleScroll, { passive: true });
+    const observer = new ResizeObserver(handleScroll);
+    observer.observe(container);
+    slides().forEach((el) => observer.observe(el));
     return () => {
       container.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
       cancelAnimationFrame(raf);
     };
   }, [subcategories.length]);
@@ -111,8 +137,9 @@ export default function CollectionScroll({
 
   const scrollToIndex = (index: number) => {
     const container = containerRef.current;
-    if (!container) return;
-    container.scrollTo({ top: index * container.clientHeight, behavior: "smooth" });
+    const target = container?.querySelectorAll<HTMLElement>("[data-collection-slide]")[index];
+    if (!container || !target) return;
+    container.scrollTo({ top: target.offsetTop, behavior: "smooth" });
   };
 
   return (
@@ -131,7 +158,7 @@ export default function CollectionScroll({
 
       <div
         ref={containerRef}
-        className="flex-1 snap-y snap-mandatory overflow-y-auto overflow-x-hidden scroll-smooth"
+        className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
       >
         {subcategories.map((subcategory, index) => (
           <CollectionSlide key={subcategory.key} subcategory={subcategory} isActive={index === activeIndex} />

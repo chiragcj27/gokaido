@@ -64,7 +64,10 @@ export async function createSubcategory(req: Request, res: Response): Promise<vo
     return;
   }
 
-  const subcategory = await Subcategory.create(parsed.data);
+  // sizeGuide: null only means something on update (clears an existing
+  // guide) — on create there's nothing to clear, so drop it either way.
+  const { sizeGuide, ...data } = parsed.data;
+  const subcategory = await Subcategory.create(sizeGuide ? { ...data, sizeGuide } : data);
   res.status(201).json({ subcategory });
 }
 
@@ -104,7 +107,16 @@ export async function updateSubcategory(req: Request, res: Response): Promise<vo
     }
   }
 
-  const subcategory = await Subcategory.findByIdAndUpdate(req.params.id, parsed.data, { new: true });
+  // sizeGuide: null means "clear it" — a plain $set would leave the old
+  // subdocument in place since Mongo treats a null value as data, not
+  // absence, so that case needs its own $unset.
+  const { sizeGuide, ...rest } = parsed.data;
+  const updateOp =
+    sizeGuide === null
+      ? { $set: rest, $unset: { sizeGuide: "" } }
+      : { $set: sizeGuide !== undefined ? { ...rest, sizeGuide } : rest };
+
+  const subcategory = await Subcategory.findByIdAndUpdate(req.params.id, updateOp, { new: true });
   if (!subcategory) {
     res.status(404).json({ error: "Subcategory not found" });
     return;

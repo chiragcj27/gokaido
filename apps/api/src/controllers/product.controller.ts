@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import { Product, mongoose } from "@gokaido/database";
+import { Product, Subcategory, mongoose } from "@gokaido/database";
+import type { ISizeGuide } from "@gokaido/database";
 import {
   productListQuerySchema,
   productDetailQuerySchema,
@@ -143,17 +144,30 @@ export async function getProductBySlug(req: Request, res: Response): Promise<voi
   }
 
   const product = (await Product.findOne({ slug: req.params.slug, isActive: true }).lean()) as
-    | (Record<string, unknown> & { variants: LeanVariant[] })
+    | (Record<string, unknown> & { subcategory?: string; variants: LeanVariant[] })
     | null;
   if (!product) {
     res.status(404).json({ error: "Product not found" });
     return;
   }
 
+  // Sizing is configured per-subcategory (see Subcategory.sizeGuide), not per
+  // product, so every product under it shares one chart. `subcategory` here
+  // is the plain slug string stored on Product, same convention as the
+  // subcategory/category list filters above — a subcategory with no guide
+  // configured (or a product with no subcategory) resolves to null, and the
+  // storefront falls back to its own default guide.
+  const subcategoryDoc = product.subcategory
+    ? ((await Subcategory.findOne({ slug: product.subcategory, isActive: true })
+        .select("sizeGuide")
+        .lean()) as { sizeGuide?: ISizeGuide } | null)
+    : null;
+
   res.json({
     product: {
       ...product,
       variants: product.variants.map((v) => withEffectivePrice(v, parsed.data.region)),
+      sizeGuide: subcategoryDoc?.sizeGuide ?? null,
     },
   });
 }

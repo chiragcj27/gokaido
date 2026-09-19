@@ -8,6 +8,28 @@ export interface Category {
   createdAt: string;
 }
 
+export interface SizeGuideMeasurementPoint {
+  letter: string;
+  title: string;
+  description: string;
+}
+
+export interface SizeGuideRow {
+  size: string;
+  chestMinCm: number;
+  chestMaxCm: number;
+  lengthCm: number;
+}
+
+export interface SizeGuide {
+  title?: string;
+  description?: string;
+  measurementImage?: string;
+  measurementGuide: SizeGuideMeasurementPoint[];
+  sizeChart: SizeGuideRow[];
+  footerNote?: string;
+}
+
 export interface Subcategory {
   _id: string;
   name: string;
@@ -15,6 +37,16 @@ export interface Subcategory {
   description?: string;
   image?: string;
   category: string | { _id: string; name: string; slug: string };
+  sizeGuide?: SizeGuide;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Color {
+  _id: string;
+  name: string;
+  slug: string;
+  hex: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -72,6 +104,10 @@ export interface Product {
   productType: string;
   description?: string;
   images?: string[];
+  /** Background-removed image used for product cards/listings — never the ones in `images`. */
+  cardImage?: string;
+  /** Competitor product photo, shown as the "before" side of the before/after comparison slider. */
+  competitorImage?: string;
   variants: ProductVariant[];
   isActive: boolean;
   isFeatured: boolean;

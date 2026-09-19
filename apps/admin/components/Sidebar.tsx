@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/assets", label: "Asset store" },
   { href: "/categories", label: "Categories" },
   { href: "/subcategories", label: "Subcategories" },
+  { href: "/colors", label: "Colors" },
   { href: "/coupons", label: "Coupons" },
   { href: "/reviews", label: "Reviews" },
 ];

@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import SearchModal from "../SearchModal/SearchModal";
 import styles from "./Navbar.module.css";
 
 const navLinks = [
@@ -13,9 +14,35 @@ const navLinks = [
   { key: "contact-us", href: "/contact-us", label: "Contact Us", src: "/navbar/contact-us.png", width: 156, height: 46 },
 ];
 
+// Every category opens the sample collections page until the real ones are wired up.
+const categories = [
+  { key: "karate", label: "Karate", href: "/collections" },
+  { key: "boxing", label: "Boxing", href: "/collections" },
+  { key: "taekwondo", label: "Taekwondo", href: "/collections" },
+];
+
 export default function Navbar() {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const categoryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!categoryOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!categoryRef.current?.contains(event.target as Node)) setCategoryOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCategoryOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [categoryOpen]);
 
   return (
     <header className={styles.header}>
@@ -29,7 +56,7 @@ export default function Navbar() {
             className={mobileOpen ? `${styles.navLinks} ${styles.navLinksOpen}` : styles.navLinks}
             aria-label="Primary"
           >
-            <div className={styles.categoryWrap}>
+            <div className={styles.categoryWrap} ref={categoryRef}>
               <button
                 type="button"
                 className={styles.categoryButton}
@@ -54,8 +81,23 @@ export default function Navbar() {
                 />
               </button>
               {categoryOpen && (
-                // Category mega-menu content is pending its own Figma frame.
-                <div className={styles.categoryMenu} role="menu" />
+                // Placeholder list until the category mega-menu Figma frame lands.
+                <div className={styles.categoryMenu} role="menu">
+                  {categories.map((category) => (
+                    <Link
+                      key={category.key}
+                      href={category.href}
+                      role="menuitem"
+                      className={styles.categoryItem}
+                      onClick={() => {
+                        setCategoryOpen(false);
+                        setMobileOpen(false);
+                      }}
+                    >
+                      {category.label}
+                    </Link>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -74,7 +116,13 @@ export default function Navbar() {
         </div>
 
         <div className={styles.actions}>
-          <button type="button" className={styles.iconButton} aria-label="Search">
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label="Search"
+            aria-haspopup="dialog"
+            onClick={() => setSearchOpen(true)}
+          >
             <Image src="/navbar/icon-search.png" alt="" width={37} height={56} style={{ width: 37, height: 56 }} />
           </button>
           <Link href="/account" className={styles.iconButton} aria-label="Account">
@@ -97,6 +145,7 @@ export default function Navbar() {
           </button>
         </div>
       </div>
+      <SearchModal open={searchOpen} onClose={closeSearch} />
     </header>
   );
 }

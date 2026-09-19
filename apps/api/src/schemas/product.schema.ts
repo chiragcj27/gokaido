@@ -69,6 +69,8 @@ export const createProductSchema = z.object({
 
   description: z.string().trim().optional(),
   images: z.array(assetUrlSchema).optional(),
+  cardImage: assetUrlSchema.optional(),
+  competitorImage: assetUrlSchema.optional(),
   videos: z.array(assetUrlSchema).optional(),
   tags: z.array(z.string()).optional(),
 

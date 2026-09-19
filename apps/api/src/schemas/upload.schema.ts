@@ -9,6 +9,7 @@ const VIDEO_TYPES = ["video/mp4", "video/webm"] as const;
 export const UPLOAD_PURPOSES = {
   product: { folder: "products", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   category: { folder: "categories", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
+  sizeGuide: { folder: "size-guides", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   blog: { folder: "blog", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   banner: { folder: "banners", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   asset: { folder: "assets", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },

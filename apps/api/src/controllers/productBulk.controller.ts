@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import ExcelJS from "exceljs";
-import { Category, Subcategory, Product } from "@gokaido/database";
+import { Category, Subcategory, Color, Product } from "@gokaido/database";
 import { createProductSchema } from "../schemas/product.schema.js";
 import {
   bulkProductRowSchema,
   splitCsv,
   BULK_TEMPLATE_HEADERS,
-  BULK_TEMPLATE_EXAMPLE_ROW,
+  BULK_TEMPLATE_EXAMPLE_ROWS,
   type BulkProductRow,
 } from "../schemas/productBulk.schema.js";
 
@@ -78,14 +78,16 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
     return;
   }
 
-  const [categories, subcategories] = await Promise.all([
+  const [categories, subcategories, colors] = await Promise.all([
     Category.find({ isActive: true }).lean(),
     Subcategory.find({ isActive: true }).lean(),
+    Color.find({ isActive: true }).lean(),
   ]);
   const categoryByName = new Map(categories.map((c) => [c.name.trim().toLowerCase(), c]));
   const subcategoryByKey = new Map(
     subcategories.map((s) => [`${s.category}:${s.name.trim().toLowerCase()}`, s])
   );
+  const colorByName = new Map(colors.map((c) => [c.name.trim().toLowerCase(), c]));
 
   const rowErrors: RowError[] = [];
   const groups = new Map<
@@ -123,8 +125,27 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
       subcategorySlug = subcategory.slug;
     }
 
+    const color = colorByName.get(row.color.trim().toLowerCase());
+    if (!color) {
+      rowErrors.push({
+        row: rowNumber,
+        message: `Colour "${row.color}" not found — create it in Colors first`,
+      });
+      continue;
+    }
+
+    // Normalize to the master list's exact spelling/casing so every row of
+    // this colour — however it was typed in the sheet — ends up with the
+    // same stored value.
+    const normalizedRow: BulkProductRow = { ...row, color: color.name };
+
     const bucket = groups.get(row.slug) ?? [];
-    bucket.push({ rows: [rowNumber], data: row, category: category.slug, subcategory: subcategorySlug });
+    bucket.push({
+      rows: [rowNumber],
+      data: normalizedRow,
+      category: category.slug,
+      subcategory: subcategorySlug,
+    });
     groups.set(row.slug, bucket);
   }
 
@@ -161,6 +182,16 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
       continue;
     }
 
+    // Photos are per colour, not per size — a colour's sizes all share the
+    // same shoot, so `variantImages` only needs to be filled in on that
+    // colour's first row; later size rows for the same colour inherit it.
+    const imagesByColor = new Map<string, string[]>();
+    for (const e of entries) {
+      const key = e.data.color.trim().toLowerCase();
+      const imgs = splitCsv(e.data.variantImages);
+      if (imgs.length > 0 && !imagesByColor.has(key)) imagesByColor.set(key, imgs);
+    }
+
     const payload = {
       name,
       slug,
@@ -170,6 +201,8 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
       productType: first.productType,
       description: first.description,
       images: splitCsv(first.images),
+      cardImage: first.cardImage,
+      competitorImage: first.competitorImage,
       tags: splitCsv(first.tags),
       isFeatured: first.isFeatured,
       isNewArrival: first.isNewArrival,
@@ -180,7 +213,7 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
         size: e.data.size,
         stock: e.data.stock,
         basePrice: e.data.basePrice,
-        images: splitCsv(e.data.variantImages),
+        images: imagesByColor.get(e.data.color.trim().toLowerCase()) ?? [],
       })),
     };
 
@@ -212,7 +245,7 @@ export async function downloadBulkTemplate(_req: Request, res: Response): Promis
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Products");
   sheet.addRow(BULK_TEMPLATE_HEADERS as unknown as string[]);
-  sheet.addRow(BULK_TEMPLATE_EXAMPLE_ROW);
+  for (const row of BULK_TEMPLATE_EXAMPLE_ROWS) sheet.addRow(row);
   sheet.getRow(1).font = { bold: true };
 
   res.setHeader(

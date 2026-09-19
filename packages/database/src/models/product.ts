@@ -25,6 +25,14 @@ export interface IProduct {
 
   description: string;
   images: string[];
+  // Background-removed cutout used wherever the product renders as a card
+  // (listings, related products, kit builder) — `images` above may have a
+  // studio/lifestyle background and isn't safe for that context.
+  cardImage?: string;
+  // A competitor's product photo, shown as the "before" side of the
+  // before/after comparison slider (see BeforeAfterSlider) — not one of our
+  // own product's images.
+  competitorImage?: string;
   videos: string[];
   tags: string[];
 
@@ -98,6 +106,8 @@ const productSchema = new mongoose.Schema<IProduct>(
 
     description: { type: String, default: "" },
     images: [{ type: String }],
+    cardImage: String,
+    competitorImage: String,
     videos: [{ type: String }],
     tags: [{ type: String }],
 
@@ -136,6 +146,8 @@ const productSchema = new mongoose.Schema<IProduct>(
 );
 
 productSchema.index({ sport: 1, category: 1 });
+// Collection pages: active products of a category, grouped by subcategory.
+productSchema.index({ category: 1, isActive: 1, subcategory: 1 });
 productSchema.index({ isActive: 1, isFeatured: 1 });
 productSchema.index({ name: "text", description: "text", tags: "text" });
 

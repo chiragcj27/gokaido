@@ -1,15 +1,20 @@
 import sharp from "sharp";
 
 // Matches the framing apps/web's PoppedCard.tsx was hand-tuned against
-// (product-placeholder.png: subject bbox ~55% width / ~78% height, centered)
+// (product-placeholder.png: subject ~78% height, centered)
 // so its fixed scale/offset pop effect works the same for every upload.
 const CANVAS = { width: 1000, height: 1000 };
-const INNER_BOX = { width: 550, height: 780 };
+// Height is the dimension that drives the pop-out above the card's background, so it is fixed;
+// width is only a generous cap (PoppedCard's scaled image spans the full card width at 1000px), so
+// square or moderately wide subjects reach the same height as tall ones instead of stopping short.
+const INNER_BOX = { width: 900, height: 780 };
 
 export async function normalizeCutoutImage(input: Buffer): Promise<Buffer> {
   const trimmed = await sharp(input).trim().toBuffer();
   const resized = await sharp(trimmed)
-    .resize({ width: INNER_BOX.width, height: INNER_BOX.height, fit: "inside", withoutEnlargement: true })
+    // Upscale small cutouts too — otherwise a small upload keeps its tiny trimmed size inside the
+    // canvas and renders far smaller than a large one.
+    .resize({ width: INNER_BOX.width, height: INNER_BOX.height, fit: "inside" })
     .toBuffer();
   const { width = INNER_BOX.width, height = INNER_BOX.height } = await sharp(resized).metadata();
   const left = Math.round((CANVAS.width - width) / 2);

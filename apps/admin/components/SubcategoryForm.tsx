@@ -2,14 +2,35 @@
 
 import { useState } from "react";
 import { api, ApiError } from "../lib/api";
-import type { Category, Subcategory } from "../lib/types";
+import type { Category, SizeGuide, Subcategory } from "../lib/types";
 import ImageUpload from "./ImageUpload";
+import SizeGuideFields from "./SizeGuideFields";
 
 interface Props {
   subcategory: Subcategory | null;
   categories: Category[];
   onDone: () => void;
   onCancel: () => void;
+}
+
+const EMPTY_SIZE_GUIDE: SizeGuide = {
+  title: "",
+  description: "",
+  measurementImage: "",
+  measurementGuide: [],
+  sizeChart: [],
+  footerNote: "",
+};
+
+function buildSizeGuidePayload(sizeGuide: SizeGuide) {
+  return {
+    title: sizeGuide.title || undefined,
+    description: sizeGuide.description || undefined,
+    measurementImage: sizeGuide.measurementImage || undefined,
+    measurementGuide: sizeGuide.measurementGuide,
+    sizeChart: sizeGuide.sizeChart,
+    footerNote: sizeGuide.footerNote || undefined,
+  };
 }
 
 function slugify(value: string): string {
@@ -33,6 +54,8 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
   );
   const [description, setDescription] = useState(subcategory?.description ?? "");
   const [image, setImage] = useState(subcategory?.image ?? "");
+  const [hasSizeGuide, setHasSizeGuide] = useState(Boolean(subcategory?.sizeGuide));
+  const [sizeGuide, setSizeGuide] = useState<SizeGuide>(subcategory?.sizeGuide ?? EMPTY_SIZE_GUIDE);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -51,6 +74,9 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
       category: categoryValue,
       description: description || undefined,
       image: image || undefined,
+      // null clears a previously-saved custom guide on edit (see
+      // updateSubcategory) — on create there's nothing to clear yet.
+      sizeGuide: hasSizeGuide ? buildSizeGuidePayload(sizeGuide) : isEdit ? null : undefined,
     };
 
     setSaving(true);
@@ -116,6 +142,20 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
         Image
         <ImageUpload purpose="category" value={image} onChange={setImage} />
       </label>
+
+      <h2>Size guide</h2>
+      <small className="form-hint">
+        Sizing is shared by every product under this subcategory. Leave this off and products here fall back to the
+        storefront&apos;s default size guide.
+      </small>
+      <div className="checkbox-row">
+        <label>
+          <input type="checkbox" checked={hasSizeGuide} onChange={(e) => setHasSizeGuide(e.target.checked)} />
+          Custom size guide for this subcategory
+        </label>
+      </div>
+
+      {hasSizeGuide && <SizeGuideFields value={sizeGuide} onChange={setSizeGuide} />}
 
       <div className="form-actions">
         <button type="submit" disabled={saving}>

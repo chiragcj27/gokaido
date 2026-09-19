@@ -3,90 +3,74 @@
 // decided data model (see CLAUDE.md "Product URLs, Variants & Google
 // Shopping Feed") so swapping this for a real fetch later is a drop-in.
 
-export interface ProductColorOption {
-  name: string;
-  /** URL path segment, e.g. /products/karate-guards/red */
-  slug: string;
-  hex: string;
-  /** Gallery images (background-less product cutouts) for this color. */
-  images: string[];
-}
+import { DEFAULT_SIZE_GUIDE } from "./pdp/defaults";
+import type {
+  Faq,
+  KitAddOn,
+  PdpProduct,
+  ProductAccordionEntry,
+  ProductColorOption,
+  ProductReview,
+  ProductVariant,
+  ProtectionStat,
+  RelatedProduct,
+  ReviewSummary,
+  SizeGuide,
+} from "./pdp/types";
 
-export interface ProductVariant {
-  sku: string;
-  colorSlug: string;
-  size: string;
-  price: number;
-  mrp: number;
-  stock: number;
-}
+// Types now live in ./pdp/types; re-exported so existing component imports keep working.
+export type * from "./pdp/types";
 
-export interface ProductAccordionEntry {
-  title: string;
-  content: string;
-}
-
-export interface ProtectionStat {
-  label: string;
-  value: string;
-  description: string;
-}
-
-export interface KitAddOn {
-  key: string;
-  title: string;
-  subtitle: string;
-  imageSrc: string;
-  price: number;
-  mrp: number;
-  tag?: string;
-}
-
-export interface RelatedProduct {
-  key: string;
-  slug: string;
-  title: string;
-  subtitle: string;
-  imageSrc: string;
-  price: number;
-  mrp: number;
-  colors: { name: string; hex: string }[];
-}
-
-export interface ProductReview {
-  id: string;
-  author: string;
-  rating: number;
-  verified: boolean;
-  date: string;
-  text: string;
-  helpfulCount: number;
-}
-
-export interface Faq {
-  question: string;
-  answer: string;
-}
-
-export interface DummyProduct {
-  slug: string;
-  name: string;
-  breadcrumb: { label: string; href?: string }[];
-  description: string;
-  sizes: string[];
-  colors: ProductColorOption[];
-  variants: ProductVariant[];
-  accordion: ProductAccordionEntry[];
-  protectionStats: ProtectionStat[];
-  buildYourKit: KitAddOn[];
-  relatedProducts: RelatedProduct[];
-  reviews: ProductReview[];
-  faqs: Faq[];
-}
+/** @deprecated Alias of PdpProduct, kept while the sample product exists. */
+export type DummyProduct = PdpProduct;
 
 const DUMMY_IMAGE = "/dummy/product-placeholder.png";
 
-const SIZES = ["XS", "S", "M", "L", "XL"];
+const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+
+// This subcategory's admin-configured chart (see Subcategory.sizeGuide) —
+// matches the reference design exactly. A different subcategory (e.g.
+// "boxing-gloves") would carry its own title/image/rows here instead.
+const CHEST_GUARDS_SIZE_GUIDE: SizeGuide = {
+  title: "Size Guide",
+  description:
+    "Find your perfect fit with our detailed size guide. If you're between sizes, we recommend choosing the larger size for a more comfortable fit.",
+  measurementImageSrc: "/mini-mannequin-image.png",
+  measurementGuide: [
+    {
+      letter: "A",
+      title: "Chest Circumference",
+      description: "Measure around the fullest part of your chest, keeping the tape level and snug.",
+    },
+    {
+      letter: "B",
+      title: "Length",
+      description: "Measure from the top of the shoulder to the bottom of the guard.",
+    },
+  ],
+  sizeChart: [
+    { size: "XS", chestMinCm: 70, chestMaxCm: 75, lengthCm: 40 },
+    { size: "S", chestMinCm: 75, chestMaxCm: 80, lengthCm: 42 },
+    { size: "M", chestMinCm: 80, chestMaxCm: 85, lengthCm: 44 },
+    { size: "L", chestMinCm: 85, chestMaxCm: 90, lengthCm: 46 },
+    { size: "XL", chestMinCm: 90, chestMaxCm: 95, lengthCm: 48 },
+    { size: "XXL", chestMinCm: 95, chestMaxCm: 100, lengthCm: 50 },
+  ],
+  footerNote: "Sizes are approximate and may vary slightly by product. For any assistance, feel free to contact our support team.",
+};
+
+
+// Stand-in for `GET Subcategory.sizeGuide`, keyed by subcategory slug — a
+// subcategory absent from this map (or present with no override) means
+// "hasn't configured a custom guide yet", same as a real Subcategory
+// document with no `sizeGuide` set.
+const SUBCATEGORY_SIZE_GUIDES: Record<string, SizeGuide> = {
+  "chest-guards": CHEST_GUARDS_SIZE_GUIDE,
+};
+
+export function getSizeGuideForProduct(product: DummyProduct): SizeGuide {
+  return SUBCATEGORY_SIZE_GUIDES[product.subcategorySlug] ?? DEFAULT_SIZE_GUIDE;
+}
 
 const COLORS: ProductColorOption[] = [
   { name: "Red", slug: "red", hex: "#e2342a", images: [DUMMY_IMAGE, DUMMY_IMAGE, DUMMY_IMAGE, DUMMY_IMAGE] },
@@ -104,7 +88,10 @@ function buildVariants(colors: ProductColorOption[], sizes: string[]): ProductVa
         size,
         price: 250,
         mrp: 500,
-        stock: 12,
+        // XXL isn't in production yet — left in stock: 0 so the size guide
+        // modal can demonstrate disabling a chart row that isn't purchasable
+        // for this product, rather than every row always being available.
+        stock: size === "XXL" ? 0 : 12,
       });
     });
   });
@@ -126,22 +113,36 @@ export const dummyProduct: DummyProduct = {
   variants: buildVariants(COLORS, SIZES),
   accordion: [
     {
-      title: "Materials & Care",
+      title: "Material & Padding",
       content:
-        "Outer shell in high-density closed-cell foam with a wipe-clean synthetic leather finish. Hand wipe with a damp cloth; air dry away from direct heat.",
+        "Outer shell in high-density closed-cell foam with a wipe-clean synthetic leather finish, engineered for controlled impact absorption.",
     },
     {
-      title: "Shipping & Returns",
+      title: "Hygiene & Maintenance",
       content:
-        "Dispatched within 2 business days. Free returns within 7 days of delivery for unused items in original packaging.",
+        "Wipe down with a damp cloth after each session and air dry away from direct heat. Avoid machine washing.",
     },
   ],
+  subcategorySlug: "chest-guards",
   protectionStats: [
-    { label: "Coverage", value: "3-panel", description: "Chest & ribs" },
+    { label: "Coverage", value: "", description: "Chest & ribs" },
     { label: "Impact level", value: "92%", description: "Light to moderate (training contact)" },
     { label: "Grade", value: "89%", description: "Competition / Approved" },
   ],
   buildYourKit: [
+    {
+      key: "headgear",
+      title: "Karate Headgear",
+      subtitle: "Matches this kit",
+      imageSrc: DUMMY_IMAGE,
+      price: 999,
+      mrp: 1299,
+      colors: [
+        { name: "Blue", hex: "#1a3f8f" },
+        { name: "Black", hex: "#151515" },
+        { name: "Red", hex: "#e2342a" },
+      ],
+    },
     {
       key: "gi-jacket",
       title: "Training Gi Jacket",
@@ -149,7 +150,10 @@ export const dummyProduct: DummyProduct = {
       imageSrc: DUMMY_IMAGE,
       price: 1899,
       mrp: 2499,
-      tag: "Blue",
+      colors: [
+        { name: "Blue", hex: "#1a3f8f" },
+        { name: "Black", hex: "#151515" },
+      ],
     },
     {
       key: "shin-guards",
@@ -158,7 +162,11 @@ export const dummyProduct: DummyProduct = {
       imageSrc: DUMMY_IMAGE,
       price: 899,
       mrp: 1199,
-      tag: "Blue",
+      colors: [
+        { name: "Blue", hex: "#1a3f8f" },
+        { name: "Black", hex: "#151515" },
+        { name: "Red", hex: "#e2342a" },
+      ],
     },
   ],
   relatedProducts: [
@@ -204,33 +212,85 @@ export const dummyProduct: DummyProduct = {
       ],
     },
   ],
+  reviewSummary: {
+    average: 4.2,
+    totalCount: 459,
+    recommendPercent: 78,
+    breakdown: [
+      { stars: 5, count: 230 },
+      { stars: 4, count: 120 },
+      { stars: 3, count: 60 },
+      { stars: 2, count: 30 },
+      { stars: 1, count: 19 },
+    ],
+    talkedAbout: ["Comfort", "Durability", "Sizing", "Padding", "Value for money"],
+    photoCount: 5,
+  },
   reviews: [
     {
       id: "r1",
       author: "Arjun M.",
       rating: 5,
       verified: true,
+      ageRange: "25-34",
+      sport: "Karate",
       date: "2026-08-02",
+      title: "Doesn't shift around during drills",
       text: "Solid protection for sparring, doesn't shift around during drills. Sizing runs true.",
-      helpfulCount: 14,
+      thumbsUp: 14,
+      thumbsDown: 1,
     },
     {
       id: "r2",
       author: "Priya S.",
       rating: 4,
       verified: true,
+      ageRange: "35-44",
+      sport: "Karate",
       date: "2026-07-21",
+      title: "Good quality for the price",
       text: "Good quality for the price. Straps could be a touch longer for adjustment.",
-      helpfulCount: 6,
+      thumbsUp: 6,
+      thumbsDown: 0,
     },
     {
       id: "r3",
       author: "Rohan K.",
       rating: 5,
       verified: false,
+      ageRange: "45-54",
+      sport: "Karate",
       date: "2026-06-30",
+      title: "Holding up well after months of use",
       text: "Bought for my son's dojo sessions, holding up well after a couple months of use.",
-      helpfulCount: 3,
+      thumbsUp: 3,
+      thumbsDown: 0,
+    },
+    {
+      id: "r4",
+      author: "Meera J.",
+      rating: 4,
+      verified: true,
+      ageRange: "18-24",
+      sport: "Karate",
+      date: "2026-06-12",
+      title: "Comfortable for long sessions",
+      text: "Comfortable for long sessions and the padding holds up well against sparring contact.",
+      thumbsUp: 5,
+      thumbsDown: 1,
+    },
+    {
+      id: "r5",
+      author: "Karan V.",
+      rating: 5,
+      verified: true,
+      ageRange: "25-34",
+      sport: "Karate",
+      date: "2026-05-28",
+      title: "Great fit out of the box",
+      text: "Great fit out of the box, no break-in period needed. Would recommend sizing up if in-between sizes.",
+      thumbsUp: 9,
+      thumbsDown: 0,
     },
   ],
   faqs: [
@@ -258,5 +318,7 @@ export const dummyProduct: DummyProduct = {
 };
 
 export function getProductBySlug(slug: string): DummyProduct | null {
-  return dummyProduct.slug === slug ? dummyProduct : null;
+  return dummyProduct.slug === slug
+    ? { ...dummyProduct, sizeGuide: getSizeGuideForProduct(dummyProduct) }
+    : null;
 }

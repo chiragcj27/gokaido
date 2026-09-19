@@ -180,7 +180,11 @@ export default function ProductsPage() {
             <tbody>
               {products.map((p) => (
                 <tr key={p._id}>
-                  <td>{p.images?.[0] && <img src={p.images[0]} alt="" className="thumb" />}</td>
+                  <td>
+                    {(p.cardImage ?? p.images?.[0]) && (
+                      <img src={p.cardImage ?? p.images?.[0]} alt="" className="thumb" />
+                    )}
+                  </td>
                   <td>{p.name}</td>
                   <td>{p.sport}</td>
                   <td>{p.category}</td>

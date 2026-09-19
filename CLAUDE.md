@@ -79,6 +79,21 @@ Every color page's `<link rel="canonical">` points at the base `/en/products/{sl
 
 Inactive variants are excluded entirely; out-of-stock-but-active variants stay in the feed as `out_of_stock` (don't drop them — that loses the listing rather than just pausing it).
 
+### Product Image Fields
+
+`Product.images` (product-level) and `variant.images` (per colour) are the general gallery/PDP photos and **may have a studio or lifestyle background** — they're not usable everywhere. Two extra single-image fields on `Product` (`packages/database/src/models/product.ts`) exist for contexts that need something else:
+
+- **`cardImage`** — background-removed cutout, the only image allowed wherever the product renders as a card (listings, related products, kit builder — `PoppedCard` and friends in `apps/web/app/components/`). Falling back to `images[0]` for a card would mean a background sneaking into a spot designed around a transparent cutout, so card-rendering code should read `cardImage`, not `images`.
+- **`competitorImage`** — a competitor's own product photo, not ours; feeds the "before" side of `BeforeAfterSlider` (`apps/web/app/components/BeforeAfterSlider/`), currently wired with dummy placeholders in `SizeGuide.tsx` pending real product data.
+
+Both are product-level (not per-colour) — matches how `PoppedCard` and `BeforeAfterSlider` currently take a single static image regardless of colour selection. Optional in the schema/Zod validation; admin's `ProductForm` exposes them via the single-image `ImageUpload` component (not `MultiImageUpload`, which is for the array fields). Bulk upload (`productBulk.schema.ts` / `.controller.ts`) carries them as two more columns, filled in once on a product's first row like `images`/`description`/`tags`.
+
+### Product Page (storefront)
+
+`/products/{slug}` and `/products/{slug}/{colorSlug}` are **API-backed**: `apps/web/app/lib/pdp/` fetches the product (+ colors, reviews with rating histogram, related and kit items in parallel) from the API and `adapter.ts` maps it onto the `PdpProduct` view-model that `components/ProductPage/ProductPageClient.tsx` renders. Fetches use Next's fetch cache (product 60s, reviews 5m, colors 1h, related 10m; tags `product:{slug}`, `products`, `colors`, `reviews:{slug}` for on-demand `revalidateTag`). `?size=` is applied client-side after mount so the page stays cacheable.
+
+The old hard-coded page is kept temporarily at `/sample-product/karate-guards` (noindex; `lib/dummyProduct.ts`) — delete it, and the `DummyProduct` alias, once the Figma-final page is signed off. Known gaps in the dynamic page: no MRP field in the catalogue (no strike-through price), FAQs are store-wide defaults (no FAQ model), review "talked about"/photos and down-votes aren't collected, region pricing isn't applied (base price is what's cached and rendered).
+
 ## Payment Gateway (ICICI Bank PG)
 
 Switched from the originally-planned Razorpay to **ICICI Bank's own Payment Gateway** — client onboarded directly with ICICI (UAT credentials on file, not in this repo — see `apps/api/.env`, gitignored). Integration built against ICICI's Interface Specification doc; test it against their UAT sandbox before assuming anything below still matches their live behavior if the bank revises the spec.
@@ -177,6 +192,10 @@ API needs:
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE`
 - `RESEND_API_KEY`
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET`
+
+Web (`apps/web`) needs:
+- `NEXT_PUBLIC_SITE_URL` — public storefront base URL; used for canonical/Open Graph `metadataBase` and absolute URLs in JSON-LD
+- `API_URL` — server-side base URL of the API for product-page fetches (falls back to `NEXT_PUBLIC_API_URL`, then `http://localhost:3001`)
 
 Admin (`apps/admin`) needs:
 - `NEXT_PUBLIC_API_URL` — defaults to `http://localhost:3001`

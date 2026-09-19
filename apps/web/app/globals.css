@@ -8,5 +8,59 @@
   --color-panel: #0b0a09;
   --color-paper: #f5f5f5;
   --color-gold: #f0ad3d;
-  --color-red: #e2342a;
+  --color-red: #c8102e;
+}
+
+@keyframes hero-card-expand {
+  from {
+    clip-path: inset(0 25% 0 25%);
+  }
+  to {
+    clip-path: inset(0 0% 0 0%);
+  }
+}
+
+.animate-hero-expand {
+  animation: hero-card-expand 1s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-expand {
+    animation: none;
+  }
+}
+
+@keyframes pane-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-pane-fade {
+  animation: pane-fade-in 400ms ease-out both;
+}
+
+@keyframes pane-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(8%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-pane-slide-in {
+  animation: pane-slide-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pane-fade,
+  .animate-pane-slide-in {
+    animation: none;
+  }
 }

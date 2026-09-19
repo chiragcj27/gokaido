@@ -3,6 +3,7 @@ import CollectionScroll, {
 } from "../components/CollectionScroll/CollectionScroll";
 
 const DUMMY_IMAGE = "/dummy/product-placeholder.png";
+const SAMPLE_PRODUCT_HREF = "/sample-product/karate-guards";
 
 const RED_WHITE_BLUE: CollectionSubcategory["products"][number]["colors"] = [
   { name: "Red", hex: "#e2342a" },
@@ -10,8 +11,8 @@ const RED_WHITE_BLUE: CollectionSubcategory["products"][number]["colors"] = [
   { name: "Blue", hex: "#1a3f8f" },
 ];
 
-function dummyProducts(subcategoryKey: string, price: string, originalPrice: string) {
-  return Array.from({ length: 6 }, (_, index) => ({
+function dummyProducts(subcategoryKey: string, price: string, originalPrice: string, count = 6) {
+  return Array.from({ length: count }, (_, index) => ({
     key: `${subcategoryKey}-${index}`,
     imageSrc: DUMMY_IMAGE,
     title: "Lorem ipsum",
@@ -19,7 +20,7 @@ function dummyProducts(subcategoryKey: string, price: string, originalPrice: str
     price,
     originalPrice,
     colors: RED_WHITE_BLUE,
-    href: `/products/${subcategoryKey}-${index}`,
+    href: SAMPLE_PRODUCT_HREF,
   }));
 }
 
@@ -34,7 +35,7 @@ const subcategories: CollectionSubcategory[] = [
     description:
       "Engineered for precision, protection and performance. Trusted by athletes at every level.",
     href: "/collections/karate/gloves",
-    products: dummyProducts("gloves", "₹2,499.00", "₹0.00"),
+    products: dummyProducts("gloves", "₹2,499.00", "₹0.00", 18),
   },
   {
     key: "shin-guards",

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { Review, Order } from "@gokaido/database";
+import { Review, Order, mongoose } from "@gokaido/database";
 import {
   createReviewSchema,
   reviewListQuerySchema,
@@ -30,18 +30,39 @@ export async function listProductReviews(req: Request, res: Response): Promise<v
   const { product, page, limit, sort } = parsed.data;
   const filter = { product, status: "approved" as const };
 
-  const [reviews, total] = await Promise.all([
+  // One grouped pass over the product's approved reviews yields the whole rating histogram
+  // (served by the { product, status } index); average/total/recommend% are derived from it.
+  const [reviews, total, histogram] = await Promise.all([
     Review.find(filter)
+      .select("-helpfulVotedBy")
       .populate("user", "name")
       .sort(buildSort(sort))
       .skip((page - 1) * limit)
-      .limit(limit),
+      .limit(limit)
+      .lean(),
     Review.countDocuments(filter),
+    Review.aggregate<{ _id: number; count: number }>([
+      { $match: { product: new mongoose.Types.ObjectId(product), status: "approved" } },
+      { $group: { _id: "$rating", count: { $sum: 1 } } },
+    ]),
   ]);
+
+  const countByStars = new Map(histogram.map((row) => [row._id, row.count]));
+  const breakdown = ([5, 4, 3, 2, 1] as const).map((stars) => ({ stars, count: countByStars.get(stars) ?? 0 }));
+  const ratedTotal = breakdown.reduce((sum, row) => sum + row.count, 0);
+  const ratingSum = breakdown.reduce((sum, row) => sum + row.stars * row.count, 0);
+  const positive = breakdown.filter((row) => row.stars >= 4).reduce((sum, row) => sum + row.count, 0);
 
   res.json({
     reviews,
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    summary: {
+      average: ratedTotal ? Math.round((ratingSum / ratedTotal) * 10) / 10 : 0,
+      totalCount: ratedTotal,
+      // No explicit "would recommend" question is collected, so 4-5★ share stands in for it.
+      recommendPercent: ratedTotal ? Math.round((positive / ratedTotal) * 100) : 0,
+      breakdown,
+    },
   });
 }
 

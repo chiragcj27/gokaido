@@ -7,7 +7,15 @@ export { Category } from "./models/category.js";
 export type { ICategory } from "./models/category.js";
 
 export { Subcategory } from "./models/subcategory.js";
-export type { ISubcategory } from "./models/subcategory.js";
+export type {
+  ISubcategory,
+  ISizeGuide,
+  ISizeGuideMeasurementPoint,
+  ISizeGuideRow,
+} from "./models/subcategory.js";
+
+export { Color } from "./models/color.js";
+export type { IColor } from "./models/color.js";
 
 export { Asset } from "./models/asset.js";
 export type { IAsset } from "./models/asset.js";

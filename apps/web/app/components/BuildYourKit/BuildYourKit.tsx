@@ -39,7 +39,7 @@ export default function BuildYourKit({ items }: BuildYourKitProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <div key={item.key} className="relative">
             <PoppedCard
@@ -50,7 +50,7 @@ export default function BuildYourKit({ items }: BuildYourKitProps) {
               subtitle={item.subtitle}
               price={formatInr(item.price)}
               originalPrice={item.mrp > item.price ? formatInr(item.mrp) : undefined}
-              colors={item.tag ? [{ name: item.tag, hex: "#1a3f8f" }] : undefined}
+              colors={item.colors}
               onAddToCart={() => toggleItem(item.key)}
             />
             {selected.has(item.key) && (
@@ -82,7 +82,7 @@ export default function BuildYourKit({ items }: BuildYourKitProps) {
           <button
             type="button"
             disabled={selected.size === 0}
-            className="h-13 flex-1 cursor-pointer rounded-lg border border-paper bg-paper px-6 font-heading text-xs font-bold tracking-[0.04em] text-ink uppercase transition-colors duration-200 hover:bg-transparent hover:text-paper disabled:cursor-not-allowed disabled:opacity-40 sm:w-40"
+            className="h-13 flex-1 cursor-pointer rounded-lg border border-red bg-red px-6 font-heading text-xs font-bold tracking-[0.04em] text-paper uppercase transition-colors duration-200 hover:bg-transparent hover:text-red disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-red disabled:hover:text-paper sm:w-40"
           >
             Buy Now
           </button>
