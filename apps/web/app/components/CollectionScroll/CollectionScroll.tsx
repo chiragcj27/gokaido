@@ -40,8 +40,10 @@ function CollectionSlide({ subcategory, isActive }: CollectionSlideProps) {
       {/* Pinned to the top of the scroll pane while this section's grid scrolls past;
           releases with the section once its last product is reached. */}
       <div className="md:sticky md:top-0 md:flex md:h-[var(--pane-h)] md:items-center">
+        {/* The card's height follows its width (3:2 image), so on short viewports (e.g. Windows at
+            125-150% scaling) cap the width so the whole card always fits inside the pane. */}
         <div
-          className={`w-full shrink-0 transition-all duration-700 ease-out ${
+          className={`w-full shrink-0 md:max-w-[max(18rem,calc((var(--pane-h)-14rem)*1.5))] transition-all duration-700 ease-out ${
             isActive ? "translate-y-0 opacity-100" : "translate-y-14 opacity-0"
           }`}
         >
