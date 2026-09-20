@@ -34,9 +34,9 @@ export default function CollectionCategoryBar({
   const clearHover = () => setHoveredIndex(null);
 
   return (
-    <div className="relative z-20 border-b border-white/10 bg-ink px-6 py-6 lg:px-10">
-      <div className="flex items-center gap-10">
-        <h2 className="shrink-0 font-heading text-2xl font-extralight tracking-wide text-paper/90 lg:text-3xl">
+    <div className="relative z-20 border-b border-white/10 bg-ink px-6 py-2.5 lg:px-10">
+      <div className="flex items-center gap-6 lg:gap-10">
+        <h2 className="shrink-0 font-heading text-lg font-extralight tracking-wide text-paper/90 lg:text-xl">
           {categoryName}
         </h2>
 
@@ -60,12 +60,12 @@ export default function CollectionCategoryBar({
           </div>
 
           {/* visual rows: number / title / line+dots — purely presentational */}
-          <div className="pointer-events-none relative grid gap-y-3" style={columns}>
+          <div className="pointer-events-none relative grid gap-y-1" style={columns}>
             {steps.map((step, index) => (
               <span
                 key={`num-${step.key}`}
                 style={{ gridColumn: index + 1, gridRow: 1 }}
-                className={`text-center font-sans text-[11px] tracking-[0.08em] transition-colors duration-300 ${
+                className={`text-center font-sans text-[10px] leading-none tracking-[0.08em] transition-colors duration-300 ${
                   index === activeIndex ? "text-red" : "text-paper/40"
                 }`}
               >
@@ -77,7 +77,7 @@ export default function CollectionCategoryBar({
               <span
                 key={`title-${step.key}`}
                 style={{ gridColumn: index + 1, gridRow: 2 }}
-                className={`truncate text-center font-heading text-sm transition-colors duration-300 lg:text-base ${
+                className={`truncate text-center font-heading text-xs transition-colors duration-300 lg:text-sm ${
                   index === activeIndex ? "font-semibold text-red" : "text-paper/70"
                 }`}
               >
@@ -85,7 +85,7 @@ export default function CollectionCategoryBar({
               </span>
             ))}
 
-            <div className="relative h-6" style={{ gridColumn: `1 / span ${count}`, gridRow: 3 }}>
+            <div className="relative h-3" style={{ gridColumn: `1 / span ${count}`, gridRow: 3 }}>
               <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-paper/15" />
               <div
                 className="absolute top-1/2 left-0 h-px -translate-y-1/2 bg-red transition-[width] duration-500 ease-out"
@@ -108,11 +108,11 @@ export default function CollectionCategoryBar({
             {steps.map((step, index) => (
               <div key={`preview-${step.key}`} className="flex justify-center" style={{ gridColumn: index + 1 }}>
                 <div
-                  className={`relative mt-3 h-14 w-14 transition-all duration-300 ease-out ${
+                  className={`relative mt-2 h-12 w-12 transition-all duration-300 ease-out ${
                     hoveredIndex === index ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
                   }`}
                 >
-                  <Image src={step.imageSrc} alt="" fill sizes="56px" className="object-contain" />
+                  <Image src={step.imageSrc} alt="" fill sizes="48px" className="object-contain" />
                 </div>
               </div>
             ))}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
+import SiteFooter from "./components/Footer/SiteFooter";
 import { CartProvider } from "./lib/cartStore";
 import { geist, montserrat, roboto } from "./fonts";
 import "./globals.css";
@@ -23,7 +24,9 @@ export default function RootLayout({
         <CartProvider>
           <Navbar />
           {children}
-          <Footer />
+          <SiteFooter>
+            <Footer />
+          </SiteFooter>
         </CartProvider>
       </body>
     </html>

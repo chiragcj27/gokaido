@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import PoppedCard, { type PoppedCardColor } from "../PoppedCard/PoppedCard";
 import CollectionCategoryBar from "../CollectionCategoryBar/CollectionCategoryBar";
+import Footer from "../Footer/Footer";
 
 export interface CollectionProduct {
   key: string;
@@ -89,6 +90,7 @@ export default function CollectionScroll({
   subcategories: CollectionSubcategory[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -98,6 +100,9 @@ export default function CollectionScroll({
     const slides = () => Array.from(container.querySelectorAll<HTMLElement>("[data-collection-slide]"));
 
     const update = () => {
+      // Fit the page to what's left of the viewport below the navbar so the document itself never scrolls.
+      const wrapper = wrapperRef.current;
+      if (wrapper) wrapper.style.setProperty("--top", `${wrapper.getBoundingClientRect().top + window.scrollY}px`);
       container.style.setProperty("--pane-h", `${container.clientHeight}px`);
       const els = slides();
       if (!els.length) return;
@@ -143,7 +148,7 @@ export default function CollectionScroll({
   };
 
   return (
-    <div className="flex h-dvh flex-col">
+    <div ref={wrapperRef} className="flex h-[calc(100dvh-var(--top,0px))] flex-col">
       <CollectionCategoryBar
         categoryName={categoryName}
         steps={subcategories.map((subcategory) => ({
@@ -163,6 +168,7 @@ export default function CollectionScroll({
         {subcategories.map((subcategory, index) => (
           <CollectionSlide key={subcategory.key} subcategory={subcategory} isActive={index === activeIndex} />
         ))}
+        <Footer />
       </div>
     </div>
   );
