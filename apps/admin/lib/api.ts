@@ -35,32 +35,10 @@ export const api = {
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
 
-// product/category photos feed PoppedCard's pop-out treatment — routed
-// through the API so it can trim/re-composite them onto a canonical canvas
-// instead of going straight to S3 unprocessed.
-const NORMALIZED_PURPOSES = new Set(["product", "category"]);
-
 export async function uploadImage(
   file: File,
   purpose: string
 ): Promise<{ publicUrl: string; key: string }> {
-  if (NORMALIZED_PURPOSES.has(purpose)) {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("purpose", purpose);
-
-    const res = await fetch(`${API_URL}/api/uploads/normalized`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: formData,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new ApiError(res.status, (data as { error?: string }).error ?? "Failed to upload image");
-    }
-    return data as { publicUrl: string; key: string };
-  }
-
   const { uploadUrl, publicUrl, key } = await request<{
     uploadUrl: string;
     publicUrl: string;

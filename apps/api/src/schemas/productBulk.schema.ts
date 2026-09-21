@@ -76,8 +76,8 @@ export const BULK_TEMPLATE_HEADERS = [
 // `productBulk.controller.ts`'s `imagesByColor` grouping). `cardImage` and
 // `competitorImage` are product-level (not per-colour), so they only need
 // filling in once too, on the product's first row — `cardImage` must be a
-// background-removed cutout, unlike `images`/`variantImages`, which may have
-// a background.
+// finished card visual (card background + product composited), unlike
+// `images`/`variantImages`, which are plain gallery photos.
 export const BULK_TEMPLATE_EXAMPLE_ROWS = [
   [
     "karate-gi-classic",

@@ -2,7 +2,7 @@
 
 import PoppedCard from "../PoppedCard/PoppedCard";
 
-const DUMMY_IMAGE = "/dummy/product-placeholder.png";
+const DUMMY_IMAGE = "/card/card-sample.png";
 
 const subcategories = [
   {

@@ -54,6 +54,7 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
   );
   const [description, setDescription] = useState(subcategory?.description ?? "");
   const [image, setImage] = useState(subcategory?.image ?? "");
+  const [icon, setIcon] = useState(subcategory?.icon ?? "");
   const [hasSizeGuide, setHasSizeGuide] = useState(Boolean(subcategory?.sizeGuide));
   const [sizeGuide, setSizeGuide] = useState<SizeGuide>(subcategory?.sizeGuide ?? EMPTY_SIZE_GUIDE);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +75,7 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
       category: categoryValue,
       description: description || undefined,
       image: image || undefined,
+      icon: icon || undefined,
       // null clears a previously-saved custom guide on edit (see
       // updateSubcategory) — on create there's nothing to clear yet.
       sizeGuide: hasSizeGuide ? buildSizeGuidePayload(sizeGuide) : isEdit ? null : undefined,
@@ -141,6 +143,12 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
       <label className="full-width">
         Image
         <ImageUpload purpose="category" value={image} onChange={setImage} />
+      </label>
+
+      <label className="full-width">
+        Subcategory icon
+        <small className="form-hint">Small preview shown under this subcategory in the collections page bar on hover.</small>
+        <ImageUpload purpose="category" value={icon} onChange={setIcon} />
       </label>
 
       <h2>Size guide</h2>

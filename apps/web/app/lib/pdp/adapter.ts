@@ -64,8 +64,8 @@ function distinctColors(product: ApiListProduct, resolve: ReturnType<typeof colo
 }
 
 function toCard(product: ApiListProduct, resolve: ReturnType<typeof colorLookup>): RelatedProduct | null {
-  // Cards only ever render the background-removed cutout (see CLAUDE.md "Product Image Fields"),
-  // so a product without one is left out rather than falling back to a photo with a background.
+  // Cards only ever render the finished card visual (see CLAUDE.md "Product Image Fields"),
+  // so a product without one is left out rather than falling back to a plain gallery photo.
   if (!product.cardImage) return null;
   const price = startingPrice(product);
   if (!price) return null;

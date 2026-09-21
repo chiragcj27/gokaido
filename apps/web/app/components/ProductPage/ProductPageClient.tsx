@@ -130,7 +130,7 @@ export default function ProductPageClient({
   };
 
   return (
-    <main className="mx-auto flex max-w-360 flex-col gap-24 pt-8 pb-24">
+    <main className="mx-auto flex max-w-360 flex-col gap-24 px-4 pt-8 pb-24 md:px-8 lg:px-12">
       {/* eslint-disable-next-line react/no-danger */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 

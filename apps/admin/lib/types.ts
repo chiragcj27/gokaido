@@ -36,6 +36,7 @@ export interface Subcategory {
   slug: string;
   description?: string;
   image?: string;
+  icon?: string;
   category: string | { _id: string; name: string; slug: string };
   sizeGuide?: SizeGuide;
   isActive: boolean;
@@ -104,7 +105,7 @@ export interface Product {
   productType: string;
   description?: string;
   images?: string[];
-  /** Background-removed image used for product cards/listings — never the ones in `images`. */
+  /** Finished card visual (background + product composited) used for product cards/listings — never the ones in `images`. */
   cardImage?: string;
   /** Competitor product photo, shown as the "before" side of the before/after comparison slider. */
   competitorImage?: string;

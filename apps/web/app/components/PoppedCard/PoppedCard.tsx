@@ -74,7 +74,7 @@ export default function PoppedCard({
 
   const card = (
     <article
-      className={`relative flex flex-col pt-8${className ? ` ${className}` : ""}`}
+      className={`relative flex flex-col${className ? ` ${className}` : ""}`}
     >
       {variant === "product" && (
         <button
@@ -82,7 +82,7 @@ export default function PoppedCard({
           aria-pressed={liked}
           aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
           onClick={handleToggleWishlist}
-          className="absolute top-12 right-4 z-30 inline-flex h-8.5 w-8.5 items-center justify-center border-0 bg-transparent p-0 text-paper/80 transition-transform duration-200 hover:scale-108 aria-pressed:text-red"
+          className="absolute top-10 right-4 z-30 inline-flex h-8.5 w-8.5 items-center justify-center border-0 bg-transparent p-0 text-paper/80 transition-transform duration-200 hover:scale-108 aria-pressed:text-red"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path
@@ -96,26 +96,21 @@ export default function PoppedCard({
         </button>
       )}
 
+      {/* imageSrc is a finished card visual — background and product already composited, with
+          transparent headroom above the background for the pop-out — so it renders as-is. */}
       <div
         className={
           variant === "product"
-            ? "relative z-20 mx-5 -mb-10 aspect-3/2"
-            : "relative z-20 mx-4 -mb-16 aspect-3/2"
+            ? "relative z-20 mx-5 -mb-10 aspect-594/470"
+            : "relative z-20 mx-4 -mb-16 aspect-594/470"
         }
       >
-        <div
-          className={
-            variant === "product"
-              ? "absolute inset-0 overflow-hidden rounded-t-2xl bg-[url('/card/card_bg.png')] bg-cover bg-center"
-              : "absolute inset-0 overflow-hidden rounded-t-[20px] bg-[url('/card/card_bg.png')] bg-cover bg-center"
-          }
-        />
         <Image
           src={imageSrc}
           alt={imageAlt}
           fill
-          className="z-10 scale-150 object-contain px-6 pb-10"
-          style={{ top: "-2%" }}
+          sizes="(min-width: 768px) 30vw, 60vw"
+          className="object-contain"
           unoptimized={imageSrc.endsWith(".svg")}
         />
       </div>
@@ -123,8 +118,8 @@ export default function PoppedCard({
       <div
         className={
           variant === "product"
-            ? "relative z-10 flex-1 rounded-2xl border border-white/6 bg-[radial-gradient(120%_100%_at_50%_0%,#131313_0%,#060606_65%)] px-4.5 pt-14 pb-4.5"
-            : "relative z-10 flex-1 rounded-[20px] border border-white/6 bg-[radial-gradient(120%_100%_at_50%_0%,#131313_0%,#060606_65%)] px-6 pt-20 pb-6"
+            ? "relative z-10 flex-1 px-4.5 pt-14 pb-4.5"
+            : "relative z-10 flex-1 px-6 pt-20 pb-6"
         }
       >
         {variant === "subcategory" ? (

@@ -57,6 +57,7 @@ export const createSubcategorySchema = z.object({
   slug: slugSchema,
   description: z.string().trim().max(2000).optional(),
   image: imageSchema.optional(),
+  icon: imageSchema.optional(),
   category: objectIdSchema,
   // null clears a previously-set custom guide, reverting the subcategory to
   // the storefront's default; undefined/omitted leaves it untouched.

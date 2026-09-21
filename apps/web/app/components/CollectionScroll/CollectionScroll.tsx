@@ -19,6 +19,8 @@ export interface CollectionProduct {
 export interface CollectionSubcategory {
   key: string;
   imageSrc: string;
+  /** Small preview shown on hover in the category bar; falls back to `imageSrc`. */
+  iconSrc?: string;
   eyebrow?: string;
   title: string;
   description?: string;
@@ -40,10 +42,10 @@ function CollectionSlide({ subcategory, isActive }: CollectionSlideProps) {
       {/* Pinned to the top of the scroll pane while this section's grid scrolls past;
           releases with the section once its last product is reached. */}
       <div className="md:sticky md:top-0 md:flex md:h-[var(--pane-h)] md:items-center">
-        {/* The card's height follows its width (3:2 image), so on short viewports (e.g. Windows at
+        {/* The card's height follows its width (594:470 card image), so on short viewports (e.g. Windows at
             125-150% scaling) cap the width so the whole card always fits inside the pane. */}
         <div
-          className={`w-full shrink-0 md:max-w-[max(18rem,calc((var(--pane-h)-14rem)*1.5))] transition-all duration-700 ease-out ${
+          className={`w-full shrink-0 md:max-w-[max(18rem,calc((var(--pane-h)-14rem)*1.26))] transition-all duration-700 ease-out ${
             isActive ? "translate-y-0 opacity-100" : "translate-y-14 opacity-0"
           }`}
         >
@@ -108,18 +110,18 @@ export default function CollectionScroll({
       container.style.setProperty("--pane-h", `${container.clientHeight}px`);
       const els = slides();
       if (!els.length) return;
-      // Sections have varying heights, so progress is measured against each section's
-      // own top edge rather than a fixed slide height.
+      // Sections have varying heights, so progress is each section's own scroll extent:
+      // from its top edge to the next section's top (the last one runs to the end of the pane's scroll).
       const tops = els.map((el) => el.offsetTop);
       const y = container.scrollTop;
       let i = tops.length - 1;
       while (i > 0 && tops[i] > y) i--;
-      const next = tops[i + 1];
-      // The pinned card only changes while the section is scrolling away, i.e. over the
-      // final pane-height before the next section's top.
-      const pane = container.clientHeight;
-      const fraction = next === undefined ? 0 : Math.min(Math.max((y - (next - pane)) / pane, 0), 1);
-      setProgress(Math.min(Math.max(i + fraction, 0), els.length - 1));
+      const end = i === tops.length - 1 ? container.scrollHeight - container.clientHeight : tops[i + 1];
+      const span = end - tops[i];
+      const fraction = span > 0 ? Math.min(Math.max((y - tops[i]) / span, 0), 1) : 0;
+      // Each section owns one dot; the last one's scroll carries the line on to the bar's far end (+0.5).
+      const last = i === els.length - 1;
+      setProgress(i + fraction * (last ? 0.5 : 1));
     };
 
     let raf = 0;
@@ -140,7 +142,7 @@ export default function CollectionScroll({
     };
   }, [subcategories.length]);
 
-  const activeIndex = Math.round(progress);
+  const activeIndex = Math.min(Math.floor(progress), subcategories.length - 1);
 
   const scrollToIndex = (index: number) => {
     const container = containerRef.current;
@@ -156,7 +158,7 @@ export default function CollectionScroll({
         steps={subcategories.map((subcategory) => ({
           key: subcategory.key,
           title: subcategory.title,
-          imageSrc: subcategory.imageSrc,
+          imageSrc: subcategory.iconSrc ?? subcategory.imageSrc,
         }))}
         progress={progress}
         activeIndex={activeIndex}

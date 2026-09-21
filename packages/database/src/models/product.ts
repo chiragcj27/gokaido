@@ -25,9 +25,10 @@ export interface IProduct {
 
   description: string;
   images: string[];
-  // Background-removed cutout used wherever the product renders as a card
-  // (listings, related products, kit builder) — `images` above may have a
-  // studio/lifestyle background and isn't safe for that context.
+  // Finished card visual (card background + product already composited,
+  // transparent headroom above for the pop-out) rendered as-is wherever the
+  // product shows as a card (listings, related products, kit builder) —
+  // `images` above are plain gallery photos and aren't suitable there.
   cardImage?: string;
   // A competitor's product photo, shown as the "before" side of the
   // before/after comparison slider (see BeforeAfterSlider) — not one of our

@@ -316,8 +316,8 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
         <label>
           Card image
           <small className="form-hint">
-            Background-removed cutout only — used for product cards/listings. Regular images above
-            may have a background.
+            Finished card visual — card background and product already composited, with transparent
+            headroom above the background for the pop-out. Used as-is on product cards/listings.
           </small>
           <ImageUpload purpose="product" value={cardImage} onChange={setCardImage} />
         </label>

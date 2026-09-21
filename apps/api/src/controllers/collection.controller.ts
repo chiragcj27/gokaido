@@ -12,7 +12,7 @@ type AggProduct = {
   variants: { color: string; basePrice: number }[];
 };
 type CategoryDoc = { _id: unknown; name: string; slug: string; description?: string; image?: string };
-type SubcategoryDoc = { name: string; slug: string; description?: string; image?: string };
+type SubcategoryDoc = { name: string; slug: string; description?: string; image?: string; icon?: string };
 type ColorDoc = { name: string; slug: string; hex: string };
 type AggGroup = { _id: string | null; total: number; products: AggProduct[] };
 
@@ -25,7 +25,7 @@ export async function getCollection(req: Request, res: Response): Promise<void> 
   const slug = String(req.params.category).toLowerCase();
 
   const category = (await Category.findOne({ slug, isActive: true })
-    .select("name slug description image")
+    .select("name slug description image icon")
     .lean()) as CategoryDoc | null;
   if (!category) {
     res.status(404).json({ error: "Category not found" });
@@ -39,7 +39,7 @@ export async function getCollection(req: Request, res: Response): Promise<void> 
       .lean(),
     Color.find({ isActive: true }).select("name slug hex").lean(),
     Product.aggregate<AggGroup>([
-      // Cards only render the background-removed cutout (see CLAUDE.md "Product Image Fields").
+      // Cards only render the finished card visual (see CLAUDE.md "Product Image Fields").
       { $match: { isActive: true, category: slug, cardImage: { $exists: true, $ne: "" } } },
       { $sort: { isBestseller: -1, isFeatured: -1, createdAt: -1 } },
       {
@@ -75,6 +75,7 @@ export async function getCollection(req: Request, res: Response): Promise<void> 
         slug: sub.slug,
         name: sub.name,
         description: sub.description ?? null,
+        icon: sub.icon ?? null,
         image: sub.image ?? group.products[0]?.cardImage ?? null,
         total: group.total,
         products: group.products.map((p) => {

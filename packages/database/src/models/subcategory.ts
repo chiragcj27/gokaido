@@ -38,6 +38,8 @@ export interface ISubcategory {
   slug: string;
   description?: string;
   image?: string;
+  // Small icon shown on hover in the collections page subcategory bar.
+  icon?: string;
   category: mongoose.Types.ObjectId;
   sizeGuide?: ISizeGuide;
   isActive: boolean;
@@ -82,6 +84,7 @@ const subcategorySchema = new mongoose.Schema<ISubcategory>(
     slug: { type: String, required: true, lowercase: true, trim: true },
     description: { type: String, trim: true },
     image: String,
+    icon: String,
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     sizeGuide: sizeGuideSchema,
     isActive: { type: Boolean, default: true },

@@ -5,7 +5,7 @@ import type { CollectionSubcategory } from "../../components/CollectionScroll/Co
 // Catalogue changes are infrequent; the page is served from the fetch cache and refreshed in the
 // background. Purge early with revalidateTag("collections") or `collection:{slug}`.
 const COLLECTION_TTL = 300;
-const PLACEHOLDER_IMAGE = "/dummy/product-placeholder.png";
+const PLACEHOLDER_IMAGE = "/card/card-sample.png";
 
 interface ApiCollection {
   category: { name: string; slug: string; description?: string; image?: string };
@@ -14,6 +14,7 @@ interface ApiCollection {
     name: string;
     description: string | null;
     image: string | null;
+    icon: string | null;
     total: number;
     products: {
       slug: string;
@@ -57,6 +58,7 @@ export const getCollection = cache(async (categorySlug: string): Promise<Collect
     subcategories: sections.map((s) => ({
       key: s.slug,
       imageSrc: s.image ?? PLACEHOLDER_IMAGE,
+      iconSrc: s.icon ?? undefined,
       eyebrow: category.name,
       title: s.name,
       description: s.description ?? undefined,

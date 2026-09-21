@@ -2,7 +2,7 @@ import CollectionScroll, {
   type CollectionSubcategory,
 } from "../components/CollectionScroll/CollectionScroll";
 
-const DUMMY_IMAGE = "/dummy/product-placeholder.png";
+const DUMMY_IMAGE = "/card/card-sample.png";
 const SAMPLE_PRODUCT_HREF = "/sample-product/karate-guards";
 
 const RED_WHITE_BLUE: CollectionSubcategory["products"][number]["colors"] = [

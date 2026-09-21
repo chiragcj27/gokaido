@@ -3,6 +3,11 @@
 import Image from "next/image";
 import { useState } from "react";
 
+// String geometry (px): height of the string box, resting y of its pinned ends, and how far the weight pulls it down.
+const STRING_H = 16;
+const STRING_Y = 4;
+const SAG = 11;
+
 export interface CollectionBarStep {
   key: string;
   title: string;
@@ -29,12 +34,16 @@ export default function CollectionCategoryBar({
   const count = steps.length;
   const fillPercent =
     count > 1 ? Math.min(Math.max(((progress + 0.5) / count) * 100, 0), 100) : 100;
+  // Weight position on the string, kept off the very ends so the V stays well-formed.
+  const weightX = Math.min(Math.max(fillPercent, 0.01), 99.99);
+  const stringY = (x: number) =>
+    STRING_Y + SAG * (x <= weightX ? x / weightX : (100 - x) / (100 - weightX));
   const columns = { gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` };
 
   const clearHover = () => setHoveredIndex(null);
 
   return (
-    <div className="relative z-20 border-b border-white/10 bg-ink px-6 py-2.5 lg:px-10">
+    <div className="relative z-20 bg-ink px-6 py-2.5 lg:px-10">
       <div className="flex items-center gap-6 lg:gap-10">
         <h2 className="shrink-0 font-heading text-lg font-extralight tracking-wide text-paper/90 lg:text-xl">
           {categoryName}
@@ -85,37 +94,61 @@ export default function CollectionCategoryBar({
               </span>
             ))}
 
-            <div className="relative h-3" style={{ gridColumn: `1 / span ${count}`, gridRow: 3 }}>
-              <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-paper/15" />
-              <div
-                className="absolute top-1/2 left-0 h-px -translate-y-1/2 bg-red transition-[width] duration-500 ease-out"
-                style={{ width: `${fillPercent}%` }}
-              />
-              {steps.map((step, index) => (
-                <span
-                  key={`dot-${step.key}`}
-                  className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300 ${
-                    index === activeIndex ? "h-2.5 w-2.5 bg-red" : "h-1.5 w-1.5 bg-paper/30"
-                  }`}
-                  style={{ left: `${((index + 0.5) / count) * 100}%` }}
+            {/* The line is a taut string pinned at both ends; the icon is a weight hanging from it,
+                so the string dips into a "V" whose lowest point is wherever the icon currently is. */}
+            <div className="relative" style={{ gridColumn: `1 / span ${count}`, gridRow: 3, height: STRING_H }}>
+              <svg
+                className="absolute inset-0 h-full w-full overflow-visible"
+                viewBox={`0 0 100 ${STRING_H}`}
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                <polyline
+                  points={`0,${STRING_Y} ${weightX},${STRING_Y + SAG} 100,${STRING_Y}`}
+                  fill="none"
+                  className="stroke-paper/15"
+                  strokeWidth={1}
+                  vectorEffect="non-scaling-stroke"
                 />
-              ))}
+                <polyline
+                  points={`0,${STRING_Y} ${weightX},${STRING_Y + SAG}`}
+                  fill="none"
+                  className="stroke-red"
+                  strokeWidth={1}
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+              {steps.map((step, index) => {
+                const x = ((index + 0.5) / count) * 100;
+                return (
+                  <span
+                    key={`dot-${step.key}`}
+                    className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full transition-[width,height,background-color] duration-300 ${
+                      index === activeIndex ? "h-2.5 w-2.5 bg-red" : "h-1.5 w-1.5 bg-paper/30"
+                    }`}
+                    style={{ left: `${x}%`, top: stringY(x) }}
+                  />
+                );
+              })}
             </div>
           </div>
 
-          {/* hover / active preview image, floating just below the line */}
-          <div className="pointer-events-none absolute inset-x-0 top-full grid" style={columns}>
-            {steps.map((step, index) => (
-              <div key={`preview-${step.key}`} className="flex justify-center" style={{ gridColumn: index + 1 }}>
-                <div
-                  className={`relative mt-2 h-12 w-12 transition-all duration-300 ease-out ${
-                    hoveredIndex === index ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+          {/* icon of the active subcategory; rides along the line with scroll progress */}
+          <div className="pointer-events-none relative h-12">
+            <div className="absolute top-0 h-12 w-12 -translate-x-1/2" style={{ left: `${fillPercent}%` }}>
+              {steps.map((step, index) => (
+                <Image
+                  key={`icon-${step.key}`}
+                  src={step.imageSrc}
+                  alt=""
+                  fill
+                  sizes="48px"
+                  className={`object-contain transition-opacity duration-300 ${
+                    index === activeIndex ? "opacity-100" : "opacity-0"
                   }`}
-                >
-                  <Image src={step.imageSrc} alt="" fill sizes="48px" className="object-contain" />
-                </div>
-              </div>
-            ))}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
