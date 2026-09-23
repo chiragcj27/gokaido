@@ -505,6 +505,15 @@ label {
   margin-bottom: 1rem;
 }
 
+.form-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
 /* Order detail */
 .detail-grid {
   display: grid;

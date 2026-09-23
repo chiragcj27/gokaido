@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./Footer.module.css";
+import TaglineReveal from "./TaglineReveal";
 
 const aboutUsLinks = [
   { label: "Our Legacy", href: "/our-legacy" },
@@ -49,8 +50,7 @@ export default function Footer() {
             className={styles.logo}
             priority
           />
-          {/* Placeholder hover animation — replace with the real prototype interaction once available. */}
-          <h2 className={styles.tagline}>MADE TO CHANGE THE GAME</h2>
+          <TaglineReveal />
         </div>
 
         <div className={styles.columns}>

@@ -55,6 +55,70 @@ body {
   }
 }
 
+/* Shimmer for the hero headline: a narrow bright band travels across the
+   glyphs. Two stacked background layers, both clipped to the text — a flat
+   resting colour underneath, and a mostly-transparent gradient on top whose
+   only opaque part is the highlight. Sweeping `background-position` across a
+   300%-wide gradient is what moves the highlight; the text itself never
+   animates, so this costs nothing in layout. */
+@keyframes hero-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  /* Sweep across 70% of the cycle, rest for the last 30%. The reference
+     version this came from swept for only half and sat idle the other half,
+     which made the effect easy to miss entirely — most of the time you were
+     looking at flat, un-shimmered text. */
+  70%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+.shimmer-text {
+  /* Band width is in `ch`, so it scales with each word's font-size — the
+     highlight stays proportional on both "THE" and the giant "CHANGE". */
+  --shimmer-spread: 4;
+  --shimmer-angle: 100deg;
+  --shimmer-base: #a9a9b0;
+  --shimmer-glint: #ffffff;
+  --shimmer-duration: 3.2s;
+  --shimmer-offset: calc(var(--shimmer-spread) * 0.5ch);
+  --shimmer-core: calc(var(--shimmer-offset) * 0.3);
+
+  background:
+    /* Two inner stops hold the glint at full brightness across a narrow core
+       before falling off, so it reads as a specular streak. A single centre
+       stop (as in the reference) peaks for an instant and spends most of its
+       width part-faded — legible as a soft gradient, not as a shine. */
+    linear-gradient(
+        var(--shimmer-angle),
+        #0000 calc(50% - var(--shimmer-offset)),
+        var(--shimmer-glint) calc(50% - var(--shimmer-core)),
+        var(--shimmer-glint) calc(50% + var(--shimmer-core)),
+        #0000 calc(50% + var(--shimmer-offset))
+      )
+      0 0 / 300% 100% no-repeat,
+    linear-gradient(var(--shimmer-base), var(--shimmer-base));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hero-shimmer var(--shimmer-duration) infinite both ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text {
+    /* Not just `animation: none` — that would freeze the highlight mid-sweep
+       and leave part of the word lit. Drop the clipping entirely and paint
+       the text as a plain solid colour. */
+    animation: none;
+    background: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    color: var(--shimmer-base);
+  }
+}
+
 @keyframes pane-fade-in {
   from {
     opacity: 0;

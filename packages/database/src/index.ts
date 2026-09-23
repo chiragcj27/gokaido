@@ -52,3 +52,10 @@ export type { ICampaignBlast } from "./models/campaign-blast.js";
 
 export { BlogPost } from "./models/blog-post.js";
 export type { IBlogPost } from "./models/blog-post.js";
+
+export {
+  HomepageSettings,
+  getHomepageSettingsSingleton,
+  upsertHomepageSettingsSingleton,
+} from "./models/homepage-settings.js";
+export type { IHomepageSettings } from "./models/homepage-settings.js";

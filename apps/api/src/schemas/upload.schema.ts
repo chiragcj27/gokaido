@@ -14,6 +14,7 @@ export const UPLOAD_PURPOSES = {
   banner: { folder: "banners", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   asset: { folder: "assets", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   review: { folder: "reviews", roles: null, contentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES] },
+  homepage: { folder: "homepage", roles: ["admin", "superadmin"], contentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES] },
 } as const;
 
 export type UploadPurpose = keyof typeof UPLOAD_PURPOSES;

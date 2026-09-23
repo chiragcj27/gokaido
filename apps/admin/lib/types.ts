@@ -8,6 +8,13 @@ export interface Category {
   createdAt: string;
 }
 
+export interface HomepageSettings {
+  heroVideoUrl: string | null;
+  heroVideoPosterUrl: string | null;
+  heroBackgroundImageUrl: string | null;
+  heroShowcaseImages: string[];
+}
+
 export interface SizeGuideMeasurementPoint {
   letter: string;
   title: string;
