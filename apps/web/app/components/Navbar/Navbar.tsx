@@ -123,13 +123,13 @@ export default function Navbar() {
             aria-haspopup="dialog"
             onClick={() => setSearchOpen(true)}
           >
-            <Image src="/navbar/icon-search.png" alt="" width={37} height={56} style={{ width: 37, height: 56 }} />
+            <Image src="/navbar/icon-search.png" alt="" width={37} height={56} style={{ width: 32, height: 48 }} />
           </button>
           <Link href="/account" className={styles.iconButton} aria-label="Account">
-            <Image src="/navbar/icon-account.png" alt="" width={37} height={56} style={{ width: 37, height: 56 }} />
+            <Image src="/navbar/icon-account.png" alt="" width={37} height={56} style={{ width: 32, height: 48 }} />
           </Link>
           <Link href="/cart" className={styles.iconButton} aria-label="Cart">
-            <Image src="/navbar/icon-cart.png" alt="" width={37} height={56} style={{ width: 37, height: 56 }} />
+            <Image src="/navbar/icon-cart.png" alt="" width={37} height={56} style={{ width: 32, height: 48 }} />
           </Link>
 
           <button

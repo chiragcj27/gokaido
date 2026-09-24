@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createHeroReelGL, type HeroReelGL } from "./heroReelGL";
@@ -64,12 +64,21 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Autoplay only works muted (browser policy) — this is the initial/default
+  // state, not a permanent one. The toggle button below lets the visitor
+  // opt in to sound; it never auto-unmutes itself.
+  const [muted, setMuted] = useState(true);
+  const [reelVisible, setReelVisible] = useState(false);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     // Don't burn decode cycles while the reel is nowhere near the viewport.
+    // Also drives the mute toggle's visibility — no point offering a sound
+    // control for a video that isn't on screen.
     const io = new IntersectionObserver(
       ([entry]) => {
+        setReelVisible(entry.isIntersecting);
         if (entry.isIntersecting) video.play().catch(() => {});
         else video.pause();
       },
@@ -78,6 +87,16 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
     io.observe(video);
     return () => io.disconnect();
   }, []);
+
+  // Imperative, not the `muted` JSX attribute alone — React doesn't reliably
+  // push updates to the `muted` DOM property after mount on every browser,
+  // and the GL path never re-renders this element anyway (it just reads
+  // frames off the same <video> for its texture, audio plays from here
+  // regardless of which visual path is active).
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) video.muted = muted;
+  }, [muted]);
 
   useEffect(() => {
     const stack = stackRef.current;
@@ -212,7 +231,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
   return (
     <>
       <div ref={stackRef} className="relative">
-        <section className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-ink text-paper">
+        <section className="relative flex h-[calc(100svh-var(--navbar-h))] w-full flex-col items-center justify-center overflow-hidden bg-ink text-paper">
           {backgroundUrl && (
             // Background art is already near-black with its own spotlights and
             // red accents — no scrim, it would only mute the glow.
@@ -223,7 +242,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
               stagger, so the highlight travels through the headline in reading
               order instead of every word lighting up at once. */}
           <div className="relative z-10 flex w-full max-w-[90vw] flex-col items-center gap-[1vw] text-center font-heading font-extrabold uppercase leading-[0.9]">
-            <div className="flex w-full items-center justify-center gap-[3vw] text-[5vw] sm:text-[4vw]">
+            <div className="flex w-full items-center justify-center gap-[3vw] text-[5vw] sm:text-[7vw]">
               <span className="shimmer-text">Made</span>
               {showcaseImages && showcaseImages.length > 0 && (
                 // White card holding square product tiles side by side. The
@@ -241,10 +260,10 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
                 To
               </span>
             </div>
-            <div className="shimmer-text text-[15vw] sm:text-[11vw]" style={{ animationDelay: "0.24s" }}>
+            <div className="shimmer-text text-[15vw] sm:text-[14vw]" style={{ animationDelay: "0.24s" }}>
               Change
             </div>
-            <div className="flex w-full items-center justify-center gap-[3vw] text-[5vw] sm:text-[4vw]">
+            <div className="flex w-full items-center justify-center gap-[3vw] text-[5vw] sm:text-[7vw]">
               <span className="shimmer-text" style={{ animationDelay: "0.36s" }}>
                 The
               </span>
@@ -289,6 +308,36 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
           falls back to its width/height attributes (the device-pixel buffer
           size), rendering it ~2x too large. */}
       <canvas ref={canvasRef} className="invisible pointer-events-none fixed inset-0 z-20 h-full w-full" />
+
+      {/* Sound toggle. Autoplay only works muted, so this is the only way a
+          visitor ever hears the reel — it never unmutes itself. Only shown
+          while the reel is actually on screen (same IntersectionObserver
+          that drives play/pause above), and sits on its own layer so it
+          stays clickable regardless of which of the two painting surfaces
+          above it (both pointer-events-none) is currently active. */}
+      <button
+        type="button"
+        onClick={() => setMuted((m) => !m)}
+        aria-label={muted ? "Unmute video" : "Mute video"}
+        aria-pressed={!muted}
+        className={`fixed bottom-6 right-6 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-ink/60 text-paper backdrop-blur-sm transition-opacity duration-300 ${
+          reelVisible ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
+        {muted ? (
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <line x1="23" y1="9" x2="17" y2="15" />
+            <line x1="17" y1="9" x2="23" y2="15" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          </svg>
+        )}
+      </button>
     </>
   );
 }

@@ -14,6 +14,8 @@ export const UPLOAD_PURPOSES = {
   banner: { folder: "banners", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   asset: { folder: "assets", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   review: { folder: "reviews", roles: null, contentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES] },
+  reel: { folder: "reels", roles: ["admin", "superadmin"], contentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES] },
+  store: { folder: "stores", roles: ["admin", "superadmin"], contentTypes: IMAGE_TYPES },
   homepage: { folder: "homepage", roles: ["admin", "superadmin"], contentTypes: [...IMAGE_TYPES, ...VIDEO_TYPES] },
 } as const;
 

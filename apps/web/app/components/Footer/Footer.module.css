@@ -167,6 +167,26 @@
   gap: 32px;
 }
 
+/* Contact spans two grid columns: address/social/app on the left, email/phone as a fourth column on the right. */
+.contactBody {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px;
+  align-items: start;
+}
+
+.contactMain,
+.contactAside {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+
+.contactAside {
+  gap: 8px;
+}
+
 .heading {
   margin: 0;
   font-family: var(--font-montserrat), system-ui, sans-serif;
@@ -351,6 +371,13 @@
 
   .contactColumn {
     grid-column: span 12;
+  }
+}
+
+@media (max-width: 560px) {
+  .contactBody {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
   }
 }
 

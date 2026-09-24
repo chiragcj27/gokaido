@@ -79,55 +79,61 @@ export default function Footer() {
           <div className={styles.contactColumn} data-name="Contact">
             <h3 className={styles.heading}>Contact</h3>
 
-            <address className={styles.address}>
-              <div className={styles.addressName}>Mumbai (Head Office)</div>
-              <div className={styles.addressLines}>
-                136-B, Deccean Chembers Bldg,
-                <br />
-                J.S.S. Road, Near Majestic Shopping Centre,
-                <br />
-                Mumbai - 400 004
-                <br />
-                India
+            <div className={styles.contactBody}>
+              <div className={styles.contactMain}>
+                <address className={styles.address}>
+                  <div className={styles.addressName}>Mumbai (Head Office)</div>
+                  <div className={styles.addressLines}>
+                    136-B, Deccean Chembers Bldg,
+                    <br />
+                    J.S.S. Road, Near Majestic Shopping Centre,
+                    <br />
+                    Mumbai - 400 004
+                    <br />
+                    India
+                  </div>
+                </address>
+
+                <div className={styles.social}>
+                  {socialLinks.map((social) => (
+                    <a
+                      key={social.label}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={social.label}
+                      className={styles.socialLink}
+                    >
+                      <img src={social.icon} alt="" width={11} height={11} />
+                    </a>
+                  ))}
+                </div>
+
+                <div className={styles.appBadgesBlock}>
+                  <h4 className={styles.appBadgesHeading}>Download the app</h4>
+                  <div className={styles.appBadges}>
+                    <a href="#" aria-label="Get it on Google Play">
+                      <img src="/footer/app-badge-google-play.png" alt="Get it on Google Play" />
+                    </a>
+                    <a href="#" aria-label="Download on the App Store">
+                      <img src="/footer/app-badge-app-store.png" alt="Download on the App Store" />
+                    </a>
+                  </div>
+                </div>
               </div>
 
-              <div className={styles.contactDetails}>
-                <strong>Email</strong> -{" "}
-                <a href="mailto:gikaido@gmail.com">gikaido@gmail.com</a> /{" "}
-                <a href="mailto:gokaidoorders@gmail.com">gokaidoorders@gmail.com</a>
-              </div>
-              <div className={styles.contactDetails}>
-                <strong>Mobile No.:</strong>{" "}
-                <a href="tel:+912223859074">+91-22-23859074</a>
-                <br />
-                <a href="tel:+919820585200">+91-9820585200</a>
-              </div>
-            </address>
-
-            <div className={styles.social}>
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={social.label}
-                  className={styles.socialLink}
-                >
-                  <img src={social.icon} alt="" width={11} height={11} />
-                </a>
-              ))}
-            </div>
-
-            <div className={styles.appBadgesBlock}>
-              <h4 className={styles.appBadgesHeading}>Download the app</h4>
-              <div className={styles.appBadges}>
-                <a href="#" aria-label="Get it on Google Play">
-                  <img src="/footer/app-badge-google-play.png" alt="Get it on Google Play" />
-                </a>
-                <a href="#" aria-label="Download on the App Store">
-                  <img src="/footer/app-badge-app-store.png" alt="Download on the App Store" />
-                </a>
+              <div className={styles.contactAside} data-name="Contact Details">
+                <div className={styles.contactDetails}>
+                  <strong>Email</strong> -{" "}
+                  <a href="mailto:gikaido@gmail.com">gikaido@gmail.com</a> /{" "}
+                  <a href="mailto:gokaidoorders@gmail.com">gokaidoorders@gmail.com</a>
+                </div>
+                <div className={styles.contactDetails}>
+                  <strong>Mobile No.:</strong>{" "}
+                  <a href="tel:+912223859074">+91-22-23859074</a>
+                  <br />
+                  <a href="tel:+919820585200">+91-9820585200</a>
+                </div>
               </div>
             </div>
           </div>

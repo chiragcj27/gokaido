@@ -80,8 +80,9 @@ export default function HomepagePage() {
           Hero video
           <VideoUpload purpose="homepage" value={settings.heroVideoUrl ?? ""} onChange={(v) => set("heroVideoUrl", v)} />
           <p className="form-hint">
-            Plays muted/looped in the small slot, then grows full-screen on scroll. Compress to ~1–2MB, no audio —
-            large files slow down the homepage.
+            Plays muted/looped in the small slot, then grows full-screen on scroll — muted by default because
+            browsers block autoplay with sound, but visitors can unmute it with the speaker button. Include audio if
+            you want, and compress to ~1–2MB; large files slow down the homepage either way.
           </p>
         </label>
 

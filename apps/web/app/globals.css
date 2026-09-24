@@ -11,6 +11,12 @@
   --color-red: #c8102e;
 }
 
+/* Fixed navbar height, so the homepage hero can fill exactly the viewport
+   below it (see Hero.tsx) instead of overflowing by the navbar's height. */
+:root {
+  --navbar-h: 72px;
+}
+
 /* Hide every scrollbar (Windows shows chunky always-on bars; scrolling still works). */
 * {
   scrollbar-width: none;

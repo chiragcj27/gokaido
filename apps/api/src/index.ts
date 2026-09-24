@@ -20,6 +20,8 @@ import adminReviewRouter from "./routes/adminReview.js";
 import uploadRouter from "./routes/upload.js";
 import assetRouter from "./routes/asset.js";
 import homepageSettingsRouter from "./routes/homepageSettings.js";
+import storeRouter from "./routes/store.js";
+import reelRouter from "./routes/reel.js";
 
 const app: Express = express();
 
@@ -80,6 +82,8 @@ app.use("/api/admin/reviews", adminReviewRouter);
 app.use("/api/uploads", uploadRouter);
 app.use("/api/assets", assetRouter);
 app.use("/api/homepage-settings", homepageSettingsRouter);
+app.use("/api/stores", storeRouter);
+app.use("/api/reels", reelRouter);
 
 const mongoUri = process.env.MONGODB_URI;
 

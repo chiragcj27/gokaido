@@ -203,3 +203,28 @@ export interface Coupon {
   validUntil: string;
   isActive: boolean;
 }
+
+export interface Store {
+  _id: string;
+  city: string;
+  name: string;
+  address: string;
+  hours?: string;
+  phone?: string;
+  image?: string;
+  directionsUrl?: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface Reel {
+  _id: string;
+  title: string;
+  videoUrl?: string;
+  posterUrl?: string;
+  instagramUrl?: string;
+  /** Product id — the list endpoint returns it unpopulated. */
+  product?: string;
+  sortOrder: number;
+  isActive: boolean;
+}

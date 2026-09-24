@@ -59,3 +59,9 @@ export {
   upsertHomepageSettingsSingleton,
 } from "./models/homepage-settings.js";
 export type { IHomepageSettings } from "./models/homepage-settings.js";
+
+export { Store } from "./models/store.js";
+export type { IStore } from "./models/store.js";
+
+export { Reel } from "./models/reel.js";
+export type { IReel } from "./models/reel.js";
