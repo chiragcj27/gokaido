@@ -14,6 +14,12 @@ export const sortSchema = z.enum([
   "relevance",
 ]);
 
+// `z.coerce.boolean()` treats any non-empty string (including "false") as
+// true, so query-string flags are parsed explicitly.
+const queryBoolean = z
+  .enum(["true", "false", "1", "0"])
+  .transform((v) => v === "true" || v === "1");
+
 export const productListQuerySchema = z.object({
   sport: sportSchema.optional(),
   category: z.string().trim().optional(),
@@ -28,9 +34,9 @@ export const productListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   region: z.string().trim().optional(),
-  featured: z.coerce.boolean().optional(),
-  newArrival: z.coerce.boolean().optional(),
-  bestseller: z.coerce.boolean().optional(),
+  featured: queryBoolean.optional(),
+  newArrival: queryBoolean.optional(),
+  bestseller: queryBoolean.optional(),
   // Only honored for admin/superadmin callers — see listProducts. Public
   // listings always see active-only regardless of this value.
   status: z.enum(["active", "inactive", "all"]).optional(),

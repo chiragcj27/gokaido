@@ -108,7 +108,9 @@ export default function ProductsPage() {
           <code>category</code>/<code>subcategory</code> must match a name already created under
           Categories/Subcategories (not case-sensitive) — get exact URLs for the{" "}
           <code>images</code>/<code>variantImages</code> columns from the{" "}
-          <a href="/assets">Asset store</a>. Existing slugs are skipped, never overwritten.
+          <a href="/assets">Asset store</a>. <code>isFeatured</code>/<code>isNewArrival</code>/
+          <code>isBestseller</code> take <code>true</code>/<code>false</code> on the product&apos;s
+          first row. Existing slugs are skipped, never overwritten.
         </p>
         <div className="row-actions">
           <button type="button" className="link-button" onClick={handleDownloadTemplate}>

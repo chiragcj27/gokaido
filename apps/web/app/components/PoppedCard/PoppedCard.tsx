@@ -26,6 +26,8 @@ export interface PoppedCardProps {
   description?: string;
   /** Small gray line under the product name. Product variant only. */
   subtitle?: string;
+  /** Small gold tag above the product name, e.g. a material callout. Product variant only. */
+  badge?: string;
 
   price?: string;
   originalPrice?: string;
@@ -47,6 +49,7 @@ export default function PoppedCard({
   title,
   description,
   subtitle,
+  badge,
   price,
   originalPrice,
   colors,
@@ -142,6 +145,11 @@ export default function PoppedCard({
           </div>
         ) : (
           <div className="flex flex-col">
+            {badge && (
+              <span className="mb-2 self-start bg-gold px-1.5 py-0.5 font-heading text-[9px] font-bold tracking-[0.04em] text-ink uppercase">
+                {badge}
+              </span>
+            )}
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-col gap-0.5">
                 {title && (
