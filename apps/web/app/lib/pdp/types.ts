@@ -114,6 +114,8 @@ export interface Faq {
 }
 
 export interface PdpProduct {
+  /** Mongo `_id` — the cart/order API keys items by it. Empty for the sample product (not orderable). */
+  id: string;
   slug: string;
   name: string;
   breadcrumb: { label: string; href?: string }[];

@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
 import SiteFooter from "./components/Footer/SiteFooter";
 import { CartProvider } from "./lib/cartStore";
+import { AuthProvider } from "./lib/auth/authStore";
 import { geist, montserrat, roboto } from "./fonts";
 import "./globals.css";
 
@@ -21,13 +22,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} ${roboto.variable} ${geist.variable}`}>
       <body className="bg-ink font-sans text-paper antialiased">
-        <CartProvider>
-          <Navbar />
-          {children}
-          <SiteFooter>
-            <Footer />
-          </SiteFooter>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Navbar />
+            {children}
+            <SiteFooter>
+              <Footer />
+            </SiteFooter>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

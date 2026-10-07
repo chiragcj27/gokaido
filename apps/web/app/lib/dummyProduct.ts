@@ -99,6 +99,7 @@ function buildVariants(colors: ProductColorOption[], sizes: string[]): ProductVa
 }
 
 export const dummyProduct: DummyProduct = {
+  id: "",
   slug: "karate-guards",
   name: "Karate Guards (No. 1)",
   breadcrumb: [

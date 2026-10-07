@@ -1,5 +1,4 @@
 import type { CustomerInfo } from "./CustomerInfoStep";
-import { SHIPPING_OPTIONS, type ShippingMethodId } from "./ShippingMethodStep";
 
 const PAYMENT_LABELS: Record<string, string> = {
   upi: "UPI",
@@ -35,21 +34,15 @@ function ReviewBlock({
 
 export default function OrderReviewStep({
   customerInfo,
-  shippingMethod,
   paymentMethod,
   onEditCustomer,
-  onEditShipping,
   onEditPayment,
 }: {
   customerInfo: CustomerInfo;
-  shippingMethod: ShippingMethodId;
   paymentMethod: string;
   onEditCustomer: () => void;
-  onEditShipping: () => void;
   onEditPayment: () => void;
 }) {
-  const shippingOption = SHIPPING_OPTIONS.find((option) => option.id === shippingMethod);
-
   return (
     <div className="flex flex-col rounded-2xl border border-white/10 bg-panel px-6">
       <ReviewBlock title="Delivery Address" onEdit={onEditCustomer}>
@@ -58,12 +51,6 @@ export default function OrderReviewStep({
           {customerInfo.address}, {customerInfo.city}, {customerInfo.state} - {customerInfo.pincode}
         </p>
         <p className="m-0 text-paper/60">{customerInfo.phone}</p>
-      </ReviewBlock>
-
-      <ReviewBlock title="Shipping Method" onEdit={onEditShipping}>
-        <p className="m-0">
-          {shippingOption?.label} · {shippingOption && shippingOption.cost > 0 ? `₹${shippingOption.cost}` : "Free"}
-        </p>
       </ReviewBlock>
 
       <ReviewBlock title="Payment" onEdit={onEditPayment}>

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import PoppedCard, { type PoppedCardColor } from "../PoppedCard/PoppedCard";
 
 export interface BestsellerProduct {
@@ -16,6 +17,10 @@ export interface BestsellerProduct {
 
 export interface BestsellersProps {
   title?: string;
+  /** Optional line under the heading (e.g. a search result count or empty-state message). */
+  subtitle?: string;
+  /** Rendered under the cards inside the section (e.g. pagination on search results). */
+  footer?: ReactNode;
   products: BestsellerProduct[];
   /**
    * "carousel" (default) is the homepage's single row; "grid" wraps every
@@ -34,10 +39,17 @@ function formatInr(amount: number) {
  * so the cards keep a usable width instead of squeezing into columns.
  * Grid: 1 → 2 → 4 columns, wrapping into as many rows as there are products.
  */
-export default function Bestsellers({ title = "Bestsellers", products, layout = "carousel" }: BestsellersProps) {
+export default function Bestsellers({
+  title = "Bestsellers",
+  subtitle,
+  footer,
+  products,
+  layout = "carousel",
+}: BestsellersProps) {
   return (
     <section className="w-full bg-ink px-4 py-16 text-paper sm:px-6 lg:px-8 lg:py-20">
       <h2 className="m-0 text-center font-heading text-[clamp(32px,4.2vw,64px)] font-bold leading-none">{title}</h2>
+      {subtitle && <p className="m-0 mt-4 text-center font-sans text-base text-paper/60">{subtitle}</p>}
 
       <div
         className={
@@ -69,6 +81,7 @@ export default function Bestsellers({ title = "Bestsellers", products, layout = 
           </div>
         ))}
       </div>
+      {footer && <div className="mt-12 lg:mt-16">{footer}</div>}
     </section>
   );
 }

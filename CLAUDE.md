@@ -94,6 +94,10 @@ Both are product-level (not per-colour) — matches how `PoppedCard` and `Before
 
 The old hard-coded page is kept temporarily at `/sample-product/karate-guards` (noindex; `lib/dummyProduct.ts`) — delete it, and the `DummyProduct` alias, once the Figma-final page is signed off. Known gaps in the dynamic page: no MRP field in the catalogue (no strike-through price), FAQs are store-wide defaults (no FAQ model), review "talked about"/photos and down-votes aren't collected, region pricing isn't applied (base price is what's cached and rendered).
 
+## Dummy Data Tracker
+
+Every hard-coded / placeholder / stubbed piece of storefront data is listed in `DUMMY_DATA.md` (repo root), with its real source. **Add a row whenever you introduce dummy data and remove it when you wire the real thing.** `/search` currently returns dummy results for every query (`USE_DUMMY_SEARCH` in `apps/web/app/lib/search/dummySearch.ts`) — temporary, remove only when the user asks.
+
 ## Payment Gateway (ICICI Bank PG)
 
 Switched from the originally-planned Razorpay to **ICICI Bank's own Payment Gateway** — client onboarded directly with ICICI (UAT credentials on file, not in this repo — see `apps/api/.env`, gitignored). Integration built against ICICI's Interface Specification doc; test it against their UAT sandbox before assuming anything below still matches their live behavior if the bank revises the spec.
@@ -128,6 +132,8 @@ PATCH /api/admin/orders/:id         → admin: tracking info + status transition
 **Idempotency**: `payment-return` and `payment-advice` can both fire for the same attempt (or `payment-return` can be replayed). `applyGatewayResult` no-ops once `payment.status` is already `"paid"` — confirmed by literally replaying a successful callback and checking nothing double-applied (coupon `usedCount` included).
 
 **`payment.merchantTxnNo`** (on the `Order` model) is the value sent to ICICI for the *current* attempt — regenerated on retry, since ICICI requires a unique value per `initiateSale` call. `orderNumber` is the permanent customer-facing identifier and never changes.
+
+**Storefront side** (`apps/web/app/lib/checkout/placeOrder.ts`): the bag lives in localStorage, so "Place Order" first mirrors it into the server `Cart` (clear, then re-add each line — logged-in by token, guests by a persistent `X-Guest-Id`), then calls `POST /api/orders` and navigates to ICICI. Cart lines therefore need `productId` (set from the PDP). The local bag is only cleared on the return page (`/orders/{orderNumber}?status=success`), so a failed payment keeps it; `/checkout/failed` handles the unverifiable-return case.
 
 **Not yet built**: invoice generation. Deliberately deferred, tracked in `TASKS.md`.
 

@@ -93,6 +93,7 @@ export default function ProductPageClient({
     if (!activeVariant) return;
     addItem({
       id: activeVariant.sku,
+      productId: product.id || undefined,
       productSlug: product.slug,
       name: product.name,
       category: product.breadcrumb[product.breadcrumb.length - 1]?.label ?? "",

@@ -31,7 +31,7 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
 
   return (
     <section className="w-full bg-black py-16 text-paper md:py-24">
-      <div className="mx-auto w-full max-w-6xl px-4">
+      <div className="mx-auto w-full px-4 md:px-20">
         <div className="grid items-center gap-8 md:grid-cols-[1.45fr_1fr] md:gap-14">
           <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-panel">
             <Image

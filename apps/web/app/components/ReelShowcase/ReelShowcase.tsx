@@ -205,7 +205,7 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
 
   return (
     <section
-      className="w-full overflow-hidden bg-black py-16 text-paper md:py-24"
+      className="w-full overflow-hidden bg-black py-16 md:px-20 text-paper md:py-24"
       aria-roledescription="carousel"
       aria-label={title}
     >

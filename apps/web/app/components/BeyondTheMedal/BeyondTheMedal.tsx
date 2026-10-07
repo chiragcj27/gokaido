@@ -14,7 +14,7 @@ export interface BeyondTheMedalProps {
 export default function BeyondTheMedal({ ctaHref }: BeyondTheMedalProps) {
   return (
     <section className="w-full bg-black py-16 text-paper md:py-24">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 md:grid-cols-[1fr_1.1fr] md:gap-14">
+      <div className="mx-auto grid w-full items-center gap-10 px-4 md:grid-cols-[1fr_1.1fr] md:gap-14 md:px-20">
         <div>
           <h2 className="m-0 font-heading font-bold uppercase leading-[1.02]">
             <span className="block text-[clamp(48px,6.4vw,88px)]">Beyond</span>

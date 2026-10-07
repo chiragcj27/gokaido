@@ -12,7 +12,11 @@ const STORAGE_KEY = "gokaido:cart";
 export const FREE_SHIPPING_THRESHOLD = 5000;
 
 export interface CartItem {
+  /** Variant SKU. */
   id: string;
+  /** Product Mongo `_id`, needed to mirror the line into the server cart at checkout. Missing on
+   * lines added before this field existed, or from the sample product — those can't be ordered. */
+  productId?: string;
   productSlug: string;
   name: string;
   category: string;
@@ -81,6 +85,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearCart = useCallback(() => {
+    // Also clear storage directly: a child calling this on mount runs before the
+    // hydration effect above, which would otherwise reload the old items.
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // localStorage unavailable — nothing persisted to clear
+    }
     setItems([]);
   }, []);
 

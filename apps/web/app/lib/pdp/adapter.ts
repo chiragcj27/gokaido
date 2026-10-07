@@ -206,6 +206,7 @@ export function toPdpProduct(src: PdpSources): PdpProduct | null {
   const summary = reviews.summary;
 
   return {
+    id: product._id,
     slug: product.slug,
     name: product.name,
     breadcrumb: [
