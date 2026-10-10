@@ -44,3 +44,13 @@ export async function getReels(): Promise<Reel[]> {
     return [];
   }
 }
+
+// Dummy reels until the admin adds real ones (Reels page). Reuses the hero reel
+// as the video, with the placeholder card as the attached product.
+export const DUMMY_REELS: Reel[] = [1, 2, 3].map((n) => ({
+  id: `dummy-reel-${n}`,
+  videoUrl: "/hero/hero-reel.mp4",
+  posterUrl: "/hero/hero-reel-poster.jpg",
+  instagramUrl: null,
+  product: { name: "Lorem ipsum", slug: `dummy-reel-product-${n}`, image: "/card/card-sample.png", price: 2499 },
+}));

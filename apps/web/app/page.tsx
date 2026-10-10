@@ -7,7 +7,7 @@ import StoreLocator from "./components/StoreLocator/StoreLocator";
 import ReelShowcase from "./components/ReelShowcase/ReelShowcase";
 import BeyondTheMedal from "./components/BeyondTheMedal/BeyondTheMedal";
 import { getStores, type Store } from "./lib/stores";
-import { getReels, type Reel } from "./lib/reels";
+import { DUMMY_REELS, getReels } from "./lib/reels";
 import { getHomepageSettings } from "./lib/homepage";
 
 // Dummy categories until the ring is wired to real category data (name +
@@ -51,16 +51,6 @@ const DUMMY_STORES: Store[] = [
   phone: "+91 7996000781",
   image: null,
   directionsUrl: null,
-}));
-
-// Dummy reels until the admin adds real ones (Reels page). Reuses the hero reel
-// as the video, with the placeholder card as the attached product.
-const DUMMY_REELS: Reel[] = [1, 2, 3].map((n) => ({
-  id: `dummy-reel-${n}`,
-  videoUrl: "/hero/hero-reel.mp4",
-  posterUrl: "/hero/hero-reel-poster.jpg",
-  instagramUrl: null,
-  product: { name: "Lorem ipsum", slug: `dummy-reel-product-${n}`, image: "/card/card-sample.png", price: 2499 },
 }));
 
 export default async function Home() {

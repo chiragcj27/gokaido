@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/colors", label: "Colors" },
   { href: "/coupons", label: "Coupons" },
   { href: "/reviews", label: "Reviews" },
+  { href: "/franchise-enquiries", label: "Franchise enquiries" },
 ];
 
 export default function Sidebar({

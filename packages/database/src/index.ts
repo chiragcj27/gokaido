@@ -65,3 +65,10 @@ export type { IStore } from "./models/store.js";
 
 export { Reel } from "./models/reel.js";
 export type { IReel } from "./models/reel.js";
+
+export { FranchiseEnquiry, FRANCHISE_ENQUIRY_SOURCES, FRANCHISE_ENQUIRY_STATUSES } from "./models/franchise-enquiry.js";
+export type {
+  IFranchiseEnquiry,
+  FranchiseEnquirySource,
+  FranchiseEnquiryStatus,
+} from "./models/franchise-enquiry.js";

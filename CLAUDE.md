@@ -220,3 +220,4 @@ Admin (`apps/admin`) needs:
 - `Notification` — user, channel, type, status, sentAt
 - `CampaignBlast` — segment, channel, message, scheduledAt, status
 - `BlogPost` — title, slug, content, language, metaTitle, metaDescription
+- `FranchiseEnquiry` — name, email, phone, city (free-form "City / Country"), businessName, source, message, status (new/contacted/closed), adminNotes. Public `POST /api/franchise-enquiries` (storefront `/our-franchise` form, rate-limited 5/hour per IP); admin list/update at `/api/admin/franchise-enquiries`, shown in admin under "Franchise enquiries"

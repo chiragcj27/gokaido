@@ -28,7 +28,7 @@ Paths are relative to `apps/web/app/`. Line numbers are approximate — search f
 |---|---|---|
 | `page.tsx` — `DUMMY_KIT_CATEGORIES` | "Unify Your Kits" category ring (names + placeholder image) | Category data (name + image) from the API |
 | `page.tsx` — `DUMMY_STORES` | Store locator — **fallback only**, shown when the API returns no stores | Admin Stores page (`lib/stores.ts`) — already dynamic, drop the fallback once real stores are added |
-| `page.tsx` — `DUMMY_REELS` | Reel showcase — **fallback only**, shown when the API returns no reels | Admin Reels page (`lib/reels.ts`) — already dynamic, drop the fallback once real reels are added |
+| `lib/reels.ts` — `DUMMY_REELS` (used by `page.tsx`, `our-franchise/page.tsx`) | Reel showcase — **fallback only**, shown when the API returns no reels | Admin Reels page (`lib/reels.ts`) — already dynamic, drop the fallback once real reels are added |
 | `page.tsx` — Hero `/hero/*` files | Hero video/showcase images are local files — **fallback only** | Admin homepage settings upload |
 | `page.tsx` — `<BeyondTheMedal ctaHref="#">` | CTA goes nowhere | Decide submission route (form / WhatsApp / email) |
 | `page.tsx` — `<AppDownload playStoreUrl="#" appStoreUrl="#">` | App store buttons go nowhere | Real Play Store / App Store links from client |
@@ -52,6 +52,8 @@ Paths are relative to `apps/web/app/`. Line numbers are approximate — search f
 | `about-us/AwardsFloat.tsx` — `AWARDS` | Placeholder awards | Client's real awards |
 | `about-us/StatsTrail.tsx` — `IMAGES` | Placeholder photos | Client's brand/story images |
 | `about-us/page.tsx` — `SEGMENTS` | Generic "Industrial / Office" / "Retail" copy unrelated to Gokaido | Copy from client |
+| `our-franchise/page.tsx` — franchise paragraph | Franchise pitch copy written by us (support offered, etc. not confirmed by client) | Copy from client |
+| `our-franchise/FranchiseSignup.tsx` — form intro line, `SOURCES` | "Sign up today" intro copy and the "How did you hear about us?" options are ours | Copy/options from client (keep options in sync with `FRANCHISE_ENQUIRY_SOURCES` in the database package) |
 
 ## Stubbed behaviour (not data, but fake)
 

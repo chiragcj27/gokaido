@@ -32,3 +32,13 @@ export const adminLoginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Public enquiry forms (franchise sign-up) — per IP, enough for a genuine retry, not for spam.
+export const enquiryLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req: Request) => ipKeyGenerator(req.ip ?? ""),
+  message: { error: "Too many submissions. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

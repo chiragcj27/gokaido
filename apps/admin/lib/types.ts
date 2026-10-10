@@ -228,3 +228,19 @@ export interface Reel {
   sortOrder: number;
   isActive: boolean;
 }
+
+export type FranchiseEnquiryStatus = "new" | "contacted" | "closed";
+
+export interface FranchiseEnquiry {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  businessName: string;
+  source?: string;
+  message?: string;
+  status: FranchiseEnquiryStatus;
+  adminNotes?: string;
+  createdAt: string;
+}

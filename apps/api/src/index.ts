@@ -22,6 +22,8 @@ import assetRouter from "./routes/asset.js";
 import homepageSettingsRouter from "./routes/homepageSettings.js";
 import storeRouter from "./routes/store.js";
 import reelRouter from "./routes/reel.js";
+import franchiseEnquiryRouter from "./routes/franchiseEnquiry.js";
+import adminFranchiseEnquiryRouter from "./routes/adminFranchiseEnquiry.js";
 
 const app: Express = express();
 
@@ -84,6 +86,8 @@ app.use("/api/assets", assetRouter);
 app.use("/api/homepage-settings", homepageSettingsRouter);
 app.use("/api/stores", storeRouter);
 app.use("/api/reels", reelRouter);
+app.use("/api/franchise-enquiries", franchiseEnquiryRouter);
+app.use("/api/admin/franchise-enquiries", adminFranchiseEnquiryRouter);
 
 const mongoUri = process.env.MONGODB_URI;
 
