@@ -70,7 +70,15 @@ export default async function Home() {
             : ["/hero/showcase-1.png", "/hero/showcase-2.png", "/hero/showcase-3.png"]
         }
       />
-      <UnifyKits categories={DUMMY_KIT_CATEGORIES} backgroundUrl="/home/unify_your_kits_bg.png" />
+      {/* Phones: while the hero is pinned and its video grows (see Hero.tsx),
+          this rises from the bottom and settles just under the video strip.
+          The pull-up is the pinned block's height minus the hero (16:9 art)
+          plus the strip (16:9) — both are 100vw wide — so at the end of the
+          pin its top meets the strip's bottom. z-25 keeps it above the
+          hero's fixed video layer (z-20). */}
+      <div className="relative z-[25] max-md:-mt-[calc(100svh-112.93vw)]">
+        <UnifyKits categories={DUMMY_KIT_CATEGORIES} backgroundUrl="/home/unify_your_kits_bg.png" />
+      </div>
       <Bestsellers products={DUMMY_BESTSELLERS} />
       <PresenceMap />
       <StoreLocator stores={stores.length > 0 ? stores : DUMMY_STORES} />

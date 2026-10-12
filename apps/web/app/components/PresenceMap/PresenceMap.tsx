@@ -30,6 +30,7 @@ export default function PresenceMap() {
             className="object-contain"
           />
 
+          {/* Touch/phone screens have no hover, so the pins layer below is simply always shown there. */}
           {/* Rectangular approximation of the India landmass, not a traced outline. Must precede the pins layer (peer). */}
           <div
             aria-hidden="true"
@@ -43,7 +44,7 @@ export default function PresenceMap() {
             aria-hidden="true"
             fill
             sizes="(min-width: 1152px) 1152px, 100vw"
-            className="pointer-events-none z-10 object-contain opacity-0 transition-opacity duration-500 ease-out peer-hover:opacity-100"
+            className="pointer-events-none z-10 object-contain opacity-0 transition-opacity duration-500 ease-out peer-hover:opacity-100 max-md:opacity-100 [@media(hover:none)]:opacity-100"
           />
 
           <svg

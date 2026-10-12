@@ -39,7 +39,7 @@ export async function getCollection(req: Request, res: Response): Promise<void> 
       .lean(),
     Color.find({ isActive: true }).select("name slug hex").lean(),
     Product.aggregate<AggGroup>([
-      // Cards only render the finished card visual (see CLAUDE.md "Product Image Fields").
+      // Cards only render the product's `cardImage` (see CLAUDE.md "Product Image Fields").
       { $match: { isActive: true, category: slug, cardImage: { $exists: true, $ne: "" } } },
       { $sort: { isBestseller: -1, isFeatured: -1, createdAt: -1 } },
       {

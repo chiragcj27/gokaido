@@ -141,8 +141,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       const w = lerp(a.width, b.width, t);
       const h = lerp(a.height, b.height, t);
 
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
+            const vh = window.innerHeight;
 
       // Same off-screen cull upsunday does — once the reel has scrolled past,
       // stop painting entirely rather than leaving a stale frame on a layer
@@ -160,13 +159,17 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
           radius
         );
       } else if (offScreen) {
-        videoWrap!.style.clipPath = "inset(50% 50% 50% 50%)";
+        videoWrap!.style.visibility = "hidden";
       } else {
-        const top = (y / vh) * 100;
-        const left = (x / vw) * 100;
-        const right = 100 - ((x + w) / vw) * 100;
-        const bottom = 100 - ((y + h) / vh) * 100;
-        videoWrap!.style.clipPath = `inset(${top}% ${right}% ${bottom}% ${left}% round ${radius}px)`;
+        // Size the wrapper to the rect (the <video> object-covers it) rather
+        // than clipping a viewport-sized video: on a portrait phone the end
+        // rect is a full-width 16:9 strip, and clipping a cover-fitted
+        // portrait video would show only its cropped centre.
+        videoWrap!.style.visibility = "visible";
+        videoWrap!.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        videoWrap!.style.width = `${w}px`;
+        videoWrap!.style.height = `${h}px`;
+        videoWrap!.style.borderRadius = `${radius}px`;
       }
     }
 
@@ -196,20 +199,38 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
 
     const ctx = gsap.context(() => {
       if (reduceMotion) return;
-      // No pin: the headline scrolls away naturally while the video morphs
+      // Desktop does not pin: the headline scrolls away naturally while the video morphs
       // down into the reel card. Linear ease + `scrub` smoothing is what
       // gives the weighted, premium feel — an ease curve on top of a scrub
       // reads as lag, not polish.
-      gsap.to(morph, {
-        t: 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: stack,
-          start: "top top",
-          end: () => `+=${window.innerHeight}`,
-          scrub: 1,
-          invalidateOnRefresh: true,
-        },
+      const tween = (extra: ScrollTrigger.Vars) =>
+        gsap.to(morph, {
+          t: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: stack,
+            start: "top top",
+            scrub: 1,
+            invalidateOnRefresh: true,
+            ...extra,
+          },
+        });
+
+      const mm = gsap.matchMedia();
+      // Desktop: the end box is a full viewport below the hero, so the morph
+      // takes one viewport of scroll and the reel arrives as it fills the screen.
+      mm.add("(min-width: 768px)", () => {
+        tween({ end: () => `+=${window.innerHeight}` });
+      });
+      // Phones: the end box is a short strip right under the hero, so it is
+      // already on screen. Pin hero + strip while the video grows into it,
+      // then release to normal scrolling. Meanwhile the next section rises
+      // from the bottom and ends up just under the strip (page.tsx offsets
+      // it so the two line up exactly at the end of this range). Without
+      // the pin the strip scrolls away as the video arrives and it never
+      // shows fully in place.
+      mm.add("(max-width: 767px)", () => {
+        tween({ pin: stack, end: () => `+=${window.innerHeight * 0.6}` });
       });
     }, stack);
 
@@ -230,8 +251,8 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
 
   return (
     <>
-      <div ref={stackRef} className="relative">
-        <section className="relative flex h-[calc(100svh-var(--navbar-h))] w-full flex-col items-center justify-center overflow-hidden bg-ink text-paper">
+      <div ref={stackRef} className="relative max-md:flex max-md:min-h-svh max-md:flex-col">
+        <section className="relative flex aspect-[1602/908] w-full shrink-0 md:aspect-auto md:h-[calc(100svh-var(--navbar-h))] flex-col items-center justify-center overflow-hidden bg-ink text-paper">
           {backgroundUrl && (
             // Background art is already near-black with its own spotlights and
             // red accents — no scrim, it would only mute the glow.
@@ -242,15 +263,15 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
               stagger, so the highlight travels through the headline in reading
               order instead of every word lighting up at once. */}
           <div className="relative z-10 flex w-full max-w-[90vw] flex-col items-center gap-[1vw] text-center font-heading font-extrabold uppercase leading-[0.9]">
-            <div className="flex w-full items-center justify-center gap-[3vw] text-[5vw] sm:text-[7vw]">
+            <div className="flex w-full items-center justify-center gap-[3vw] text-[7vw]">
               <span className="shimmer-text">Made</span>
               {showcaseImages && showcaseImages.length > 0 && (
                 // White card holding square product tiles side by side. The
                 // card's own padding/gap are what read as the thin white
                 // dividers between tiles in the design.
-                <div className="flex h-[8vw] shrink-0 items-stretch gap-[0.4vw] rounded-[1.2vw] bg-paper p-[0.4vw] sm:h-[5.6vw] sm:rounded-[0.9vw]">
+                <div className="flex h-[5.6vw] shrink-0 items-stretch gap-[0.4vw] rounded-[0.9vw] bg-paper p-[0.4vw]">
                   {showcaseImages.map((src) => (
-                    <div key={src} className="relative aspect-square h-full overflow-hidden rounded-[0.8vw] sm:rounded-[0.6vw]">
+                    <div key={src} className="relative aspect-square h-full overflow-hidden rounded-[0.6vw]">
                       <Image src={src} alt="" fill sizes="12vw" className="object-cover" />
                     </div>
                   ))}
@@ -260,16 +281,16 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
                 To
               </span>
             </div>
-            <div className="shimmer-text text-[15vw] sm:text-[14vw]" style={{ animationDelay: "0.24s" }}>
+            <div className="shimmer-text text-[14vw]" style={{ animationDelay: "0.24s" }}>
               Change
             </div>
-            <div className="flex w-full items-center justify-center gap-[3vw] text-[5vw] sm:text-[7vw]">
+            <div className="flex w-full items-center justify-center gap-[3vw] text-[7vw]">
               <span className="shimmer-text" style={{ animationDelay: "0.36s" }}>
                 The
               </span>
               {/* Start of the morph. Empty — reserves layout only; the video
                   is painted over it by the fixed layer below. */}
-              <div ref={slotRef} aria-hidden="true" className="h-[12vw] w-[18vw] shrink-0 sm:h-[9vw] sm:w-[13vw]" />
+              <div ref={slotRef} aria-hidden="true" className="h-[9vw] w-[13vw] shrink-0" />
               <span className="shimmer-text" style={{ animationDelay: "0.48s" }}>
                 Game
               </span>
@@ -280,15 +301,30 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
         {/* End of the morph. A REAL in-flow element — that's what lets the
             reel scroll away naturally once it's full size, instead of being
             stuck to the viewport. */}
-        <section className="relative h-screen w-full bg-ink">
-          <div ref={cardRef} aria-hidden="true" className="absolute inset-0" />
+        <section className="relative w-full bg-ink max-md:flex-1 md:h-screen">
+          {/* Phones: the pinned hero + strip is shorter than the screen, so
+              fill the rest with the "Unify your kits" backdrop (same art as
+              the next section) instead of plain black. Darkened so the reel
+              strip stays the focus. */}
+          <Image src="/home/unify_your_kits_bg.png" alt="" fill sizes="100vw" className="object-cover md:hidden" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink via-ink/40 to-ink/20 md:hidden" />
+          {/* Phones: a full-width 16:9 strip so the reel shows uncropped.
+              md+: the whole viewport. */}
+          <div ref={cardRef} aria-hidden="true" className="relative z-10 aspect-video w-full overflow-hidden md:absolute md:inset-0 md:aspect-auto">
+            {/* Phones only: the strip sits empty under the hero until the
+                video morphs into it, so show a dimmed preview of the reel
+                rather than a dead black band. The real video paints over it. */}
+            {posterUrl && (
+              <Image src={posterUrl} alt="" fill sizes="100vw" className="object-cover opacity-30 md:hidden" />
+            )}
+          </div>
         </section>
       </div>
 
       {/* Painting surfaces. Both fixed & full-viewport; only one is ever
           visible. They carry no layout meaning — the rect they draw comes
           entirely from slotRef/cardRef above. */}
-      <div ref={videoWrapRef} className="invisible pointer-events-none fixed inset-0 z-20 overflow-hidden">
+      <div ref={videoWrapRef} className="invisible pointer-events-none fixed left-0 top-0 z-20 overflow-hidden">
         <video
           ref={videoRef}
           src={videoUrl}

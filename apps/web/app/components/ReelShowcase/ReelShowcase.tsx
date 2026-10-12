@@ -147,7 +147,7 @@ function ReelCard({ reel, offset, onSelect }: { reel: Reel; offset: number; onSe
             >
               <span className="relative size-14 shrink-0 overflow-hidden rounded-md bg-neutral-100">
                 {product.image && (
-                  <Image src={product.image} alt="" fill sizes="56px" className="object-contain" />
+                  <Image src={product.image} alt="" fill sizes="56px" className="object-cover object-center" />
                 )}
               </span>
               <span className="flex min-w-0 flex-col justify-between self-stretch py-0.5">

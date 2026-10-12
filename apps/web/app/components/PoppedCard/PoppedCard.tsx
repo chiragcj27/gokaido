@@ -77,7 +77,7 @@ export default function PoppedCard({
 
   const card = (
     <article
-      className={`relative flex flex-col${className ? ` ${className}` : ""}`}
+      className={`@container relative flex flex-col${className ? ` ${className}` : ""}`}
     >
       {variant === "product" && (
         <button
@@ -85,7 +85,7 @@ export default function PoppedCard({
           aria-pressed={liked}
           aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
           onClick={handleToggleWishlist}
-          className="absolute top-10 right-4 z-30 inline-flex h-8.5 w-8.5 items-center justify-center border-0 bg-transparent p-0 text-paper/80 transition-transform duration-200 hover:scale-108 aria-pressed:text-red"
+          className="absolute top-3 right-3 z-30 inline-flex h-8.5 w-8.5 items-center justify-center rounded-full border-0 bg-ink/55 p-0 text-paper/90 backdrop-blur-sm transition-transform duration-200 hover:scale-108 aria-pressed:text-red"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path
@@ -99,21 +99,15 @@ export default function PoppedCard({
         </button>
       )}
 
-      {/* imageSrc is a finished card visual — background and product already composited, with
-          transparent headroom above the background for the pop-out — so it renders as-is. */}
-      <div
-        className={
-          variant === "product"
-            ? "relative z-20 mx-5 -mb-10 aspect-594/470"
-            : "relative z-20 mx-4 -mb-16 aspect-594/470"
-        }
-      >
+      {/* imageSrc is an ordinary photo (the product's `cardImage`), so it fills the frame and is
+          centre-cropped to the card's aspect ratio rather than composited over a background. */}
+      <div className="relative z-20 aspect-594/470 overflow-hidden bg-panel">
         <Image
           src={imageSrc}
           alt={imageAlt}
           fill
           sizes="(min-width: 768px) 30vw, 60vw"
-          className="object-contain"
+          className="object-cover object-center"
           unoptimized={imageSrc.endsWith(".svg")}
         />
       </div>
@@ -121,8 +115,8 @@ export default function PoppedCard({
       <div
         className={
           variant === "product"
-            ? "relative z-10 flex-1 px-4.5 pt-14 pb-4.5"
-            : "relative z-10 flex-1 px-6 pt-20 pb-6"
+            ? "relative z-10 flex-1 px-2.5 pt-2.5 pb-3 @[260px]:px-4.5 @[260px]:pt-4 @[260px]:pb-4.5"
+            : "relative z-10 flex-1 px-6 pt-6 pb-6"
         }
       >
         {variant === "subcategory" ? (
@@ -150,10 +144,10 @@ export default function PoppedCard({
                 {badge}
               </span>
             )}
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1 @[260px]:flex-row @[260px]:items-start @[260px]:justify-between @[260px]:gap-3">
               <div className="flex min-w-0 flex-col gap-0.5">
                 {title && (
-                  <h3 className="m-0 truncate font-heading text-[15px] font-bold text-paper">
+                  <h3 className="m-0 truncate font-heading text-[13px] font-bold text-paper @[260px]:text-[15px]">
                     {title}
                   </h3>
                 )}
@@ -164,7 +158,7 @@ export default function PoppedCard({
                 )}
               </div>
               {(price || originalPrice) && (
-                <div className="flex shrink-0 flex-col items-end gap-0.5 whitespace-nowrap">
+                <div className="flex shrink-0 flex-row items-baseline gap-1.5 whitespace-nowrap @[260px]:flex-col @[260px]:items-end @[260px]:gap-0.5">
                   {price && (
                     <span className="font-heading text-sm font-bold text-paper">
                       {price}
@@ -180,8 +174,8 @@ export default function PoppedCard({
             </div>
 
             {colors && colors.length > 0 && (
-              <div className="mt-3.5 flex items-center gap-2.5 font-sans text-xs text-paper/70">
-                <span>{colors[colorIndex]?.name}</span>
+              <div className="mt-2.5 flex items-center gap-2.5 font-sans text-xs text-paper/70 @[260px]:mt-3.5">
+                <span className="hidden @[260px]:inline">{colors[colorIndex]?.name}</span>
                 <div className="flex gap-2">
                   {colors.map((color, index) => (
                     <button
@@ -209,7 +203,7 @@ export default function PoppedCard({
                   event.preventDefault();
                   onAddToCart();
                 }}
-                className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/50 bg-transparent px-4 py-3 font-heading text-[13px] font-semibold tracking-[0.02em] text-paper uppercase transition-colors duration-200 hover:bg-paper hover:text-ink"
+                className="mt-3 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-white/50 bg-transparent px-2 py-2 font-heading text-[11px] @[260px]:mt-4 @[260px]:gap-2 @[260px]:px-4 @[260px]:py-3 @[260px]:text-[13px] font-semibold tracking-[0.02em] text-paper uppercase transition-colors duration-200 hover:bg-paper hover:text-ink"
               >
                 <span aria-hidden="true" className="text-base leading-none">
                   +

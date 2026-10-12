@@ -40,7 +40,8 @@ export interface ApiProduct {
   ageGroup?: string;
   skillLevel?: string;
   soldAs?: string;
-  protectionLevel?: string;
+  protectionDescription?: string;
+  protectionStats?: { heading: string; subheading: string; percent?: number }[];
   materialAndPadding?: string;
   hygieneAndMaintenance?: string;
   replacementInterval?: string;

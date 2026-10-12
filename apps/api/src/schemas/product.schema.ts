@@ -61,6 +61,12 @@ const variantInputSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+export const protectionStatSchema = z.object({
+  heading: z.string().trim().min(1, "Protection stat heading is required"),
+  subheading: z.string().trim().optional().default(""),
+  percent: z.coerce.number().min(0).max(100).optional(),
+});
+
 export const createProductSchema = z.object({
   name: z.string().trim().min(1).max(200),
   slug: z
@@ -91,7 +97,8 @@ export const createProductSchema = z.object({
   ageGroup: z.string().trim().optional(),
   skillLevel: z.string().trim().optional(),
   soldAs: z.string().trim().optional(),
-  protectionLevel: z.string().trim().optional(),
+  protectionDescription: z.string().trim().optional(),
+  protectionStats: z.array(protectionStatSchema).max(3, "At most 3 protection stats").optional(),
   materialAndPadding: z.string().trim().optional(),
   hygieneAndMaintenance: z.string().trim().optional(),
   replacementInterval: z.string().trim().optional(),

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api";
-import type { Category, Color, Product, ProductVariant, Subcategory } from "../lib/types";
+import type { Category, Color, Product, ProductVariant, ProtectionStat, Subcategory } from "../lib/types";
 import MultiImageUpload from "./MultiImageUpload";
 import ImageUpload from "./ImageUpload";
 
@@ -57,6 +57,21 @@ function toColorGroups(variants: ProductVariant[]): ColorGroupDraft[] {
   return groups;
 }
 
+// The PDP's Protection Level section has exactly 3 stat slots (each paired
+// with a fixed icon), so the form always shows 3; blank-heading slots are
+// dropped on submit.
+const PROTECTION_STAT_SLOTS = 3;
+
+type ProtectionStatDraft = { heading: string; subheading: string; percent: string };
+
+function toProtectionStatDrafts(stats: ProtectionStat[] = []): ProtectionStatDraft[] {
+  return Array.from({ length: PROTECTION_STAT_SLOTS }, (_, i) => ({
+    heading: stats[i]?.heading ?? "",
+    subheading: stats[i]?.subheading ?? "",
+    percent: stats[i]?.percent === undefined ? "" : String(stats[i]!.percent),
+  }));
+}
+
 function slugify(value: string): string {
   return value
     .trim()
@@ -74,6 +89,16 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
   const [subcategory, setSubcategory] = useState(product?.subcategory ?? "");
   const [productType, setProductType] = useState(product?.productType ?? PRODUCT_TYPES[0]!);
   const [description, setDescription] = useState(product?.description ?? "");
+  const [materialAndPadding, setMaterialAndPadding] = useState(product?.materialAndPadding ?? "");
+  const [hygieneAndMaintenance, setHygieneAndMaintenance] = useState(
+    product?.hygieneAndMaintenance ?? ""
+  );
+  const [protectionDescription, setProtectionDescription] = useState(
+    product?.protectionDescription ?? ""
+  );
+  const [protectionStats, setProtectionStats] = useState<ProtectionStatDraft[]>(
+    toProtectionStatDrafts(product?.protectionStats)
+  );
   const [isFeatured, setIsFeatured] = useState(product?.isFeatured ?? false);
   const [isNewArrival, setIsNewArrival] = useState(product?.isNewArrival ?? false);
   const [isBestseller, setIsBestseller] = useState(product?.isBestseller ?? false);
@@ -119,6 +144,10 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
       .then((res) => setSubcategories(res.subcategories))
       .catch(() => setSubcategories([]));
   }, [category, categories]);
+
+  function updateProtectionStat(index: number, field: keyof ProtectionStatDraft, value: string) {
+    setProtectionStats((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  }
 
   function updateColorName(groupIndex: number, value: string) {
     setColorGroups((prev) =>
@@ -188,6 +217,16 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
       subcategory: subcategory || undefined,
       productType,
       description,
+      materialAndPadding,
+      hygieneAndMaintenance,
+      protectionDescription,
+      protectionStats: protectionStats
+        .filter((s) => s.heading.trim())
+        .map((s) => ({
+          heading: s.heading,
+          subheading: s.subheading,
+          percent: s.percent.trim() === "" ? undefined : Number(s.percent),
+        })),
       images,
       cardImage: cardImage || undefined,
       competitorImage: competitorImage || undefined,
@@ -308,6 +347,82 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
       </label>
 
       <label className="full-width">
+        Material &amp; padding
+        <textarea
+          value={materialAndPadding}
+          onChange={(e) => setMaterialAndPadding(e.target.value)}
+          rows={3}
+        />
+      </label>
+
+      <label className="full-width">
+        Hygiene &amp; maintenance
+        <textarea
+          value={hygieneAndMaintenance}
+          onChange={(e) => setHygieneAndMaintenance(e.target.value)}
+          rows={3}
+        />
+      </label>
+
+      <h2>Protection level</h2>
+      <small className="form-hint">
+        Shown on the product page&apos;s Protection Level section. Fill in up to 3 stats — leave a
+        heading blank to skip that stat. The percentage is optional and appears large above the
+        heading (e.g. 92%).
+      </small>
+      <label className="full-width">
+        Protection description
+        <textarea
+          value={protectionDescription}
+          onChange={(e) => setProtectionDescription(e.target.value)}
+          rows={3}
+        />
+      </label>
+      <div className="table-wrap">
+        <table className="data-table variant-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Heading</th>
+              <th>Sub-heading</th>
+              <th>Percentage (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {protectionStats.map((stat, i) => (
+              <tr key={i}>
+                <td>{i + 1}</td>
+                <td>
+                  <input
+                    value={stat.heading}
+                    onChange={(e) => updateProtectionStat(i, "heading", e.target.value)}
+                    placeholder="e.g. Impact level"
+                  />
+                </td>
+                <td>
+                  <input
+                    value={stat.subheading}
+                    onChange={(e) => updateProtectionStat(i, "subheading", e.target.value)}
+                    placeholder="e.g. Light to moderate (training contact)"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={stat.percent}
+                    onChange={(e) => updateProtectionStat(i, "percent", e.target.value)}
+                    placeholder="optional"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <label className="full-width">
         Images
         <MultiImageUpload purpose="product" values={images} onChange={setImages} />
       </label>
@@ -316,8 +431,9 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
         <label>
           Card image
           <small className="form-hint">
-            Finished card visual — card background and product already composited, with transparent
-            headroom above the background for the pop-out. Used as-is on product cards/listings.
+            A normal photo of the product, used on product cards and thumbnails across the store
+            (listings, related products, kit builder). It&apos;s centre-cropped to a 594×470 (≈5:4)
+            frame, so keep the product in the middle.
           </small>
           <ImageUpload purpose="product" value={cardImage} onChange={setCardImage} />
         </label>

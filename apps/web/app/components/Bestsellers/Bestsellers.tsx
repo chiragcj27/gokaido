@@ -8,7 +8,7 @@ export interface BestsellerProduct {
   title: string;
   subtitle?: string;
   badge?: string;
-  /** Finished card visual — the product's `cardImage`, not its gallery images. */
+  /** The product's `cardImage` (its card/thumbnail photo), not its gallery images. */
   imageSrc: string;
   price: number;
   mrp?: number;
@@ -35,8 +35,7 @@ function formatInr(amount: number) {
 
 /**
  * "Bestsellers" section: centred heading over product cards.
- * Carousel: four-up grid from lg; below that it becomes a snap-scrolling strip
- * so the cards keep a usable width instead of squeezing into columns.
+ * Carousel: four-up from lg, a 2-column grid below that (2×2 for four products).
  * Grid: 1 → 2 → 4 columns, wrapping into as many rows as there are products.
  */
 export default function Bestsellers({
@@ -55,14 +54,11 @@ export default function Bestsellers({
         className={
           layout === "grid"
             ? "mx-auto mt-6 grid max-w-7xl grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:mt-10 lg:grid-cols-4 lg:gap-y-14"
-            : "mt-6 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 lg:mt-10 lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible"
+            : "mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:mt-10 lg:grid-cols-4 lg:gap-6"
         }
       >
         {products.map((product) => (
-          <div
-            key={product.slug}
-            className={layout === "grid" ? undefined : "w-[78vw] shrink-0 snap-start sm:w-80 lg:w-auto"}
-          >
+          <div key={product.slug}>
             <PoppedCard
               variant="product"
               imageSrc={product.imageSrc}

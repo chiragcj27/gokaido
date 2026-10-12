@@ -10,8 +10,6 @@ export interface IHomepageSettings {
   heroBackgroundImageUrl?: string;
   // The product tiles in the white card between "MADE" and "TO" — one image
   // per tile (square product shots), laid out side by side by the storefront.
-  // Design supplies them as separate photos rather than one composited card,
-  // so unlike Product.cardImage these are NOT pre-composited.
   heroShowcaseImages?: string[];
   createdAt: Date;
   updatedAt: Date;

@@ -123,15 +123,19 @@ export default function Footer() {
               </div>
 
               <div className={styles.contactAside} data-name="Contact Details">
+                {/* Separators are wrapped so phones can drop them and stack each
+                    address/number as its own tappable row. */}
                 <div className={styles.contactDetails}>
-                  <strong>Email</strong> -{" "}
-                  <a href="mailto:gikaido@gmail.com">gikaido@gmail.com</a> /{" "}
+                  <strong>Email</strong>
+                  <span className={styles.sep}> - </span>
+                  <a href="mailto:gikaido@gmail.com">gikaido@gmail.com</a>
+                  <span className={styles.sep}> / </span>
                   <a href="mailto:gokaidoorders@gmail.com">gokaidoorders@gmail.com</a>
                 </div>
                 <div className={styles.contactDetails}>
                   <strong>Mobile No.:</strong>{" "}
                   <a href="tel:+912223859074">+91-22-23859074</a>
-                  <br />
+                  <br className={styles.sep} />
                   <a href="tel:+919820585200">+91-9820585200</a>
                 </div>
               </div>

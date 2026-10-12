@@ -59,6 +59,17 @@ async function parseWorkbook(
   return rows;
 }
 
+function protectionStatsFromRow(row: BulkProductRow) {
+  const slots = [
+    [row.protectionStat1Heading, row.protectionStat1Subheading, row.protectionStat1Percent],
+    [row.protectionStat2Heading, row.protectionStat2Subheading, row.protectionStat2Percent],
+    [row.protectionStat3Heading, row.protectionStat3Subheading, row.protectionStat3Percent],
+  ] as const;
+  return slots.flatMap(([heading, subheading, percent]) =>
+    heading ? [{ heading, subheading: subheading ?? "", percent }] : []
+  );
+}
+
 export async function bulkUploadProducts(req: Request, res: Response): Promise<void> {
   if (!req.file) {
     res.status(400).json({ error: "No file uploaded — attach an .xlsx file as `file`" });
@@ -200,6 +211,10 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
       subcategory: entries[0]!.subcategory,
       productType: first.productType,
       description: first.description,
+      materialAndPadding: first.materialAndPadding,
+      hygieneAndMaintenance: first.hygieneAndMaintenance,
+      protectionDescription: first.protectionDescription,
+      protectionStats: protectionStatsFromRow(first),
       images: splitCsv(first.images),
       cardImage: first.cardImage,
       competitorImage: first.competitorImage,

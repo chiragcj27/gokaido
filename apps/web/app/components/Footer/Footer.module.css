@@ -377,22 +377,173 @@
 @media (max-width: 560px) {
   .contactBody {
     grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
+    gap: 20px;
   }
 }
 
+/*
+ * Phones. The desktop layout stacked into one long column (~1400px of
+ * mostly-empty rows over a busy mat photo), so here:
+ *   - About Us / Available In sit side by side
+ *   - Contact becomes a dark glass panel so text stays readable on the photo,
+ *     re-ordered address → email/phone → social → app badges
+ *   - email/phone become full-width tappable rows instead of tiny inline links
+ */
 @media (max-width: 560px) {
-  .column {
-    grid-column: span 12;
+  .tint {
+    background: rgba(0, 0, 0, 0.55);
   }
 
   .content {
-    padding: 40px 20px 0;
+    gap: 40px;
+    padding: 40px 16px 0;
+  }
+
+  .hero {
+    gap: 4px;
+  }
+
+  .columns {
+    gap: 32px 16px;
+  }
+
+  .column {
+    grid-column: span 6;
+    gap: 16px;
+  }
+
+  .heading {
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    color: #f0ad3d;
+  }
+
+  .list {
+    gap: 12px;
+  }
+
+  .list a,
+  .list span {
+    font-size: 15px;
+    font-weight: 400;
+  }
+
+  .contactColumn {
+    gap: 16px;
+    padding: 20px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  /* Flatten main/aside so their children can be re-ordered as one list. */
+  .contactMain {
+    display: contents;
+  }
+
+  .address {
+    order: 1;
+    gap: 6px;
+  }
+
+  .addressName {
+    font-size: 16px;
+  }
+
+  .addressLines {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .contactAside {
+    order: 2;
+    gap: 12px;
+  }
+
+  .social {
+    order: 3;
+    gap: 10px;
+  }
+
+  .appBadgesBlock {
+    order: 4;
+    gap: 8px;
+  }
+
+  .socialLink {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .socialLink img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .appBadges {
+    gap: 8px;
+  }
+
+  .appBadges a {
+    flex: 1;
+    width: auto;
+    max-width: none;
+  }
+
+  .sep {
+    display: none;
+  }
+
+  .contactDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 15px;
+  }
+
+  .contactDetails strong {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .contactDetails a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    text-decoration: none;
+    overflow-wrap: anywhere;
   }
 
   .bottomBar {
-    padding: 20px;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 40px;
+    padding: 20px 16px 28px;
     justify-content: center;
     text-align: center;
+    border-top-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .copyright {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .legalLinks {
+    justify-content: center;
+    gap: 8px 20px;
+  }
+
+  .legalLinks a,
+  .legalLinks button {
+    font-size: 13px;
   }
 }

@@ -1,122 +1,151 @@
 # Gokaido — Build Checklist
 
-Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Check items off as they land — this should reflect actual state, not intent. Backend items are verified working (type-checked + smoke-tested against the live DB); frontend/admin items are mostly blocked on the Figma delivery.
+Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Check items off as they land — this should reflect actual state, not intent. Backend items are verified working (type-checked + smoke-tested against the live DB). Storefront pages are being built against Figma as it arrives; hard-coded/placeholder data on those pages is tracked separately in `DUMMY_DATA.md`.
 
 ## Foundation
 
-- [x] `packages/database` — all 12 Mongoose models (User, Product, Order, Cart, Address, Review, Coupon, RewardTransaction, Referral, Notification, CampaignBlast, BlogPost)
+- [x] `packages/database` — Mongoose models: User, Product, Order, Cart, Address, Review, Coupon, RewardTransaction, Referral, Notification, CampaignBlast, BlogPost, plus Category, Subcategory, Color, Asset, HomepageSettings, Reel, Store, FranchiseEnquiry. (Notification, CampaignBlast, BlogPost are schema-only — no API uses them yet)
 
 ## Phase 1 — Go Live
 
-### 1. UI/UX & Branding — blocked on Figma (~1 week out)
+### 1. UI/UX & Branding
 - [ ] Custom glove-shaped cursor
 - [ ] Splash/intro animation
 - [ ] Interactive mascot
 - [ ] Page transitions
-- [ ] Mobile-first responsive shell
+- [x] Mobile-first responsive shell — Navbar, Footer, search modal, and all built pages are responsive
 
 ### 2. Customer Journey
-- [ ] Guest browsing (no login wall) — frontend
-- [ ] Persistent cart — backend done (guest cart via `X-Guest-Id` + merge-on-login), needs frontend wiring
+- [x] Guest browsing (no login wall) — homepage, collections, PDP, search, cart and guest checkout all work signed-out
+- [x] Persistent cart — localStorage bag (`lib/cartStore.tsx`), mirrored into the server `Cart` at "Place Order" (`lib/checkout/placeOrder.ts`, guests via `X-Guest-Id`)
 - [ ] Recently viewed — backend + frontend
-- [x] Wishlist — backend done (see User Account below), needs frontend UI
+- [x] Wishlist — backend + account Wishlist tab (list/remove)
+- [ ] Wishlist heart on product cards — `PoppedCard` has the toggle UI but `onToggleWishlist` isn't wired to the API anywhere
 - [ ] "Continue where you left off" — frontend
 
-### 3. Homepage — frontend, blocked on design
-- [ ] Hero banner
-- [ ] Featured categories
-- [ ] New arrivals / bestsellers — backend flags exist (`isNewArrival`, `isBestseller`), listing UI pending
-- [ ] About section
-- [ ] Gallery
-- [ ] Testimonials
+### 3. Homepage — `apps/web/app/page.tsx`
+- [x] Hero banner — video/showcase from admin homepage settings (local files as fallback)
+- [x] Featured categories — "Unify Your Kits" ring built, **still dummy data** (`DUMMY_KIT_CATEGORIES`)
+- [ ] New arrivals / bestsellers — Bestsellers row + `/best-sellers` page built and admin can flag bestsellers (`apps/admin/.../bestsellers`), but both pages still render `DUMMY_BESTSELLERS` instead of `GET /api/products?bestseller=true`. No new-arrivals row yet
+- [ ] About section — `/about-us` page built, copy/images are placeholders (see `DUMMY_DATA.md`)
+- [x] Gallery — Reel showcase, admin-managed (`Reel` model + admin Reels page)
+- [x] Testimonials — `CustomerReviews` section
+- [x] Store locator — admin-managed (`Store` model + admin Stores page)
 - [ ] Floating WhatsApp button
+- [ ] App download links + "Beyond the Medal" CTA — built, links are `#` pending client
 
-### 4. Product Pages
-- [x] SEO slug URLs — backend. **Routing approach decided** — see "Product URLs, Variants & Google Shopping Feed" in CLAUDE.md before building the PDP: `/products/{slug}` canonical, `/products/{slug}/{colorSlug}` for color, `?size=` query param for size (never a path segment)
-- [x] Region-based pricing — backend
-- [ ] Image gallery + zoom — frontend
-- [ ] Size/colour selector — frontend (colour switch = real navigation to the colour's URL; size = in-page only)
-- [ ] Reviews/ratings display — frontend (Review model exists, no API yet)
-- [ ] JSON-LD structured data — frontend; same offer-per-SKU shape as the Shopping feed (see CLAUDE.md), no new backend work
+### 4. Product Pages — `/products/{slug}` and `/products/{slug}/{colorSlug}`, API-backed (`lib/pdp/`)
+- [x] SEO slug URLs — routing per "Product URLs, Variants & Google Shopping Feed" in CLAUDE.md
+- [x] Region-based pricing — backend. **Not applied on the storefront** (base price is cached and rendered)
+- [x] Image gallery — `ProductGallery`
+- [ ] Image zoom — not implemented in `ProductGallery`
+- [x] Size/colour selector — colour switches the URL, size is `?size=` applied client-side
+- [x] Reviews/ratings display — reviews + rating histogram fetched from the API. "Talked about", review photos and down-votes not collected
+- [x] JSON-LD structured data — `Product` + offer-per-SKU in `ProductPageClient.tsx`
+- [x] Open Graph / Twitter card metadata per product
+- [x] Size guide modal (per-subcategory `sizeGuide`, store default as fallback) + before/after slider (placeholder images)
+- [x] Related products + Build Your Kit
 - [ ] WhatsApp share button
+- [ ] MRP / strike-through price — needs an MRP field on product/variant
+- [ ] Per-product FAQs — currently store-wide defaults; needs an FAQ model/admin editor
+- [ ] Delete `/sample-product/**` + `lib/dummyProduct.ts` once the dynamic PDP is signed off
 
 ### 5. Search & Discovery
 - [x] Full-text search + filters (category/subcategory/size/colour/price/sport) + sort + pagination — backend
-- [ ] Search suggestions/autocomplete
+- [x] Search results page + search modal — **`/search` still returns dummy results** (`USE_DUMMY_SEARCH`); remove only when asked
+- [x] Collection pages — `/collections/[category]`, API-backed (`lib/collections/getCollection.ts`)
+- [ ] Navbar category menu from the API — currently a fixed list pointing at the sample `/collections` page
+- [ ] Search suggestions/autocomplete — modal shows hard-coded trending chips only
 - [ ] AI natural language search
 
 ### 6. Cart & Checkout
 - [x] Persistent cart, guest + user, merge on login — backend
-- [ ] One-page checkout — frontend
-- [ ] Progress indicator — frontend
-- [x] Reward points redemption — backend, redeemed at checkout via `rewardPointsToRedeem`, capped/atomic/race-tested. Rate & cap are placeholder defaults, not a client-confirmed spec — see "Reward Points" in CLAUDE.md
-- [x] Promo/coupon codes — backend (admin CRUD + cart apply/remove, min-order/expiry/usage-limit/per-user-limit/product-category restriction all enforced)
-- [x] Multiple saved addresses — backend
-- [x] Payment integration — **ICICI Bank PG, not Razorpay** (client switched providers). Standard/redirect flow, secureHash verified live against UAT. See "Payment Gateway" section in CLAUDE.md
+- [x] Cart page — `/cart`. Save-for-later and discount code inputs only `console.log`; "You May Also Like" is dummy
+- [x] One-page checkout — `/checkout` with Customer info → Review → Payment steps
+- [x] Progress indicator — `CheckoutStepper`
+- [x] Reward points redemption — backend, redeemed via `rewardPointsToRedeem`, capped/atomic/race-tested. Rate & cap are placeholder defaults, not a client-confirmed spec — see "Reward Points" in CLAUDE.md
+- [ ] Reward points redemption in checkout UI — `placeOrder.ts` never sends `rewardPointsToRedeem`
+- [x] Promo/coupon codes — backend (admin CRUD + cart apply/remove, all limits enforced)
+- [ ] Coupon entry in cart/checkout UI — not wired to the cart coupon API
+- [x] Multiple saved addresses — backend + account Addresses tab
+- [ ] Saved-address picker in checkout — `CustomerInfoStep` doesn't load `/api/addresses`
+- [x] Payment integration — **ICICI Bank PG, not Razorpay**. Standard/redirect flow, secureHash verified live against UAT. See "Payment Gateway" in CLAUDE.md
 - [x] Order creation from cart — atomic stock reservation (race-tested), guest + authenticated checkout, coupon consumption on payment success
-- [x] Retry payment for a failed order — `POST /api/orders/:id/retry-payment`, re-reserves stock/points, fresh gateway attempt
+- [x] Payment return pages — `/orders/{orderNumber}?status=…` (clears bag on success) + `/checkout/failed`
+- [x] Retry payment for a failed order — `POST /api/orders/:id/retry-payment`
+- [ ] Drop / repurpose the UPI/Card/NB choice + UPI ID field in `PaymentStep` — not sent anywhere; ICICI's hosted page picks the method
 - [ ] Invoice generation/download
-- [ ] Success sound on payment return — frontend
+- [ ] Success sound on payment return
+- [ ] Card "add to cart" on listings (`Bestsellers`, `CollectionScroll`) — only `console.log`s; needs a size picker or link to PDP
 
-### 7. User Account
-- [x] OTP login (SMS via Twilio) — backend, customer-facing only. Admin portal (`apps/admin`) uses email+password instead, not OTP — see Super Admin Panel below
-- [x] Registration — backend
-- [x] My Orders (track + cancel) — `GET /api/orders`, `GET /api/orders/:id`, `POST /api/orders/:id/cancel` (refunds via ICICI if already paid, releases stock either way)
-- [x] My Addresses — backend
-- [x] Reward Points dashboard — `GET /api/users/me/reward-transactions` (balance + paginated ledger). Point *expiry* sweep not built — needs a cron/scheduler this codebase doesn't have yet
-- [x] Refer & Earn dashboard — `GET /api/users/me/referrals` (referral code, referral history, total points earned)
-- [x] Edit Profile (mutable fields only — name/mobile stay immutable) — `PATCH /api/users/me`
-- [x] Language settings — covered by `PATCH /api/users/me` (`language` field)
-- [x] Wishlist — `GET/POST/DELETE /api/users/me/wishlist` (also listed under Customer Journey above, backend now done)
+### 7. User Account — `/account` (OTP login/signup for guests, tabbed dashboard once signed in)
+- [x] OTP login (SMS via Twilio) — backend + `LoginSignup` UI. Admin portal uses email+password instead
+- [x] Registration — backend + UI
+- [x] My Orders (track + cancel) — backend + Orders tab (status, cancel for placed/confirmed)
+- [x] My Addresses — backend + Addresses tab
+- [x] Reward Points dashboard — backend `GET /api/users/me/reward-transactions`. Point *expiry* sweep not built (no scheduler)
+- [ ] Reward Points ledger UI — Overview tab shows the balance only, no transaction history
+- [x] Refer & Earn — backend `GET /api/users/me/referrals`
+- [ ] Refer & Earn UI — no referral code/history screen
+- [x] Edit Profile (mutable fields only) — backend + Profile tab
+- [x] Language settings — backend + Settings tab (also notification channel preferences)
+- [x] Wishlist — backend + Wishlist tab
 
 ### 8. Product Reviews
-- [x] Star rating + written review submission — `POST /api/reviews`. Gated on the order actually being `delivered` and containing that product; one review per (order, product) via a unique index
-- [x] Photo/video upload — `mediaUrls`, via the existing `review` upload purpose (S3 presign, any authenticated user)
-- [x] Purchase-verified badge — `isVerifiedPurchase` is always true here since creation requires a real delivered order; no unverified-review path exists yet
-- [x] Helpful votes — `POST /api/reviews/:id/helpful`, toggles on/off per user, only on approved reviews
-- [x] Admin moderation (approve/reject) — `GET/PATCH /api/admin/reviews`, `apps/api/src/controllers/adminReview.controller.ts`. `Product.avgRating`/`reviewCount` recomputed from scratch (not incremented) on every approve/reject so it can't drift
-- [x] Admin can add a review manually — `POST /api/admin/reviews` (e.g. one collected over phone/WhatsApp, no real order). `Review.order`/`user` are now optional; `guestName` + `createdBy` added for this path. Defaults to `approved` status (skips the moderation queue) unless the admin picks otherwise. Uniqueness on (order, product) is now a **partial** index (`{ order: { $exists: true } }`), not a plain sparse one — a sparse compound index only skips a doc missing *every* indexed field, and `product` is always present, so a naive sparse index still collided across multiple order-less admin reviews on the same product (caught live during testing)
-- [x] Review moderation UI in `apps/admin` — `apps/admin/app/(dashboard)/reviews`, status filter + approve/reject actions + "New review" manual-entry form (`ReviewForm.tsx`, reuses `MultiImageUpload`)
+- [x] Star rating + written review submission — `POST /api/reviews`, gated on a delivered order containing the product; one review per (order, product)
+- [x] Photo/video upload — `mediaUrls`, via the `review` upload purpose (S3 presign)
+- [x] Purchase-verified badge — `isVerifiedPurchase`
+- [x] Helpful votes — `POST /api/reviews/:id/helpful`
+- [x] Admin moderation (approve/reject) — `GET/PATCH /api/admin/reviews`; `Product.avgRating`/`reviewCount` recomputed on every change
+- [x] Admin can add a review manually — `POST /api/admin/reviews` (partial unique index on `order`)
+- [x] Review moderation UI in `apps/admin`
+- [ ] Review submission UI on the storefront — no "write a review" form for delivered orders yet
 
 ### 9. CRM & Notifications
 - [x] SMS OTP — backend
 - [ ] SMS order status — backend
 - [ ] WhatsApp order updates — backend
 - [ ] Email: registration, confirmation, invoice (Resend) — backend
-- [ ] Abandoned cart recovery (WhatsApp, 1hr after) — backend job
+- [ ] Abandoned cart recovery (WhatsApp, 1hr after) — backend job; needs a scheduler (see Infra)
 
 ### 10. Multilingual
-- [ ] EN/HI/MR/TA content plumbing (`next-intl` or similar) — frontend
-- [ ] hreflang tags — frontend
-- [ ] Language switcher — frontend
-- [x] Language field on User — backend
+- [ ] EN/HI/MR/TA content plumbing (`next-intl` or similar) — no `[locale]` routing yet; every route currently sits at the root. Do this before the route tree grows further
+- [ ] hreflang tags
+- [ ] Language switcher in header
+- [x] Language field on User — backend + Settings tab
 
-### 11. Super Admin Panel — `apps/admin`, port 3002, email+password login gated to admin/superadmin (`POST /api/auth/admin/login` — not OTP, that's customer-only). Seed an admin via `pnpm --filter @gokaido/api seed:admin`
-- [x] Review moderation UI — see Product Reviews above (list, approve/reject, manual add)
-- [x] Coupon management — full stack (list/create/edit/deactivate)
-- [x] Product management — full stack (list incl. inactive/create/edit/deactivate/reactivate). Category/subcategory picked from dropdowns, not freetext — see below. Product-level and per-variant image uploads wired via the reusable `MultiImageUpload` component (`apps/admin/components/MultiImageUpload.tsx`) — same `uploadImage()` presign+PUT helper as Category/Subcategory's `ImageUpload`
-- [x] Category & subcategory management — full stack (`Category`/`Subcategory` models, `/api/categories`, `/api/subcategories`, admin list+form pages with image upload). Product's `category`/`subcategory` fields are still plain slug strings (unchanged shape), now expected to match a real Category/Subcategory slug rather than freetext
-- [x] Order management — full stack: `GET/PATCH /api/admin/orders`, filter by status/payment/search, order detail with items/customer/shipping/history, tracking info, guarded status-transition dropdown (server re-validates regardless), cancel/refund via the same ICICI path as customer-initiated cancellation
-- [x] Asset store — full stack. `Asset` model (name tag + S3 url/key), `GET/POST/DELETE /api/assets` (name search, admin/superadmin only), `apps/admin/app/(dashboard)/assets` page (upload with a name tag, copy URL, delete). Reuses the existing presign+PUT `uploadImage()` helper via a new `asset` upload purpose. Purpose: pre-upload images once and paste the resulting S3 URL into the product bulk-upload spreadsheet's image columns instead of re-uploading per row
-- [x] Product bulk upload via Excel — `POST /api/products/bulk` (multer + `exceljs`, admin/superadmin only), `GET /api/products/bulk-template` for a starter `.xlsx`. One row = one variant, grouped into a product by matching `slug`. `category`/`subcategory` columns are matched case-insensitively against existing active `Category`/`Subcategory` names (not freetext, not created on the fly) — unmatched rows are reported as per-row errors, not silently dropped. A `slug` that already exists on a `Product` is skipped (reported, not overwritten/merged) — re-running a sheet is safe but won't update existing products; that needs a separate edit. Wired into the Products admin page (download template / upload spreadsheet / created-skipped-errors summary)
-- [ ] CRM campaign management — backend + UI
-- [ ] Blog/content management — backend + UI
-- [x] Google Shopping feed export — `GET /api/feeds/google-shopping.xml`, public/unauthenticated, one item per SKU. `google_product_category` mapping is deliberately coarse for now — flagged in `apps/api/src/utils/googleCategory.ts` to refine once there's a real catalog. No admin UI needed (it's a machine-fetched feed, not something an admin edits)
+### 11. Super Admin Panel — `apps/admin`, port 3002, email+password login gated to admin/superadmin. Seed an admin via `pnpm --filter @gokaido/api seed:admin`
+- [x] Review moderation UI — list, approve/reject, manual add
+- [x] Coupon management — full stack
+- [x] Product management — full stack, with `cardImage`/`competitorImage` single-image fields and per-variant `MultiImageUpload`
+- [x] Category & subcategory management — full stack, incl. subcategory size guides
+- [x] Colour management — full stack (`Color` model, admin Colors page)
+- [x] Bestsellers — admin page toggling `isBestseller`
+- [x] Homepage settings — hero video/showcase uploads (`HomepageSettings` singleton)
+- [x] Reels + Stores — full stack, feed the homepage/franchise sections
+- [x] Franchise enquiries — public form at `/our-franchise` (rate-limited) + admin list/status/notes
+- [x] Order management — full stack, guarded status transitions, cancel/refund via ICICI
+- [x] Asset store — full stack, pre-upload images and paste S3 URLs into the bulk sheet
+- [x] Product bulk upload via Excel — `POST /api/products/bulk` + template download, wired into the Products page
+- [x] Google Shopping feed export — `GET /api/feeds/google-shopping.xml`. `google_product_category` mapping still coarse (`apps/api/src/utils/googleCategory.ts`)
+- [ ] CRM campaign management — backend + UI (`CampaignBlast` model exists, no API)
+- [ ] Blog/content management — backend + UI (`BlogPost` model exists, no API)
 - [ ] Popup/banner management
 - [ ] Flash sale timers
+- [ ] FAQ management — needed to replace store-wide default FAQs on the PDP
 
 ### 12. Performance & Security
-- [ ] Core Web Vitals pass (<3s load) — frontend
-- [ ] Image compression + lazy loading — frontend
+- [ ] Core Web Vitals pass (<3s load)
+- [ ] Image compression + lazy loading audit
 - [ ] SSL — deploy-time
-- [ ] CSRF/XSS protection — backend (rate limiting exists on OTP only, needs extending)
-- [ ] GDPR cookie consent banner — frontend
+- [ ] CSRF/XSS protection — no `helmet`/CSRF middleware yet. Rate limiting covers OTP send/verify, admin login and franchise enquiries only
+- [ ] GDPR cookie consent banner
 
 ## Phase 2 — Post Launch
 
-- [ ] SEO (sitemap.xml, robots.txt, meta per page)
-- [x] Google Shopping Feed — done in Phase 1 (see Super Admin Panel above); this line is about the feed already existing, not new work
-- [ ] Open Graph + Twitter Cards
+- [ ] SEO (sitemap.xml, robots.txt) — per-page `metadata` already exists on most storefront routes
+- [x] Google Shopping Feed — done in Phase 1
+- [ ] Open Graph + Twitter Cards site-wide — done on the PDP only
 - [ ] Referral program UTM tracking
 - [ ] Flash sale banners
 - [ ] Blog section — frontend
@@ -130,6 +159,8 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 
 ## Infra / Cross-cutting
 
-- [x] AWS S3 bucket + upload plumbing — `gokaido-web-storage` bucket (versioned, SSE-S3, public reads under `public/*` only) + CORS for browser presigned uploads + scoped `gokaido-api-runtime` IAM user (PutObject on `public/*` only) wired into `apps/api/.env`. Verified live end-to-end (presign → PUT → public GET). Unblocks Reviews photo/video upload — Product, Category, and Subcategory image uploads are now all wired in the admin panel
+- [x] AWS S3 bucket + upload plumbing — `gokaido-web-storage` (versioned, SSE-S3, public reads under `public/*`), browser presigned uploads, scoped `gokaido-api-runtime` IAM user. Verified live end-to-end
+- [ ] Job scheduler (cron/queue) — needed for abandoned-cart recovery and reward-point expiry
 - [ ] AWS EC2 deployment pipeline
 - [ ] CI (lint/type-check on push)
+- [ ] Replace remaining placeholder data — see `DUMMY_DATA.md`

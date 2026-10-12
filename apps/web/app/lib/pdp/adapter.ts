@@ -64,7 +64,7 @@ function distinctColors(product: ApiListProduct, resolve: ReturnType<typeof colo
 }
 
 function toCard(product: ApiListProduct, resolve: ReturnType<typeof colorLookup>): RelatedProduct | null {
-  // Cards only ever render the finished card visual (see CLAUDE.md "Product Image Fields"),
+  // Cards only ever render the product's `cardImage` (see CLAUDE.md "Product Image Fields"),
   // so a product without one is left out rather than falling back to a plain gallery photo.
   if (!product.cardImage) return null;
   const price = startingPrice(product);
@@ -105,6 +105,8 @@ function buildAccordion(p: ApiProduct): ProductAccordionEntry[] {
           ["Fabric Care", p.fabricCare],
           ["Quality Features", p.qualityFeatures],
           ["Benefit", p.benefit],
+          ["Material & Padding", p.materialAndPadding],
+          ["Hygiene & Maintenance", p.hygieneAndMaintenance],
         ]
       : [
           ["Material & Padding", p.materialAndPadding],
@@ -195,7 +197,6 @@ export function toPdpProduct(src: PdpSources): PdpProduct | null {
   const sizes = [...new Set(activeVariants.map((v) => v.size))].sort(compareSizes);
 
   const isEquipment = product.productType === "equipment";
-  const protectionLevel = product.protectionLevel?.trim();
   // The section shows if either half of it has content: the protection stats or the competitor comparison.
   const ourPhoto = product.images[0] ?? colorList[0]?.images[0];
   const comparison =
@@ -222,8 +223,12 @@ export function toPdpProduct(src: PdpSources): PdpProduct | null {
     accordion: buildAccordion(product),
     subcategorySlug: product.subcategory ?? "",
     sizeGuide: toSizeGuide(product.sizeGuide, defaultSizeGuide),
-    protectionStats:
-      isEquipment && protectionLevel ? [{ label: "Protection level", value: "", description: protectionLevel }] : [],
+    protectionDescription: product.protectionDescription?.trim() ?? "",
+    protectionStats: (product.protectionStats ?? []).slice(0, 3).map((s) => ({
+      label: s.heading,
+      value: s.percent === undefined || s.percent === null ? "" : `${s.percent}%`,
+      description: s.subheading,
+    })),
     protectionComparison: comparison,
     buildYourKit: toKitAddOns(kit, colors),
     relatedProducts: toRelatedProducts(related, colors),

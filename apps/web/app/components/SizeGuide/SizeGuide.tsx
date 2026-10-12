@@ -3,6 +3,7 @@ import BeforeAfterSlider from "../BeforeAfterSlider/BeforeAfterSlider";
 import type { ProtectionStat } from "../../lib/dummyProduct";
 
 export interface SizeGuideProps {
+  description: string;
   stats: ProtectionStat[];
   /** Undefined = dummy placeholder photos (sample product); null = hide the slider. */
   comparison?: { beforeSrc: string; afterSrc: string } | null;
@@ -17,6 +18,7 @@ const STAT_ICONS = [
 const PLACEHOLDER = "/dummy/product-placeholder.png";
 
 export default function SizeGuide({
+  description,
   stats,
   comparison = { beforeSrc: PLACEHOLDER, afterSrc: PLACEHOLDER },
 }: SizeGuideProps) {
@@ -24,7 +26,7 @@ export default function SizeGuide({
     <section
       id="size-guide"
       className={`scroll-mt-24 grid grid-cols-1 gap-10 lg:gap-10 ${
-        comparison ? "lg:grid-cols-[655px_745px] lg:justify-between" : ""
+        comparison ? "lg:grid-cols-[minmax(0,655fr)_minmax(0,745fr)]" : ""
       }`}
     >
       <div className="flex w-full flex-col gap-8">
@@ -32,10 +34,9 @@ export default function SizeGuide({
           <h2 className="m-0 font-heading text-3xl font-bold text-paper uppercase lg:text-[40px]">
             Protection Level
           </h2>
-          <p className="m-0 max-w-[52ch] font-sans text-base leading-relaxed text-paper/55">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-            dolore magna aliqua.
-          </p>
+          {description && (
+            <p className="m-0 max-w-[52ch] font-sans text-base leading-relaxed text-paper/55">{description}</p>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

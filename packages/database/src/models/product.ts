@@ -15,6 +15,15 @@ export interface IProductVariant {
   isActive: boolean;
 }
 
+// One of the (up to 3) stats in the PDP's Protection Level section, e.g.
+// "Impact level" / "Light to moderate (training contact)" / 92.
+export interface IProtectionStat {
+  heading: string;
+  subheading: string;
+  // Shown as a big "92%" above the heading; omit for stats without a figure.
+  percent?: number;
+}
+
 export interface IProduct {
   name: string;
   slug: string;
@@ -25,10 +34,11 @@ export interface IProduct {
 
   description: string;
   images: string[];
-  // Finished card visual (card background + product already composited,
-  // transparent headroom above for the pop-out) rendered as-is wherever the
-  // product shows as a card (listings, related products, kit builder) —
-  // `images` above are plain gallery photos and aren't suitable there.
+  // The product's single representative photo — a normal full-bleed photo,
+  // centre-cropped to fit — used wherever the product shows as a card or
+  // thumbnail (listings, related products, kit builder, reels). Separate
+  // from `images` (the PDP gallery) so the card shot can be chosen
+  // independently.
   cardImage?: string;
   // A competitor's product photo, shown as the "before" side of the
   // before/after comparison slider (see BeforeAfterSlider) — not one of our
@@ -50,7 +60,9 @@ export interface IProduct {
   ageGroup?: string;
   skillLevel?: string;
   soldAs?: string;
-  protectionLevel?: string;
+  // PDP Protection Level section: intro paragraph + up to 3 stats.
+  protectionDescription?: string;
+  protectionStats: IProtectionStat[];
   materialAndPadding?: string;
   hygieneAndMaintenance?: string;
   replacementInterval?: string;
@@ -84,6 +96,15 @@ const variantSchema = new mongoose.Schema<IProductVariant>(
     regionPrices: { type: Map, of: Number, default: {} },
     images: [{ type: String }],
     isActive: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
+const protectionStatSchema = new mongoose.Schema<IProtectionStat>(
+  {
+    heading: { type: String, required: true },
+    subheading: { type: String, default: "" },
+    percent: { type: Number, min: 0, max: 100 },
   },
   { _id: false }
 );
@@ -125,7 +146,12 @@ const productSchema = new mongoose.Schema<IProduct>(
     ageGroup: String,
     skillLevel: String,
     soldAs: String,
-    protectionLevel: String,
+    protectionDescription: String,
+    protectionStats: {
+      type: [protectionStatSchema],
+      default: [],
+      validate: [(v: IProtectionStat[]) => v.length <= 3, "At most 3 protection stats"],
+    },
     materialAndPadding: String,
     hygieneAndMaintenance: String,
     replacementInterval: String,

@@ -130,7 +130,9 @@ export interface PdpProduct {
   subcategorySlug: string;
   /** Resolved size guide. Unset means "use DEFAULT_SIZE_GUIDE" (the sample product resolves its own by subcategory). */
   sizeGuide?: SizeGuide;
-  /** Empty hides the whole Protection Level section (non-equipment products). */
+  /** Intro paragraph of the Protection Level section. */
+  protectionDescription: string;
+  /** Up to 3. The section is hidden when this, the description and the comparison are all empty. */
   protectionStats: ProtectionStat[];
   /**
    * Before/after slider images. `undefined` = the section's dummy placeholders (sample product only);

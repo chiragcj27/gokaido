@@ -42,7 +42,7 @@ Paths are relative to `apps/web/app/`. Line numbers are approximate — search f
 | `lib/pdp/defaults.ts` — `DEFAULT_FAQS` | FAQs are store-wide defaults on every PDP, `/best-sellers` and `/search` | Needs an FAQ model / admin editor |
 | `lib/pdp/defaults.ts` — `DEFAULT_SIZE_GUIDE` | Size guide used when a subcategory has none configured | Subcategory `sizeGuide` in admin — fallback only |
 | `lib/pdp/adapter.ts` — `mrp: 0` | No strike-through/MRP price on cards or PDP | Needs an MRP field on the product/variant |
-| `components/SizeGuide/SizeGuide.tsx` — `PLACEHOLDER` + Lorem paragraph | Before/after slider placeholder images and Lorem ipsum copy | `competitorImage` / `cardImage` per product; copy from client |
+| `components/SizeGuide/SizeGuide.tsx` — `PLACEHOLDER` | Before/after slider placeholder images (sample product only — the intro copy and stats are now per-product `protectionDescription` / `protectionStats`) | `competitorImage` / `cardImage` per product |
 | `components/BuildYourKit/BuildYourKit.tsx` | Lorem ipsum description copy | Copy from client |
 
 ## About Us

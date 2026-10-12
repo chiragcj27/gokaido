@@ -48,13 +48,11 @@ export default function ProductGallery({
   const showNextThumb = () => setActiveIndex((index) => (index + 1) % activeColor.images.length);
 
   return (
-    <div className="relative aspect-1602/693 w-full overflow-hidden">
-      <div
-        className={`absolute inset-0 bg-[url('/card/card_bg.png')] bg-cover bg-center ${
-          playHeroIntro ? "animate-hero-expand" : ""
-        }`}
-      />
-      <div className="absolute inset-0 flex">
+    <div className="relative aspect-1602/693 w-full overflow-hidden bg-panel">
+      {/* Gallery photos are ordinary full-bleed shots (not transparent cut-outs), so each pane
+          fills with object-cover: the first image spans the whole frame, and once split into
+          halves each pane shows the centre of its photo with the sides cropped off. */}
+      <div className={`absolute inset-0 flex ${playHeroIntro ? "animate-hero-expand" : ""}`}>
         <div
           className="relative h-full overflow-hidden"
           style={{
@@ -68,7 +66,8 @@ export default function ProductGallery({
               alt={`${productName} — ${activeColor.name}`}
               fill
               priority={isFirstImage}
-              className="object-contain"
+              sizes="(min-width: 1440px) 1344px, 100vw"
+              className="object-cover object-center"
               unoptimized={leftImage.endsWith(".svg")}
             />
           </div>
@@ -86,7 +85,8 @@ export default function ProductGallery({
                 src={rightImage}
                 alt={`${productName} — ${activeColor.name}`}
                 fill
-                className="object-contain"
+                sizes="(min-width: 1440px) 672px, 50vw"
+                className="object-cover object-center"
                 unoptimized={rightImage.endsWith(".svg")}
               />
             </div>
@@ -132,11 +132,18 @@ export default function ProductGallery({
               aria-label={`View image ${index + 1}`}
               aria-pressed={index === activeIndex}
               onClick={() => setActiveIndex(index)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden border bg-[url('/card/card_bg.png')] bg-cover bg-center transition-colors duration-200 ${
+              className={`relative h-16 w-16 shrink-0 overflow-hidden border bg-panel transition-colors duration-200 ${
                 index === activeIndex ? "border-paper/80" : "border-white/20 hover:border-white/40"
               }`}
             >
-              <Image src={image} alt="" fill className="object-contain p-1.5" unoptimized={image.endsWith(".svg")} />
+              <Image
+                src={image}
+                alt=""
+                fill
+                sizes="64px"
+                className="object-cover object-center"
+                unoptimized={image.endsWith(".svg")}
+              />
             </button>
           ))}
           <button

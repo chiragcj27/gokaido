@@ -174,8 +174,14 @@ export default function ProductPageClient({
         </section>
       </div>
 
-      {(product.protectionStats.length > 0 || product.protectionComparison !== null) && (
-        <SizeGuide stats={product.protectionStats} comparison={product.protectionComparison} />
+      {(product.protectionStats.length > 0 ||
+        product.protectionDescription ||
+        product.protectionComparison !== null) && (
+        <SizeGuide
+          description={product.protectionDescription}
+          stats={product.protectionStats}
+          comparison={product.protectionComparison}
+        />
       )}
       {product.buildYourKit.length > 0 && <BuildYourKit items={product.buildYourKit} />}
       <CustomerReviews summary={product.reviewSummary} reviews={product.reviews} />

@@ -1,7 +1,7 @@
 export { connectDB, disconnectDB, mongoose } from "./client.js";
 
 export { Product } from "./models/product.js";
-export type { IProduct, IProductVariant, Sport, ProductType } from "./models/product.js";
+export type { IProduct, IProductVariant, IProtectionStat, Sport, ProductType } from "./models/product.js";
 
 export { Category } from "./models/category.js";
 export type { ICategory } from "./models/category.js";

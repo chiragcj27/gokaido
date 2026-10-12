@@ -125,6 +125,8 @@ export const dummyProduct: DummyProduct = {
     },
   ],
   subcategorySlug: "chest-guards",
+  protectionDescription:
+    "Engineered to absorb impact across the chest and ribs without restricting movement.",
   protectionStats: [
     { label: "Coverage", value: "", description: "Chest & ribs" },
     { label: "Impact level", value: "92%", description: "Light to moderate (training contact)" },

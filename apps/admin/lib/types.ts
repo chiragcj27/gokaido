@@ -102,6 +102,12 @@ export interface ProductVariant {
   isActive?: boolean;
 }
 
+export interface ProtectionStat {
+  heading: string;
+  subheading: string;
+  percent?: number;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -116,6 +122,10 @@ export interface Product {
   cardImage?: string;
   /** Competitor product photo, shown as the "before" side of the before/after comparison slider. */
   competitorImage?: string;
+  materialAndPadding?: string;
+  hygieneAndMaintenance?: string;
+  protectionDescription?: string;
+  protectionStats?: ProtectionStat[];
   variants: ProductVariant[];
   isActive: boolean;
   isFeatured: boolean;

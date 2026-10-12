@@ -21,13 +21,13 @@ export default function CartItem({ item, onQuantityChange, onRemove, onSaveForLa
       <div className="flex flex-1 items-start gap-4">
         <Link
           href={`/products/${item.productSlug}`}
-          className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[url('/card/card_bg.png')] bg-cover bg-center"
+          className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-panel"
         >
           <Image
             src={item.imageSrc}
             alt={item.name}
             fill
-            className="scale-125 object-contain p-2"
+            className="object-cover object-center"
             sizes="96px"
           />
         </Link>
