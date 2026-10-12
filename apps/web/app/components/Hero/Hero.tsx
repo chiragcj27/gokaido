@@ -76,16 +76,38 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
     // Don't burn decode cycles while the reel is nowhere near the viewport.
     // Also drives the mute toggle's visibility — no point offering a sound
     // control for a video that isn't on screen.
+    let visible = false;
     const io = new IntersectionObserver(
       ([entry]) => {
-        setReelVisible(entry.isIntersecting);
-        if (entry.isIntersecting) video.play().catch(() => {});
+        visible = entry.isIntersecting;
+        setReelVisible(visible);
+        if (visible) video.play().catch(() => {});
         else video.pause();
       },
       { threshold: 0.01 }
     );
     io.observe(video);
-    return () => io.disconnect();
+    // `src` is assigned after mount (see the morph effect), and loading a new
+    // source resets the element to paused — so the observer's first play()
+    // gets cancelled. Start again once it can actually play.
+    const onCanPlay = () => {
+      if (visible && video.paused) video.play().catch(() => {});
+    };
+    video.addEventListener("canplay", onCanPlay);
+    // Fallback for when the browser refuses muted autoplay outright (iPhone
+    // Low Power Mode, data saver): playback started inside a tap is always
+    // allowed, so the first tap anywhere starts the reel if it's on screen.
+    const onFirstTap = () => {
+      if (visible && video.paused) video.play().catch(() => {});
+    };
+    document.addEventListener("touchend", onFirstTap, { once: true, passive: true });
+    document.addEventListener("click", onFirstTap, { once: true });
+    return () => {
+      io.disconnect();
+      video.removeEventListener("canplay", onCanPlay);
+      document.removeEventListener("touchend", onFirstTap);
+      document.removeEventListener("click", onFirstTap);
+    };
   }, []);
 
   // Imperative, not the `muted` JSX attribute alone — React doesn't reliably
@@ -117,6 +139,16 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       !reduceMotion && window.matchMedia("(min-width: 768px) and (pointer: fine)").matches;
     const glRenderer: HeroReelGL | null = wantsGL ? createHeroReelGL(canvas, video) : null;
     const usingGL = glRenderer !== null;
+
+    // `src` is set here, not in JSX, because crossOrigin has to be decided
+    // first. WebGL can only sample a cross-origin (S3) video fetched with
+    // CORS, but a CORS request the bucket doesn't allow for this origin makes
+    // Safari refuse the video outright — which is what blanked the hero on
+    // iPhones. So only the GL path asks for CORS; the plain <video> path
+    // (phones, reduced motion) plays any URL without it.
+    if (usingGL) video.crossOrigin = "anonymous";
+    else video.removeAttribute("crossorigin");
+    if (video.getAttribute("src") !== videoUrl) video.src = videoUrl;
 
     if (usingGL) canvas.style.visibility = "visible";
     else videoWrap.style.visibility = "visible";
@@ -247,7 +279,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       glRenderer?.destroy();
       ctx.revert();
     };
-  }, []);
+  }, [videoUrl]);
 
   return (
     <>
@@ -324,16 +356,17 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       {/* Painting surfaces. Both fixed & full-viewport; only one is ever
           visible. They carry no layout meaning — the rect they draw comes
           entirely from slotRef/cardRef above. */}
-      <div ref={videoWrapRef} className="invisible pointer-events-none fixed left-0 top-0 z-20 overflow-hidden">
+      {/* Visible from first paint below md: Safari won't autoplay a video it
+          considers hidden, and won't retry once it's shown. md+ starts hidden
+          until the effect picks GL (canvas) or this plain video. */}
+      <div ref={videoWrapRef} className="pointer-events-none fixed left-0 top-0 z-20 overflow-hidden md:invisible">
         <video
           ref={videoRef}
-          src={videoUrl}
           poster={posterUrl}
           muted
           loop
           playsInline
           autoPlay
-          crossOrigin="anonymous"
           preload="metadata"
           className="h-full w-full object-cover"
         />

@@ -34,23 +34,37 @@ function ringOffset(index: number, active: number, n: number) {
   return d;
 }
 
-function ReelCard({ reel, offset, onSelect }: { reel: Reel; offset: number; onSelect: () => void }) {
+function ReelCard({
+  reel,
+  offset,
+  inView,
+  onSelect,
+}: {
+  reel: Reel;
+  offset: number;
+  /** Whether the carousel is on screen — iOS refuses play() on off-screen video and never retries. */
+  inView: boolean;
+  onSelect: () => void;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
   const active = offset === 0;
   const near = Math.abs(offset) <= 1;
 
-  // Only the centre card plays; the rest hold on their poster / first frame.
+  // Only the centre card plays, and only while the carousel is on screen;
+  // the rest hold on their poster / first frame. Waiting for `inView` matters
+  // on iPhones: Safari rejects play() on an off-screen video and doesn't retry
+  // when it scrolls into view, so playing at mount left reels frozen.
   // Reduced-motion visitors get the still frame and can press play themselves.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (active && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (active && inView && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       video.play().catch(() => {});
     } else {
       video.pause();
     }
-  }, [active]);
+  }, [active, inView]);
 
   // A card that slides out of the centre goes back to silent, so it doesn't
   // come back unmuted the next time round.
@@ -185,7 +199,17 @@ function ReelCard({ reel, offset, onSelect }: { reel: Reel; offset: number; onSe
 export default function ReelShowcase({ title = "See it in action", reels }: ReelShowcaseProps) {
   const [active, setActive] = useState(0);
   const drag = useRef<{ x: number } | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
   const n = reels.length;
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.25 });
+    io.observe(stage);
+    return () => io.disconnect();
+  }, [n]);
   if (n === 0) return null;
 
   const go = (delta: number) => setActive((a) => (a + delta + n) % n);
@@ -213,6 +237,7 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
 
       <div
         className="relative mx-auto mt-8 h-[calc(var(--reel-w)*1.5)] w-full touch-pan-y [--reel-w:62vw] sm:[--reel-w:min(40vw,340px)] lg:mt-12 lg:[--reel-w:min(28vw,426px)]"
+        ref={stageRef}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={() => (drag.current = null)}
@@ -223,7 +248,13 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
         tabIndex={0}
       >
         {reels.map((reel, i) => (
-          <ReelCard key={reel.id} reel={reel} offset={ringOffset(i, active, n)} onSelect={() => setActive(i)} />
+          <ReelCard
+            key={reel.id}
+            reel={reel}
+            offset={ringOffset(i, active, n)}
+            inView={inView}
+            onSelect={() => setActive(i)}
+          />
         ))}
       </div>
 

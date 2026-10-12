@@ -1,7 +1,18 @@
+import os from "os";
 import path from "path";
 import type { NextConfig } from "next";
 
+// This machine's LAN IPv4 addresses, so a phone on the same Wi-Fi can open the
+// dev server (http://<lan-ip>:3000) — Next blocks dev-only resources such as
+// the hot-reload socket for origins not listed here. Dev-only; no effect on
+// production builds.
+const lanHosts = Object.values(os.networkInterfaces())
+  .flat()
+  .filter((i): i is os.NetworkInterfaceInfo => !!i && i.family === "IPv4" && !i.internal)
+  .map((i) => i.address);
+
 const nextConfig: NextConfig = {
+  allowedDevOrigins: lanHosts,
   outputFileTracingRoot: path.join(__dirname, "../.."),
   images: {
     // Next 16 requires every quality value actually used by an <Image> to be
