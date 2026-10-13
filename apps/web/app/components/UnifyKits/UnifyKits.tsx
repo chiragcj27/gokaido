@@ -109,7 +109,12 @@ export default function UnifyKits({ categories, backgroundUrl }: UnifyKitsProps)
 
     render();
 
-    if (reduceMotion || count < 2) {
+    // Reduced motion keeps the pinned, scroll-driven ring (it moves only in
+    // lockstep with the visitor's own scroll) but drops the scrub lag and the
+    // auto-snap, which is motion the visitor didn't make. Skipping the pin
+    // entirely also broke the phone layout, where page.tsx overlaps this
+    // section with the hero's pin.
+    if (count < 2) {
       mobileQuery.addEventListener("change", render);
       return () => mobileQuery.removeEventListener("change", render);
     }
@@ -125,8 +130,10 @@ export default function UnifyKits({ categories, backgroundUrl }: UnifyKitsProps)
           // ~70% of a viewport of scroll per card step.
           end: () => `+=${window.innerHeight * 0.7 * (count - 1)}`,
           pin: true,
-          scrub: 1,
-          snap: { snapTo: 1 / (count - 1), duration: { min: 0.2, max: 0.5 }, ease: "power2.inOut" },
+          scrub: reduceMotion ? true : 1,
+          snap: reduceMotion
+            ? undefined
+            : { snapTo: 1 / (count - 1), duration: { min: 0.2, max: 0.5 }, ease: "power2.inOut" },
           invalidateOnRefresh: true,
         },
       });

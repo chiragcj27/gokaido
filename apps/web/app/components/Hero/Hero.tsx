@@ -153,8 +153,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
     if (usingGL) canvas.style.visibility = "visible";
     else videoWrap.style.visibility = "visible";
 
-    // Blend factor between the two slots, scrubbed by scroll. Reduced motion
-    // leaves it at 0 so the video simply stays in the headline slot.
+    // Blend factor between the two slots, scrubbed by scroll.
     const morph = { t: 0 };
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -230,7 +229,12 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
     rafId = requestAnimationFrame(frame);
 
     const ctx = gsap.context(() => {
-      if (reduceMotion) return;
+      // Reduced motion still gets the morph: it's driven 1:1 by the visitor's
+      // own scroll, not motion that plays on its own, and switching it off
+      // left phones (where iOS "Reduce Motion" is a common setting) with a
+      // stuck video and a broken layout under the pinned hero. What reduced
+      // motion drops is the GL twist (see wantsGL) and the scrub smoothing
+      // below, so nothing moves except in lockstep with the finger.
       // Desktop does not pin: the headline scrolls away naturally while the video morphs
       // down into the reel card. Linear ease + `scrub` smoothing is what
       // gives the weighted, premium feel — an ease curve on top of a scrub
@@ -242,7 +246,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
           scrollTrigger: {
             trigger: stack,
             start: "top top",
-            scrub: 1,
+            scrub: reduceMotion ? true : 1,
             invalidateOnRefresh: true,
             ...extra,
           },
