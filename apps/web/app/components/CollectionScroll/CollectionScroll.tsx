@@ -38,15 +38,16 @@ function CollectionSlide({ subcategory, isActive }: CollectionSlideProps) {
   return (
     <section
       data-collection-slide
-      className="flex min-h-full w-full flex-col gap-10 px-6 pt-16 md:grid md:grid-cols-[594fr_896fr] md:items-start md:gap-12 md:pt-0 lg:px-10"
+      // Left column is the 594:896 share of the row, but the card's height follows its width (594:470 card
+      // image), so on short viewports (e.g. Windows at 125-150% scaling) the column itself is capped so the
+      // whole card fits inside the pane — capping the column (not just the card) hands the spare width to the grid.
+      className="flex min-h-full w-full flex-col gap-10 px-6 pt-16 md:grid md:grid-cols-[min(calc((100%-3rem)*0.3987),max(18rem,calc((var(--pane-h)-14rem)*1.26)))_minmax(0,1fr)] md:items-start md:gap-12 md:pt-0 lg:px-10"
     >
       {/* Pinned to the top of the scroll pane while this section's grid scrolls past;
           releases with the section once its last product is reached. */}
       <div className="md:sticky md:top-0 md:flex md:h-[var(--pane-h)] md:items-center">
-        {/* The card's height follows its width (594:470 card image), so on short viewports (e.g. Windows at
-            125-150% scaling) cap the width so the whole card always fits inside the pane. */}
         <div
-          className={`w-full shrink-0 md:max-w-[max(18rem,calc((var(--pane-h)-14rem)*1.26))] transition-all duration-700 ease-out ${
+          className={`w-full shrink-0 transition-all duration-700 ease-out ${
             isActive ? "translate-y-0 opacity-100" : "translate-y-14 opacity-0"
           }`}
         >
