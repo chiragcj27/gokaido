@@ -34,7 +34,7 @@ export async function getCollection(req: Request, res: Response): Promise<void> 
 
   const [subcategories, colors, groups] = (await Promise.all([
     Subcategory.find({ category: category._id, isActive: true })
-      .select("name slug description image")
+      .select("name slug description image icon")
       .sort({ name: 1 })
       .lean(),
     Color.find({ isActive: true }).select("name slug hex").lean(),

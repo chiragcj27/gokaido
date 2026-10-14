@@ -23,9 +23,9 @@ export default function RelatedProducts({ title = "You Might Also Like", product
   return (
     <section className="flex flex-col gap-8">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="m-0 font-heading text-2xl font-bold text-paper">{title}</h2>
+        <h2 className="m-0 font-heading text-2xl font-bold text-paper max-lg:text-xl max-lg:font-semibold">{title}</h2>
         <div className="flex items-center gap-4">
-          <a href="/collections" className="font-sans text-sm text-paper/60 hover:text-paper">
+          <a href="/collections" className="font-sans text-sm text-paper/60 hover:text-paper max-lg:font-heading max-lg:font-semibold max-lg:text-paper max-lg:underline max-lg:underline-offset-4">
             Shop All
           </a>
           <div className="hidden gap-2 sm:flex">
@@ -49,9 +49,12 @@ export default function RelatedProducts({ title = "You Might Also Like", product
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2">
+      <div
+        ref={scrollRef}
+        className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 max-md:-mx-4 max-md:scroll-px-4 max-md:gap-5 max-md:px-4"
+      >
         {products.map((product) => (
-          <div key={product.key} className="w-72 shrink-0 snap-start sm:w-80">
+          <div key={product.key} className="w-[72%] max-w-72 shrink-0 snap-start sm:w-80 sm:max-w-none">
             <PoppedCard
               variant="product"
               imageSrc={product.imageSrc}

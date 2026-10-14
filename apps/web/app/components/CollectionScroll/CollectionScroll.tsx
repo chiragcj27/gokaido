@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import PoppedCard, { type PoppedCardColor } from "../PoppedCard/PoppedCard";
 import CollectionCategoryBar from "../CollectionCategoryBar/CollectionCategoryBar";
 import Footer from "../Footer/Footer";
+import CollectionMobile from "../CollectionMobile/CollectionMobile";
 
 export interface CollectionProduct {
   key: string;
@@ -152,28 +153,33 @@ export default function CollectionScroll({
   };
 
   return (
-    <div ref={wrapperRef} className="flex h-[calc(100dvh-var(--top,0px))] flex-col">
-      <CollectionCategoryBar
-        categoryName={categoryName}
-        steps={subcategories.map((subcategory) => ({
-          key: subcategory.key,
-          title: subcategory.title,
-          imageSrc: subcategory.iconSrc ?? subcategory.imageSrc,
-        }))}
-        progress={progress}
-        activeIndex={activeIndex}
-        onStepClick={scrollToIndex}
-      />
+    <>
+      <CollectionMobile categoryName={categoryName} subcategories={subcategories} />
 
-      <div
-        ref={containerRef}
-        className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
-      >
-        {subcategories.map((subcategory, index) => (
-          <CollectionSlide key={subcategory.key} subcategory={subcategory} isActive={index === activeIndex} />
-        ))}
-        <Footer />
+      {/* Desktop: pinned category bar over a self-scrolling pane. */}
+      <div ref={wrapperRef} className="hidden h-[calc(100dvh-var(--top,0px))] flex-col md:flex">
+        <CollectionCategoryBar
+          categoryName={categoryName}
+          steps={subcategories.map((subcategory) => ({
+            key: subcategory.key,
+            title: subcategory.title,
+            imageSrc: subcategory.iconSrc ?? subcategory.imageSrc,
+          }))}
+          progress={progress}
+          activeIndex={activeIndex}
+          onStepClick={scrollToIndex}
+        />
+
+        <div
+          ref={containerRef}
+          className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth"
+        >
+          {subcategories.map((subcategory, index) => (
+            <CollectionSlide key={subcategory.key} subcategory={subcategory} isActive={index === activeIndex} />
+          ))}
+          <Footer />
+        </div>
       </div>
-    </div>
+    </>
   );
 }

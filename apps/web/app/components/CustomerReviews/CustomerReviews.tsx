@@ -18,7 +18,7 @@ const SORT_LABELS: Record<SortOption, string> = {
   helpful: "Most Helpful",
 };
 
-function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
+function Stars({ rating, size = 14, className = "" }: { rating: number; size?: number; className?: string }) {
   return (
     <div className="flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
       {Array.from({ length: 5 }, (_, index) => (
@@ -28,7 +28,7 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
           width={size}
           height={size}
           aria-hidden="true"
-          className={index < Math.round(rating) ? "text-gold" : "text-paper/15"}
+          className={`${index < Math.round(rating) ? "text-gold max-lg:text-paper/90" : "text-paper/15"} ${className}`}
         >
           <path
             d="M10 1.5l2.6 5.3 5.9.8-4.3 4.1 1 5.8L10 14.7l-5.2 2.8 1-5.8L1.5 7.6l5.9-.8z"
@@ -55,9 +55,19 @@ function ThumbIcon({ down = false }: { down?: boolean }) {
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinejoin="round"
+        className="max-lg:fill-current"
       />
     </svg>
   );
+}
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
 }
 
 function CheckIcon() {
@@ -173,29 +183,39 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
 
   return (
     <section className="flex flex-col gap-10">
-      <h2 className="m-0 font-heading text-2xl font-bold text-paper">Reviews Summary</h2>
+      <h2 className="m-0 font-heading text-2xl font-bold text-paper max-lg:text-[22px] max-lg:font-semibold">Reviews Summary</h2>
 
-      <div className="grid grid-cols-1 divide-y divide-white/10 rounded-2xl border border-white/10 bg-panel sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
-        <div className="flex flex-col items-center justify-center gap-4 px-6 py-8 text-center">
-          <div className="flex flex-col items-center gap-2">
-            <span className="font-heading text-4xl font-extrabold text-paper">{summary.average.toFixed(1)}</span>
-            <Stars rating={summary.average} size={16} />
-            <span className="font-sans text-xs text-paper/50">Based on {summary.totalCount} reviews</span>
+      {/* Mobile: just the score and the recommend % side by side, split by a rule; the breakdown and
+          "talked about" cells are desktop-only. */}
+      <div className="grid grid-cols-[3fr_2fr] rounded-2xl border border-white/10 bg-panel max-lg:-mt-2 max-lg:rounded-none max-lg:border-0 max-lg:border-b max-lg:border-white/30 max-lg:bg-transparent max-lg:pb-5 lg:grid-cols-4 lg:divide-x lg:divide-white/10">
+        <div className="flex flex-col items-center justify-center gap-4 px-6 py-8 text-center max-lg:justify-start max-lg:border-r max-lg:border-white/40 max-lg:px-2 max-lg:py-6">
+          <div className="flex flex-col items-center gap-2 max-lg:flex-row max-lg:flex-wrap max-lg:justify-center max-lg:gap-x-3">
+            <span className="font-heading text-4xl font-extrabold text-paper max-lg:text-[28px] max-lg:font-semibold max-lg:text-paper/90">
+              {summary.average.toFixed(1)}
+            </span>
+            <Stars rating={summary.average} size={16} className="max-lg:h-5 max-lg:w-5" />
+            <span className="font-sans text-xs text-paper/50 max-lg:basis-full max-lg:font-heading max-lg:text-sm">
+              Based on {summary.totalCount} reviews
+            </span>
           </div>
           <button
             type="button"
-            className="flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-white/30 px-4 font-heading text-xs font-bold tracking-[0.04em] text-paper uppercase transition-colors duration-200 hover:bg-paper hover:text-ink"
+            className="flex h-10 cursor-pointer max-lg:h-9 max-lg:px-3 max-lg:text-[10px] items-center gap-2 rounded-lg border border-white/30 px-4 font-heading text-xs font-bold tracking-[0.04em] text-paper uppercase transition-colors duration-200 hover:bg-paper hover:text-ink"
           >
             <PencilIcon /> Write a Review
           </button>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-2 px-6 py-8 text-center">
-          <span className="font-heading text-4xl font-extrabold text-gold">{summary.recommendPercent}%</span>
-          <span className="max-w-40 font-sans text-xs text-paper/50">would recommend this product</span>
+        <div className="flex flex-col items-center justify-center gap-2 px-6 py-8 text-center max-lg:px-2">
+          <span className="font-heading text-4xl font-extrabold text-gold max-lg:text-[28px] max-lg:font-semibold max-lg:text-paper/90">
+            {summary.recommendPercent}%
+          </span>
+          <span className="max-w-40 font-sans text-xs text-paper/50 max-lg:max-w-32 max-lg:font-heading max-lg:text-base max-lg:text-paper/90">
+            would recommend this product
+          </span>
         </div>
 
-        <div className="flex flex-col justify-center gap-1.5 px-6 py-8">
+        <div className="hidden flex-col justify-center gap-1.5 px-6 py-8 lg:flex">
           {summary.breakdown.map((row) => (
             <div key={row.stars} className="flex items-center gap-2">
               <span className="w-5 shrink-0 font-sans text-xs text-paper/50">{row.stars}★</span>
@@ -210,7 +230,7 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
           ))}
         </div>
 
-        <div className={`flex-col gap-2 px-6 py-8 ${summary.talkedAbout.length > 0 ? "flex" : "hidden"}`}>
+        <div className={`hidden flex-col gap-2 px-6 py-8 ${summary.talkedAbout.length > 0 ? "lg:flex" : ""}`}>
           <span className="font-heading text-xs font-bold tracking-[0.06em] text-paper/50 uppercase">
             Customers talked about
           </span>
@@ -230,15 +250,18 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
             type="button"
             onClick={() => scrollCarousel(-1)}
             aria-label="Scroll photos left"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/20 text-paper transition-colors duration-200 hover:border-white/50"
+            className="hidden h-9 w-9 lg:flex shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/20 text-paper transition-colors duration-200 hover:border-white/50"
           >
             <ChevronIcon direction="left" />
           </button>
-          <div ref={carouselRef} className="flex flex-1 gap-3 overflow-x-auto scroll-smooth pb-1">
+          <div
+            ref={carouselRef}
+            className="flex flex-1 gap-3 overflow-x-auto scroll-smooth pb-1 max-lg:-mx-4 max-lg:snap-x max-lg:snap-mandatory max-lg:gap-2.5 max-lg:px-4"
+          >
             {Array.from({ length: summary.photoCount }, (_, index) => (
               <div
                 key={index}
-                className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-paper/30"
+                className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-paper/30 max-lg:aspect-square max-lg:h-auto max-lg:w-[62%] max-lg:snap-center max-lg:rounded-none"
               >
                 <PhotoIcon />
               </div>
@@ -248,24 +271,26 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
             type="button"
             onClick={() => scrollCarousel(1)}
             aria-label="Scroll photos right"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/20 text-paper transition-colors duration-200 hover:border-white/50"
+            className="hidden h-9 w-9 lg:flex shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/20 text-paper transition-colors duration-200 hover:border-white/50"
           >
             <ChevronIcon direction="right" />
           </button>
         </div>
       )}
 
-      <div className="flex flex-col gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="m-0 font-heading text-lg font-bold text-paper">{visibleReviews.length} reviews</h3>
+      <div className="flex flex-col gap-4 border-t border-white/10 pt-8 max-lg:-mb-4 max-lg:border-t-0 max-lg:pt-0 lg:flex-row lg:items-center lg:justify-between">
+        <h3 className="m-0 font-heading text-lg font-bold text-paper max-lg:border-b-2 max-lg:border-paper max-lg:pb-2 max-lg:text-[22px] max-lg:font-semibold">
+          {visibleReviews.length} reviews
+        </h3>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 max-lg:justify-between max-lg:border-b max-lg:border-white/30 max-lg:pt-2 max-lg:pb-5">
           <select
             value={ratingFilter}
             onChange={(event) =>
               handleFilterChange(event.target.value === "all" ? "all" : (Number(event.target.value) as RatingFilter))
             }
             aria-label="Filter reviews by rating"
-            className="h-10 cursor-pointer rounded-lg border border-white/20 bg-panel px-3 font-sans text-xs text-paper"
+            className="h-10 cursor-pointer rounded-lg border border-white/20 bg-panel px-3 font-sans text-xs text-paper max-lg:rounded-md max-lg:border-paper/80 max-lg:bg-ink max-lg:px-4 max-lg:font-heading max-lg:text-sm max-lg:font-semibold"
           >
             <option value="all">All Ratings</option>
             {[5, 4, 3, 2, 1].map((stars) => (
@@ -275,13 +300,13 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
             ))}
           </select>
 
-          <label className="flex items-center gap-2 font-sans text-xs text-paper/50">
+          <label className="flex items-center gap-2 font-sans text-xs text-paper/50 max-lg:gap-3 max-lg:font-heading max-lg:text-sm max-lg:font-semibold max-lg:text-paper">
             Sort
             <select
               value={sortBy}
               onChange={(event) => handleSortChange(event.target.value as SortOption)}
               aria-label="Sort reviews"
-              className="h-10 cursor-pointer rounded-lg border border-white/20 bg-panel px-3 font-sans text-xs text-paper"
+              className="h-10 cursor-pointer rounded-lg border border-white/20 bg-panel px-3 font-sans text-xs text-paper max-lg:border-0 max-lg:bg-transparent max-lg:px-0 max-lg:font-heading max-lg:text-base max-lg:font-normal"
             >
               {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
                 <option key={option} value={option}>
@@ -293,27 +318,47 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
         </div>
       </div>
 
-      <div className="flex flex-col divide-y divide-white/10">
+      <div className="flex flex-col divide-y divide-white/10 max-lg:divide-white/30">
         {visibleReviews.slice(0, visibleCount).map((review) => {
           const reviewVotes = votes[review.id];
           return (
-            <article key={review.id} className="flex flex-col gap-3 py-6 first:pt-0">
+            <article key={review.id} className="flex flex-col gap-3 py-6 first:pt-0 max-lg:gap-2 max-lg:py-5">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold font-heading text-sm font-bold text-ink">
-                    {review.author.charAt(0)}
+                <div className="flex items-center gap-3 max-lg:mb-2 max-lg:gap-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold font-heading text-sm font-bold text-ink max-lg:h-15 max-lg:w-15 max-lg:bg-[#f0dfcc] max-lg:text-lg">
+                    <span className="lg:hidden">{initials(review.author)}</span>
+                    <span className="max-lg:hidden">{review.author.charAt(0)}</span>
                   </span>
-                  <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-heading text-sm font-semibold text-paper">{review.author}</span>
+                  <div className="flex flex-col gap-0.5 max-lg:gap-2">
+                    <div className="flex flex-wrap items-center gap-2 max-lg:gap-x-3">
+                      <span className="font-heading text-sm font-semibold text-paper max-lg:text-xl">{review.author}</span>
                       {review.verified && (
-                        <span className="flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 font-sans text-[10px] font-semibold text-gold">
-                          <CheckIcon /> Verified Buyer
+                        <span className="flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 font-sans text-[10px] font-semibold text-gold max-lg:flex-row-reverse max-lg:gap-1.5 max-lg:bg-transparent max-lg:px-0 max-lg:font-heading max-lg:text-xs max-lg:text-paper">
+                          <span className="flex max-lg:rounded-full max-lg:bg-paper max-lg:p-0.5 max-lg:text-ink">
+                            <CheckIcon />
+                          </span>
+                          Verified Buyer
                         </span>
                       )}
                     </div>
                     {(review.ageRange || review.sport) && (
-                      <span className="font-sans text-[11px] text-paper/40">
+                      <span className="flex flex-wrap gap-x-6 gap-y-1 font-heading text-sm text-paper/85 lg:hidden">
+                        {review.ageRange && (
+                          <span>
+                            <span className="mr-2 font-semibold text-paper">Age Range</span>
+                            {review.ageRange}
+                          </span>
+                        )}
+                        {review.sport && (
+                          <span>
+                            <span className="mr-2 font-semibold text-paper">Sport</span>
+                            {review.sport}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {(review.ageRange || review.sport) && (
+                      <span className="font-sans text-[11px] text-paper/40 max-lg:hidden">
                         {[review.ageRange && `Age Range: ${review.ageRange}`, review.sport && `Sport: ${review.sport}`]
                           .filter(Boolean)
                           .join(" | ")}
@@ -321,7 +366,7 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
                     )}
                   </div>
                 </div>
-                <span className="shrink-0 font-sans text-[11px] text-paper/40">
+                <span className="shrink-0 font-sans text-[11px] text-paper/40 max-lg:hidden">
                   {new Date(review.date).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
@@ -330,11 +375,15 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
                 </span>
               </div>
 
-              <Stars rating={review.rating} />
-              <h4 className="m-0 font-heading text-sm font-bold text-paper">{review.title}</h4>
-              <p className="m-0 font-sans text-sm leading-relaxed text-paper/70">{review.text}</p>
+              <Stars rating={review.rating} className="max-lg:h-5 max-lg:w-5" />
+              <h4 className="m-0 font-heading text-sm font-bold text-paper max-lg:mt-1 max-lg:font-sans max-lg:text-[15px]">
+                {review.title}
+              </h4>
+              <p className="m-0 font-sans text-sm leading-relaxed text-paper/70 max-lg:text-[15px] max-lg:leading-[1.65] max-lg:font-light max-lg:text-paper/85">
+                {review.text}
+              </p>
 
-              <div className="flex items-center gap-4 font-sans text-xs text-paper/40">
+              <div className="flex items-center gap-4 font-sans text-xs text-paper/40 max-lg:mt-4 max-lg:font-heading max-lg:text-base max-lg:text-paper/50">
                 <span>Was this helpful?</span>
                 <button
                   type="button"
@@ -366,7 +415,7 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
         <button
           type="button"
           onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-          className="mx-auto flex h-11 cursor-pointer items-center justify-center rounded-lg border border-paper bg-paper px-8 font-heading text-xs font-bold tracking-[0.04em] text-ink uppercase transition-colors duration-200 hover:bg-transparent hover:text-paper"
+          className="mx-auto flex h-11 cursor-pointer items-center justify-center rounded-lg border border-paper bg-paper px-8 font-heading text-xs font-bold tracking-[0.04em] text-ink uppercase transition-colors duration-200 hover:bg-transparent hover:text-paper max-lg:-mt-4 max-lg:h-10 max-lg:w-41 max-lg:rounded-md max-lg:border-white/30 max-lg:bg-ink max-lg:text-base max-lg:font-semibold max-lg:tracking-normal max-lg:text-paper max-lg:normal-case"
         >
           Show More
         </button>

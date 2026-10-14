@@ -30,18 +30,21 @@ export default function BuildYourKit({ items }: BuildYourKitProps) {
   };
 
   return (
-    <section className="flex flex-col gap-10">
+    <section className="flex flex-col gap-10 max-lg:gap-8">
       <div className="flex flex-col items-center gap-2 text-center">
-        <h2 className="m-0 font-heading text-2xl font-bold text-paper">Build Your Kit</h2>
-        <p className="m-0 max-w-[60ch] font-sans text-sm leading-relaxed text-paper/55">
+        <h2 className="m-0 font-heading text-2xl font-bold text-paper max-lg:text-xl max-lg:font-semibold max-lg:text-paper/85">
+          Build Your Kit
+        </h2>
+        <p className="m-0 max-w-[60ch] max-lg:hidden font-sans text-sm leading-relaxed text-paper/55">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
           dolore magna aliqua.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Mobile: a swipe row with the next card peeking in; desktop: a 3-up grid. */}
+      <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-5 overflow-x-auto px-4 md:-mx-8 md:scroll-px-8 md:px-8 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-8 lg:overflow-visible lg:px-0">
         {items.map((item) => (
-          <div key={item.key} className="relative">
+          <div key={item.key} className="relative w-[78%] max-w-80 shrink-0 snap-start lg:w-auto lg:max-w-none">
             <PoppedCard
               variant="product"
               imageSrc={item.imageSrc}
@@ -62,7 +65,11 @@ export default function BuildYourKit({ items }: BuildYourKitProps) {
         ))}
       </div>
 
-      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/10 bg-panel px-6 py-5 sm:flex-row">
+      <div
+        className={`flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/10 bg-panel px-6 py-5 sm:flex-row ${
+          selected.size === 0 ? "max-lg:hidden" : ""
+        }`}
+      >
         <div className="flex flex-col gap-1">
           <span className="font-heading text-sm font-semibold text-paper">
             Your Custom Routine ({selected.size} {selected.size === 1 ? "Item" : "Items"})

@@ -27,7 +27,6 @@ Paths are relative to `apps/web/app/`. Line numbers are approximate — search f
 | Where | What's fake | Real source |
 |---|---|---|
 | `page.tsx` — `DUMMY_KIT_CATEGORIES` | "Unify Your Kits" category ring (names + placeholder image) | Category data (name + image) from the API |
-| `page.tsx` — `DUMMY_STORES` | Store locator — **fallback only**, shown when the API returns no stores | Admin Stores page (`lib/stores.ts`) — already dynamic, drop the fallback once real stores are added |
 | `lib/reels.ts` — `DUMMY_REELS` (used by `page.tsx`, `our-franchise/page.tsx`) | Reel showcase — **fallback only**, shown when the API returns no reels | Admin Reels page (`lib/reels.ts`) — already dynamic, drop the fallback once real reels are added |
 | `page.tsx` — Hero `/hero/*` files | Hero video/showcase images are local files — **fallback only** | Admin homepage settings upload |
 | `page.tsx` — `<BeyondTheMedal ctaHref="#">` | CTA goes nowhere | Decide submission route (form / WhatsApp / email) |
@@ -44,6 +43,7 @@ Paths are relative to `apps/web/app/`. Line numbers are approximate — search f
 | `lib/pdp/adapter.ts` — `mrp: 0` | No strike-through/MRP price on cards or PDP | Needs an MRP field on the product/variant |
 | `components/SizeGuide/SizeGuide.tsx` — `PLACEHOLDER` | Before/after slider placeholder images (sample product only — the intro copy and stats are now per-product `protectionDescription` / `protectionStats`) | `competitorImage` / `cardImage` per product |
 | `components/BuildYourKit/BuildYourKit.tsx` | Lorem ipsum description copy | Copy from client |
+| `components/ProductInfo/ProductInfo.tsx` — `DUMMY_DELIVERY_DAYS` | Mobile pincode check accepts any 6-digit pincode and always promises "Express Delivery By" today + 4 days; desktop shows a fixed "Tue, 1 Sept - Wed, 2 Sept" line | Courier serviceability/ETA API by pincode |
 
 ## About Us
 
@@ -53,7 +53,8 @@ Paths are relative to `apps/web/app/`. Line numbers are approximate — search f
 | `about-us/StatsTrail.tsx` — `IMAGES` | Placeholder photos | Client's brand/story images |
 | `about-us/page.tsx` — `SEGMENTS` | Generic "Industrial / Office" / "Retail" copy unrelated to Gokaido | Copy from client |
 | `our-franchise/page.tsx` — franchise paragraph | Franchise pitch copy written by us (support offered, etc. not confirmed by client) | Copy from client |
-| `our-franchise/FranchiseSignup.tsx` — form intro line, `SOURCES` | "Sign up today" intro copy and the "How did you hear about us?" options are ours | Copy/options from client (keep options in sync with `FRANCHISE_ENQUIRY_SOURCES` in the database package) |
+| `our-franchise/FranchiseSignup.tsx` — form intro/thanks copy; `components/EnquiryForm/EnquiryForm.tsx` — `SOURCES` | "Sign up today" intro copy and the "How did you hear about us?" options are ours | Copy/options from client (keep options in sync with `FRANCHISE_ENQUIRY_SOURCES` in the database package) |
+| `contact-us/page.tsx` — enquiry form intro/thanks copy | Written by us; the rest of the page copy is from the design | Copy from client |
 
 ## Stubbed behaviour (not data, but fake)
 

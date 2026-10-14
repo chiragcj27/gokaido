@@ -23,8 +23,8 @@ interface ApiStore {
 }
 
 // 5 min cache, tagged "stores" — same TTL/no-purge-route situation as
-// getHomepageSettings. Empty list on failure; the homepage then shows its
-// dummy stores instead of a broken section.
+// getHomepageSettings. Empty list on failure, which
+// hides the section (StoreLocator renders nothing for an empty list).
 export async function getStores(): Promise<Store[]> {
   try {
     const { stores } = await apiGet<{ stores: ApiStore[] }>("/stores", { revalidate: 300, tags: ["stores"] });

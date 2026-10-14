@@ -89,7 +89,7 @@ export default function ProductPageClient({
     router.replace(`${buildPath(currentColorSlug)}?${params.toString()}`, { scroll: false });
   };
 
-  const handleAddToBag = () => {
+  const handleAddToBag = (quantity: number) => {
     if (!activeVariant) return;
     addItem({
       id: activeVariant.sku,
@@ -101,6 +101,7 @@ export default function ProductPageClient({
       size,
       color: currentColor.name,
       price: activeVariant.price,
+      quantity,
     });
   };
 
@@ -131,15 +132,23 @@ export default function ProductPageClient({
   };
 
   return (
-    <main className="mx-auto flex max-w-360 flex-col gap-24 px-4 pt-8 pb-24 md:px-8 lg:px-12">
+    <main className="mx-auto flex max-w-360 flex-col gap-16 px-4 pt-6 pb-16 md:px-8 lg:gap-24 lg:px-12 lg:pt-8 lg:pb-24">
       {/* eslint-disable-next-line react/no-danger */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <div className="flex flex-col gap-4">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 font-sans text-sm text-paper/50">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 font-sans text-sm text-paper/50 max-lg:mb-4 max-lg:gap-3 max-lg:text-paper/80"
+        >
           {product.breadcrumb.map((crumb, index) => (
             <span key={crumb.label} className="flex items-center gap-2">
-              {index > 0 && <span aria-hidden="true">›</span>}
+              {index > 0 && (
+                <span aria-hidden="true">
+                  <span className="max-lg:hidden">›</span>
+                  <span className="lg:hidden">&gt;</span>
+                </span>
+              )}
               {crumb.href ? (
                 <Link href={crumb.href} className="hover:text-paper">
                   {crumb.label}
@@ -151,7 +160,7 @@ export default function ProductPageClient({
           ))}
         </nav>
 
-        <section className="grid grid-cols-1 gap-12 lg:gap-12">
+        <section className="grid grid-cols-1 gap-8 lg:gap-12">
           <ProductGallery
             productName={product.name}
             colors={product.colors}
@@ -163,6 +172,10 @@ export default function ProductPageClient({
             description={product.description}
             price={activeVariant?.price ?? product.variants[0].price}
             mrp={activeVariant?.mrp ?? product.variants[0].mrp}
+            rating={{ average: product.reviewSummary.average, count: product.reviewSummary.totalCount }}
+            colors={product.colors}
+            activeColorSlug={currentColorSlug}
+            onColorChange={handleColorChange}
             sizes={product.sizes}
             activeSize={size}
             onSizeChange={handleSizeChange}
@@ -186,7 +199,7 @@ export default function ProductPageClient({
       {product.buildYourKit.length > 0 && <BuildYourKit items={product.buildYourKit} />}
       <CustomerReviews summary={product.reviewSummary} reviews={product.reviews} />
       {product.relatedProducts.length > 0 && <RelatedProducts products={product.relatedProducts} />}
-      {product.faqs.length > 0 && <ProductFAQ faqs={product.faqs} />}
+      {product.faqs.length > 0 && <ProductFAQ faqs={product.faqs} darkOnMobile />}
     </main>
   );
 }

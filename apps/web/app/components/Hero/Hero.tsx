@@ -253,10 +253,13 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
         });
 
       const mm = gsap.matchMedia();
-      // Desktop: the end box is a full viewport below the hero, so the morph
-      // takes one viewport of scroll and the reel arrives as it fills the screen.
+      // Desktop: finish exactly when the end box's top reaches the viewport
+      // top, i.e. the moment it fills the screen. A fixed `+=innerHeight`
+      // overshot (the hero is 100svh minus the navbar), so the reel looked
+      // full-screen at t≈0.9 with the last-staggered corner (bottom-left)
+      // still peeling in until you scrolled further.
       mm.add("(min-width: 768px)", () => {
-        tween({ end: () => `+=${window.innerHeight}` });
+        tween({ endTrigger: card, end: "top top" });
       });
       // Phones: the end box is a short strip right under the hero, so it is
       // already on screen. Pin hero + strip while the video grows into it,

@@ -14,7 +14,16 @@
 /* Fixed navbar height, so the homepage hero can fill exactly the viewport
    below it (see Hero.tsx) instead of overflowing by the navbar's height. */
 :root {
-  --navbar-h: 72px;
+  /* Must match the real header: 50px logo + 9px/10px padding. Navbar.tsx
+     re-measures it on mount/resize; this is the pre-hydration value. */
+  --navbar-h: 69px;
+}
+
+@media (max-width: 480px) {
+  :root {
+    /* 43px icons + 11px/12px padding. */
+    --navbar-h: 66px;
+  }
 }
 
 /* Hide every scrollbar (Windows shows chunky always-on bars; scrolling still works). */
@@ -153,9 +162,25 @@ body {
   animation: pane-slide-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes collection-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-collection-card-in {
+  animation: collection-card-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-pane-fade,
-  .animate-pane-slide-in {
+  .animate-pane-slide-in,
+  .animate-collection-card-in {
     animation: none;
   }
 }

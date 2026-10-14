@@ -6,7 +6,7 @@ import AppDownload from "./components/AppDownload/AppDownload";
 import StoreLocator from "./components/StoreLocator/StoreLocator";
 import ReelShowcase from "./components/ReelShowcase/ReelShowcase";
 import BeyondTheMedal from "./components/BeyondTheMedal/BeyondTheMedal";
-import { getStores, type Store } from "./lib/stores";
+import { getStores } from "./lib/stores";
 import { DUMMY_REELS, getReels } from "./lib/reels";
 import { getHomepageSettings } from "./lib/homepage";
 
@@ -38,21 +38,6 @@ const DUMMY_BESTSELLERS = [1, 2, 3, 4].map((n) => ({
   colors: DUMMY_COLORS,
 }));
 
-// Dummy stores until the admin adds real ones (Stores page) — same idea as the
-// dummy categories/bestsellers above. Cities mirror the design mockup.
-const DUMMY_STORES: Store[] = [
-  "Pune", "Nagpur", "Bhilai", "Surat", "Baroda", "Indore", "Guwahati", "Bengaluru", "Goa", "Chennai",
-].map((city) => ({
-  id: `dummy-store-${city.toLowerCase()}`,
-  city,
-  name: `Gokaido VR Mall ${city}`,
-  address: "136-B, Deccan Chamber Building, Jagarnath Shankar Sheth (J.S.S.) Road, Girgaon, Mumbai - 400004",
-  hours: "11 AM - 10 PM (Open Everyday)",
-  phone: "+91 7996000781",
-  image: null,
-  directionsUrl: null,
-}));
-
 export default async function Home() {
   const [settings, stores, reels] = await Promise.all([getHomepageSettings(), getStores(), getReels()]);
 
@@ -81,7 +66,7 @@ export default async function Home() {
       </div>
       <Bestsellers products={DUMMY_BESTSELLERS} />
       <PresenceMap />
-      <StoreLocator stores={stores.length > 0 ? stores : DUMMY_STORES} />
+      <StoreLocator stores={stores} />
       <ReelShowcase reels={reels.length > 0 ? reels : DUMMY_REELS} />
       {/* Placeholder link until the real submission route (form / WhatsApp / email) is decided. */}
       <BeyondTheMedal ctaHref="#" />
