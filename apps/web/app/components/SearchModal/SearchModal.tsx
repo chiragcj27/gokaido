@@ -9,33 +9,24 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 export interface SearchModalProps {
   open: boolean;
   onClose: () => void;
+  /** Admin-managed terms (homepage settings), or defaults — also drive the animated placeholder. */
+  trendingSearches: string[];
+  /** Admin-flagged bestsellers, or placeholders. */
+  bestsellers: SearchModalProduct[];
 }
 
-// Pending a trending-searches endpoint; these also drive the animated placeholder.
-const TRENDING_SEARCHES = [
-  "Carrom Boards",
-  "Basketball",
-  "Rain Coats",
-  "Cricket Bats",
-  "Yoga Mats",
-  "Badminton Rackets",
-  "Travel Bags",
-];
+export interface SearchModalProduct {
+  slug: string;
+  title: string;
+  subtitle: string;
+  imageSrc: string;
+  price: number;
+  mrp: number;
+  colors: { name: string; hex: string }[];
+}
 
-// Pending a bestsellers endpoint — dummy data matching the Figma frame.
-const BESTSELLERS = Array.from({ length: 4 }, (_, i) => ({
-  id: i,
-  title: "Lorem ipsum",
-  subtitle: "Lorem ipsum",
-  price: "₹2499.00",
-  originalPrice: "₹000.00",
-  image: "/dummy/product-placeholder.png",
-  colors: [
-    { name: "Red", hex: "#c8102e" },
-    { name: "White", hex: "#ffffff" },
-    { name: "Blue", hex: "#1d4ed8" },
-  ],
-}));
+const formatInr = (amount: number) =>
+  `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const RECENT_KEY = "gokaido:recent-searches";
 const MAX_RECENT = 5;
@@ -107,7 +98,7 @@ function useTypewriter(words: string[], active: boolean) {
   return text;
 }
 
-export default function SearchModal({ open, onClose }: SearchModalProps) {
+export default function SearchModal({ open, onClose, trendingSearches, bestsellers }: SearchModalProps) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
@@ -151,7 +142,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
     };
   }, [open, onClose]);
 
-  const animatedWord = useTypewriter(TRENDING_SEARCHES, open && query === "" && !focused);
+  const animatedWord = useTypewriter(trendingSearches, open && query === "" && !focused);
 
   const submit = useCallback(
     (raw: string) => {
@@ -295,7 +286,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
               Trending Searches
             </h2>
             <div className="flex flex-wrap gap-3">
-              {TRENDING_SEARCHES.map((term) => (
+              {trendingSearches.map((term) => (
                 <button
                   key={term}
                   type="button"
@@ -312,7 +303,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
             <div className="flex items-center justify-between gap-4">
               <h2 className={`m-0 ${sectionLabel}`}>Bestsellers in Sports &amp; Lifestyle</h2>
               <Link
-                href="/collections"
+                href="/best-sellers"
                 onClick={onClose}
                 className="font-heading text-sm font-bold whitespace-nowrap text-red no-underline"
               >
@@ -321,11 +312,16 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
-              {BESTSELLERS.map((item) => (
-                <article key={item.id} className="flex flex-col gap-3">
+              {bestsellers.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/products/${item.slug}`}
+                  onClick={onClose}
+                  className="flex flex-col gap-3 text-inherit no-underline"
+                >
                   <div className="relative aspect-4/3 overflow-hidden rounded-lg bg-ink">
                     <Image
-                      src={item.image}
+                      src={item.imageSrc}
                       alt={item.title}
                       fill
                       sizes="(min-width: 1024px) 25vw, 50vw"
@@ -338,24 +334,28 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                       <p className="m-0 font-sans text-xs text-paper/50">{item.subtitle}</p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-0.5">
-                      <span className="font-heading text-sm font-bold text-paper">{item.price}</span>
-                      <span className="font-sans text-[11px] text-paper/40 line-through">{item.originalPrice}</span>
+                      <span className="font-heading text-sm font-bold text-paper">{formatInr(item.price)}</span>
+                      {item.mrp > item.price && (
+                        <span className="font-sans text-[11px] text-paper/40 line-through">{formatInr(item.mrp)}</span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 font-sans text-xs text-paper/70">
-                    <span>{item.colors[0].name}</span>
-                    <div className="flex gap-2">
-                      {item.colors.map((color) => (
-                        <span
-                          key={color.name}
-                          aria-hidden="true"
-                          style={{ backgroundColor: color.hex }}
-                          className="h-4 w-4 rounded-full border border-white/25"
-                        />
-                      ))}
+                  {item.colors.length > 0 && (
+                    <div className="flex items-center gap-3 font-sans text-xs text-paper/70">
+                      <span>{item.colors[0].name}</span>
+                      <div className="flex gap-2">
+                        {item.colors.map((color) => (
+                          <span
+                            key={color.name}
+                            aria-hidden="true"
+                            style={{ backgroundColor: color.hex }}
+                            className="h-4 w-4 rounded-full border border-white/25"
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </article>
+                  )}
+                </Link>
               ))}
             </div>
           </section>

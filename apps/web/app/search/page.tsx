@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Bestsellers from "../components/Bestsellers/Bestsellers";
 import Pagination from "../components/Pagination/Pagination";
 import ProductFAQ from "../components/ProductFAQ/ProductFAQ";
-import { DEFAULT_FAQS } from "../lib/pdp/defaults";
+import { getStoreFaqs } from "../lib/homepage";
 import { searchProducts, type SearchResults } from "../lib/search/searchProducts";
 
 interface SearchPageProps {
@@ -45,6 +45,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const query = readQuery(params.q);
   const page = readPage(params.page);
 
+  const faqsPromise = getStoreFaqs();
   let results: SearchResults = { products: [], total: 0, page, totalPages: 0 };
   let failed = false;
   if (query) {
@@ -60,6 +61,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     redirect(searchHref(query, results.totalPages));
   }
 
+  const faqs = await faqsPromise;
   const title = query ? `Results for “${query}”` : "Search";
   const subtitle = !query
     ? "Type something in the search bar to find products."
@@ -88,7 +90,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       />
       {/* Same full-width FAQ wrapper as the Best Sellers page. */}
       <div className="px-6 lg:px-10">
-        <ProductFAQ faqs={DEFAULT_FAQS} />
+        <ProductFAQ faqs={faqs} />
       </div>
     </main>
   );

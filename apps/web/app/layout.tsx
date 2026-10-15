@@ -4,6 +4,8 @@ import Footer from "./components/Footer/Footer";
 import SiteFooter from "./components/Footer/SiteFooter";
 import { CartProvider } from "./lib/cartStore";
 import { AuthProvider } from "./lib/auth/authStore";
+import { getBestsellers, getCategories } from "./lib/catalog";
+import { getTrendingSearches } from "./lib/homepage";
 import { geist, montserrat, roboto } from "./fonts";
 import "./globals.css";
 
@@ -14,17 +16,28 @@ export const metadata: Metadata = {
   description: "Gokaido app",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Navbar data — each falls back to placeholders (lib/fallbacks.ts) if the API is down or empty.
+  const [categories, trendingSearches, bestsellers] = await Promise.all([
+    getCategories(),
+    getTrendingSearches(),
+    getBestsellers(4),
+  ]);
+
   return (
     <html lang="en" className={`${montserrat.variable} ${roboto.variable} ${geist.variable}`}>
       <body className="bg-ink font-sans text-paper antialiased">
         <AuthProvider>
           <CartProvider>
-            <Navbar />
+            <Navbar
+              categories={categories.map((c) => ({ key: c.slug, label: c.name, href: c.href }))}
+              trendingSearches={trendingSearches}
+              bestsellers={bestsellers.products}
+            />
             {children}
             <SiteFooter>
               <Footer />

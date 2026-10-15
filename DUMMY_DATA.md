@@ -4,33 +4,33 @@ Every place the storefront (`apps/web`) shows hard-coded, fake, or stubbed data 
 
 Paths are relative to `apps/web/app/`. Line numbers are approximate — search for the named constant.
 
-## 🔴 Temporary — remove on request
+## 🟡 Dynamic with dummy fallback
 
-| Where | What's fake | Real source / how to remove |
+These are wired to the real source; the dummy only shows when the API is unreachable or has nothing yet, and disappears on its own once real data exists. All placeholders live in `lib/fallbacks.ts`; fetchers in `lib/catalog.ts` / `lib/homepage.ts`.
+
+| Where | Real source | Fallback shown when |
 |---|---|---|
-| `lib/search/dummySearch.ts` (`USE_DUMMY_SEARCH`), branch in `lib/search/searchProducts.ts` | `/search` returns the same 60 "Lorem ipsum N" products for **every** query (3 pages), so the results page and pagination can be reviewed | Real path is already built: `GET /api/products?search=&sort=relevance&page=&limit=`. Delete `dummySearch.ts` and the `if (USE_DUMMY_SEARCH)` line in `searchProducts.ts` |
+| Homepage Bestsellers row, `/best-sellers` (paginated), search modal "Bestsellers", cart "You May Also Like" | `getBestsellers()` → `GET /api/products?bestseller=true` (flag in admin → Bestsellers) | No product is flagged bestseller, or API down |
+| Navbar category menu, homepage "Unify Your Kits" ring | `getCategories()` → `GET /api/categories` (name, `image`, links to `/collections/{slug}`) | No active categories, or API down — dummies link to the sample `/collections` |
+| `/collections` | Redirects to the first category with products | Sample Karate page (`collections/page.tsx`) while no category has products |
+| `/search` | `GET /api/products?search=&sort=relevance` | Catalogue is empty or API down (`lib/search/dummySearch.ts`) — a real no-match on a populated catalogue shows "no results" |
+| Search modal trending chips + typewriter placeholder | Admin → Homepage → Trending searches | None saved (`DUMMY_TRENDING_SEARCHES`) |
+| FAQs on every PDP, `/best-sellers`, `/search` | Admin → Homepage → Store FAQs | None saved (`DEFAULT_FAQS` in `lib/pdp/defaults.ts`) |
+| `<BeyondTheMedal>` CTA, `<AppDownload>` store buttons | Admin → Homepage links | Not set — renders `href="#"` |
+| `lib/reels.ts` — `DUMMY_REELS` | Admin → Reels | No reels |
+| Hero `/hero/*` files | Admin → Homepage hero uploads | Not uploaded |
+| `lib/pdp/defaults.ts` — `DEFAULT_SIZE_GUIDE` | Subcategory `sizeGuide` in admin | Subcategory has none |
 
 ## Product listings
 
 | Where | What's fake | Real source |
 |---|---|---|
-| `page.tsx` — `DUMMY_BESTSELLERS` | Homepage Bestsellers row (4 cards) | `GET /api/products?bestseller=true` → `cardImage`, price, colours (reuse `toRelatedProducts` in `lib/pdp/adapter.ts`) |
-| `best-sellers/page.tsx` — `DUMMY_BESTSELLERS` | Best Sellers page grid (12 cards) | Same as above, paginated like `/search` |
-| `components/SearchModal/SearchModal.tsx` — `BESTSELLERS` | "Bestsellers in Sports & Lifestyle" row inside the search modal | Same bestseller query (4 items) |
-| `components/SearchModal/SearchModal.tsx` — `TRENDING_SEARCHES` | Trending search chips + animated placeholder words (generic sports terms, not Gokaido's) | Needs a trending-searches endpoint or an admin-managed list |
-| `collections/page.tsx` — `categoryName`, `subcategories`, `dummyProducts()` | Whole `/collections` sample page (Karate + 7 subcategories of Lorem ipsum cards linking to the sample product) | `/collections/[category]` is already API-backed (`lib/collections/getCollection.ts`); this page should be deleted/redirected once real categories exist |
-| `cart/page.tsx` — `dummyProduct.relatedProducts` | "You May Also Like" row on the cart | Related/recommended products from the API based on cart contents |
-| `components/Navbar/Navbar.tsx` — `categories` | Category dropdown is a fixed Karate/Boxing/Taekwondo list, all linking to the sample `/collections` | Categories from the API, each linking to `/collections/{slug}` |
+| `components/Bestsellers`, `CollectionScroll` — `onAddToCart` | Card "add to cart" just `console.log`s | Needs a size picker (or open PDP) then cart store |
 
 ## Homepage sections
 
 | Where | What's fake | Real source |
 |---|---|---|
-| `page.tsx` — `DUMMY_KIT_CATEGORIES` | "Unify Your Kits" category ring (names + placeholder image) | Category data (name + image) from the API |
-| `lib/reels.ts` — `DUMMY_REELS` (used by `page.tsx`, `our-franchise/page.tsx`) | Reel showcase — **fallback only**, shown when the API returns no reels | Admin Reels page (`lib/reels.ts`) — already dynamic, drop the fallback once real reels are added |
-| `page.tsx` — Hero `/hero/*` files | Hero video/showcase images are local files — **fallback only** | Admin homepage settings upload |
-| `page.tsx` — `<BeyondTheMedal ctaHref="#">` | CTA goes nowhere | Decide submission route (form / WhatsApp / email) |
-| `page.tsx` — `<AppDownload playStoreUrl="#" appStoreUrl="#">` | App store buttons go nowhere | Real Play Store / App Store links from client |
 | `components/PresenceMap/PresenceMap.tsx` | Map art + stats baked into flat mockup PNGs | Designer's layered SVG + real numbers |
 
 ## Product page
@@ -38,8 +38,6 @@ Paths are relative to `apps/web/app/`. Line numbers are approximate — search f
 | Where | What's fake | Real source |
 |---|---|---|
 | `lib/dummyProduct.ts` + `sample-product/**` | Entire hard-coded sample PDP at `/sample-product/karate-guards` | Delete once the Figma-final dynamic PDP is signed off (see CLAUDE.md) |
-| `lib/pdp/defaults.ts` — `DEFAULT_FAQS` | FAQs are store-wide defaults on every PDP, `/best-sellers` and `/search` | Needs an FAQ model / admin editor |
-| `lib/pdp/defaults.ts` — `DEFAULT_SIZE_GUIDE` | Size guide used when a subcategory has none configured | Subcategory `sizeGuide` in admin — fallback only |
 | `lib/pdp/adapter.ts` — `mrp: 0` | No strike-through/MRP price on cards or PDP | Needs an MRP field on the product/variant |
 | `components/SizeGuide/SizeGuide.tsx` — `PLACEHOLDER` | Before/after slider placeholder images (sample product only — the intro copy and stats are now per-product `protectionDescription` / `protectionStats`) | `competitorImage` / `cardImage` per product |
 | `components/BuildYourKit/BuildYourKit.tsx` | Lorem ipsum description copy | Copy from client |

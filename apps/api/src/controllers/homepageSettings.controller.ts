@@ -16,6 +16,11 @@ export async function getHomepageSettings(_req: Request, res: Response): Promise
       heroVideoPosterUrl: settings?.heroVideoPosterUrl ?? null,
       heroBackgroundImageUrl: settings?.heroBackgroundImageUrl ?? null,
       heroShowcaseImages: settings?.heroShowcaseImages ?? [],
+      trendingSearches: settings?.trendingSearches ?? [],
+      faqs: (settings?.faqs ?? []).map(({ question, answer }) => ({ question, answer })),
+      playStoreUrl: settings?.playStoreUrl ?? null,
+      appStoreUrl: settings?.appStoreUrl ?? null,
+      beyondTheMedalUrl: settings?.beyondTheMedalUrl ?? null,
     },
   });
 }
@@ -30,7 +35,7 @@ export async function updateHomepageSettings(req: Request, res: Response): Promi
   // "" (single fields) and [] (image lists) both mean "clear this" from the
   // admin form — turn them into a real unset rather than storing an empty
   // value the web app would have to treat as falsy anyway.
-  const set: Record<string, string | string[]> = {};
+  const set: Record<string, unknown> = {};
   const unset: Record<string, ""> = {};
   for (const [key, value] of Object.entries(parsed.data)) {
     if (value === undefined) continue;
@@ -38,10 +43,11 @@ export async function updateHomepageSettings(req: Request, res: Response): Promi
     else set[key] = value;
   }
 
-  const settings = await upsertHomepageSettingsSingleton(set);
+  const settings = await upsertHomepageSettingsSingleton(set as Parameters<typeof upsertHomepageSettingsSingleton>[0]);
   if (Object.keys(unset).length > 0) {
     await HomepageSettings.updateOne({ _id: settings!._id }, { $unset: unset });
   }
 
-  res.json({ settings: await getHomepageSettingsSingleton() });
+  // Same normalized shape as the GET, so the admin form can reuse it as-is.
+  await getHomepageSettings(req, res);
 }

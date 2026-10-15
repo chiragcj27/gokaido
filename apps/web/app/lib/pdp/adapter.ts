@@ -1,4 +1,3 @@
-import { DEFAULT_FAQS } from "./defaults";
 import type {
   ApiColor,
   ApiListProduct,
@@ -7,6 +6,7 @@ import type {
   ApiSizeGuide,
 } from "./apiTypes";
 import type {
+  Faq,
   KitAddOn,
   PdpProduct,
   ProductAccordionEntry,
@@ -156,11 +156,13 @@ export interface PdpSources {
   related: ApiListProduct[];
   kit: ApiListProduct[];
   defaultSizeGuide: SizeGuide;
+  /** Store-wide FAQs (admin homepage settings, or the built-in defaults). */
+  faqs: Faq[];
 }
 
 /** Maps API documents onto the view-model the product page renders. Returns null if nothing is purchasable. */
 export function toPdpProduct(src: PdpSources): PdpProduct | null {
-  const { product, colors, reviews, related, kit, defaultSizeGuide } = src;
+  const { product, colors, reviews, related, kit, defaultSizeGuide, faqs } = src;
   const activeVariants = product.variants.filter((v) => v.isActive);
   if (activeVariants.length === 0) return null;
 
@@ -242,6 +244,6 @@ export function toPdpProduct(src: PdpSources): PdpProduct | null {
       photoCount: 0,
     },
     reviews: toReviews(reviews),
-    faqs: DEFAULT_FAQS,
+    faqs,
   };
 }

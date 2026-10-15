@@ -2,6 +2,7 @@ import { cache } from "react";
 import { apiGet, ApiError } from "./api";
 import { toPdpProduct } from "./adapter";
 import { DEFAULT_SIZE_GUIDE } from "./defaults";
+import { getStoreFaqs } from "../homepage";
 import type { ApiColor, ApiListProduct, ApiProduct, ApiReviewsResponse } from "./apiTypes";
 import type { PdpProduct } from "./types";
 
@@ -49,7 +50,7 @@ export const getPdpProduct = cache(async (slug: string): Promise<PdpProduct | nu
     },
   };
 
-  const [colors, reviews, related, kit] = await Promise.all([
+  const [colors, reviews, related, kit, faqs] = await Promise.all([
     optional(
       apiGet<{ colors: ApiColor[] }>("/colors", { revalidate: COLORS_TTL, tags: ["colors"] }).then((r) => r.colors),
       [],
@@ -78,7 +79,9 @@ export const getPdpProduct = cache(async (slug: string): Promise<PdpProduct | nu
       ).then((r) => r.products.slice(0, 3)),
       [],
     ),
+    // Store-wide FAQs from admin (defaults until saved) — never throws.
+    getStoreFaqs(),
   ]);
 
-  return toPdpProduct({ product, colors, reviews, related, kit, defaultSizeGuide: DEFAULT_SIZE_GUIDE });
+  return toPdpProduct({ product, colors, reviews, related, kit, faqs, defaultSizeGuide: DEFAULT_SIZE_GUIDE });
 });

@@ -9,37 +9,19 @@ import BeyondTheMedal from "./components/BeyondTheMedal/BeyondTheMedal";
 import { getStores } from "./lib/stores";
 import { DUMMY_REELS, getReels } from "./lib/reels";
 import { getHomepageSettings } from "./lib/homepage";
-
-// Dummy categories until the ring is wired to real category data (name +
-// cardImage). Order matters: index 0 starts front-and-centre, and the ring
-// wraps, so the last entries sit to its left.
-const DUMMY_KIT_CATEGORIES = [
-  { name: "Karate", image: "/dummy/product-placeholder.png" },
-  { name: "Taekwondo", image: "/dummy/product-placeholder.png" },
-  { name: "Jujutsu", image: "/dummy/product-placeholder.png" },
-  { name: "MMA", image: "/dummy/product-placeholder.png" },
-  { name: "Boxing", image: "/dummy/product-placeholder.png" },
-];
-
-// Dummy bestsellers until this is backed by real product data (cardImage,
-// price, colour variants).
-const DUMMY_COLORS = [
-  { name: "Red", hex: "#c8102e" },
-  { name: "White", hex: "#f5f5f5" },
-  { name: "Blue", hex: "#1f4fbf" },
-];
-const DUMMY_BESTSELLERS = [1, 2, 3, 4].map((n) => ({
-  slug: `dummy-bestseller-${n}`,
-  title: "Lorem ipsum",
-  subtitle: "Lorem ipsum",
-  imageSrc: "/card/card-sample.png",
-  price: 2499,
-  mrp: 3499,
-  colors: DUMMY_COLORS,
-}));
+import { getBestsellers, getCategories } from "./lib/catalog";
+import { CATEGORY_PLACEHOLDER_IMAGE } from "./lib/fallbacks";
 
 export default async function Home() {
-  const [settings, stores, reels] = await Promise.all([getHomepageSettings(), getStores(), getReels()]);
+  // Every source below falls back to placeholder data (lib/fallbacks.ts) when the API is down or
+  // has nothing yet, so the page never renders an empty section.
+  const [settings, stores, reels, categories, bestsellers] = await Promise.all([
+    getHomepageSettings(),
+    getStores(),
+    getReels(),
+    getCategories(),
+    getBestsellers(4),
+  ]);
 
   return (
     <main>
@@ -62,16 +44,18 @@ export default async function Home() {
           pin its top meets the strip's bottom. z-25 keeps it above the
           hero's fixed video layer (z-20). */}
       <div className="relative z-[25] max-md:-mt-[calc(100svh-112.93vw)]">
-        <UnifyKits categories={DUMMY_KIT_CATEGORIES} backgroundUrl="/home/unify_your_kits_bg.png" />
+        <UnifyKits
+          categories={categories.map((c) => ({ name: c.name, image: c.image ?? CATEGORY_PLACEHOLDER_IMAGE }))}
+          backgroundUrl="/home/unify_your_kits_bg.png"
+        />
       </div>
-      <Bestsellers products={DUMMY_BESTSELLERS} />
+      <Bestsellers products={bestsellers.products} />
       <PresenceMap />
       <StoreLocator stores={stores} />
       <ReelShowcase reels={reels.length > 0 ? reels : DUMMY_REELS} />
-      {/* Placeholder link until the real submission route (form / WhatsApp / email) is decided. */}
-      <BeyondTheMedal ctaHref="#" />
-      {/* Placeholder store links until the real ones are supplied. */}
-      <AppDownload playStoreUrl="#" appStoreUrl="#" />
+      {/* Links are set in admin → Homepage; "#" until they're filled in. */}
+      <BeyondTheMedal ctaHref={settings.beyondTheMedalUrl ?? "#"} />
+      <AppDownload playStoreUrl={settings.playStoreUrl ?? "#"} appStoreUrl={settings.appStoreUrl ?? "#"} />
     </main>
   );
 }

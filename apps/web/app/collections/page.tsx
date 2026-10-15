@@ -1,6 +1,15 @@
+import { redirect } from "next/navigation";
 import CollectionScroll, {
   type CollectionSubcategory,
 } from "../components/CollectionScroll/CollectionScroll";
+import { getCategories } from "../lib/catalog";
+import { getCollection } from "../lib/collections/getCollection";
+
+// Re-checked every 5 min, same as the category pages, so it switches over once real data exists.
+export const revalidate = 300;
+
+// Placeholder collection — only rendered until there's a real category with products, at which
+// point /collections redirects to it (see below).
 
 const DUMMY_IMAGE = "/card/card-sample.png";
 const SAMPLE_PRODUCT_HREF = "/sample-product/karate-guards";
@@ -93,6 +102,22 @@ const subcategories: CollectionSubcategory[] = [
   },
 ];
 
-export default function CollectionsPage() {
+/** First real category that actually has products, or null while the catalogue is empty/unreachable. */
+async function firstLiveCollectionHref(): Promise<string | null> {
+  const categories = (await getCategories()).filter((c) => c.href !== "/collections");
+  for (const category of categories) {
+    try {
+      const collection = await getCollection(category.slug);
+      if (collection && collection.subcategories.length > 0) return category.href;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export default async function CollectionsPage() {
+  const href = await firstLiveCollectionHref();
+  if (href) redirect(href);
   return <CollectionScroll categoryName={categoryName} subcategories={subcategories} />;
 }

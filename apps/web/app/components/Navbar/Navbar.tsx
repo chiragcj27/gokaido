@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import SearchModal from "../SearchModal/SearchModal";
+import SearchModal, { type SearchModalProduct } from "../SearchModal/SearchModal";
 import styles from "./Navbar.module.css";
 
 const navLinks = [
@@ -15,14 +15,21 @@ const navLinks = [
   { key: "contact-us", href: "/contact-us", label: "Contact Us", src: "/navbar/contact-us.png", width: 140, height: 41 },
 ];
 
-// Every category opens the sample collections page until the real ones are wired up.
-const categories = [
-  { key: "karate", label: "Karate", href: "/collections" },
-  { key: "boxing", label: "Boxing", href: "/collections" },
-  { key: "taekwondo", label: "Taekwondo", href: "/collections" },
-];
+export interface NavCategory {
+  key: string;
+  label: string;
+  href: string;
+}
 
-export default function Navbar() {
+export interface NavbarProps {
+  /** Active categories from the API (layout.tsx) — placeholders linking to /collections until real ones exist. */
+  categories: NavCategory[];
+  /** Search modal content, fetched server-side by the layout. */
+  trendingSearches: string[];
+  bestsellers: SearchModalProduct[];
+}
+
+export default function Navbar({ categories, trendingSearches, bestsellers }: NavbarProps) {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -202,7 +209,12 @@ export default function Navbar() {
           </button>
         </div>
       </div>
-      <SearchModal open={searchOpen} onClose={closeSearch} />
+      <SearchModal
+        open={searchOpen}
+        onClose={closeSearch}
+        trendingSearches={trendingSearches}
+        bestsellers={bestsellers}
+      />
     </header>
   );
 }

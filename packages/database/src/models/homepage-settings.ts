@@ -1,5 +1,10 @@
 import { mongoose } from "../client.js";
 
+export interface IHomepageFaq {
+  question: string;
+  answer: string;
+}
+
 // Singleton — one document holds all homepage CMS content (hero for now,
 // more sections later e.g. featured categories). Always read/written via
 // getSingleton() below rather than find(), so callers can't accidentally
@@ -11,6 +16,14 @@ export interface IHomepageSettings {
   // The product tiles in the white card between "MADE" and "TO" — one image
   // per tile (square product shots), laid out side by side by the storefront.
   heroShowcaseImages?: string[];
+  // Search modal chips + the typewriter placeholder words.
+  trendingSearches?: string[];
+  // Store-wide FAQs shown on every PDP, /best-sellers and /search.
+  faqs?: IHomepageFaq[];
+  playStoreUrl?: string;
+  appStoreUrl?: string;
+  // "Beyond the Medal" CTA target — a form page, WhatsApp link or mailto:.
+  beyondTheMedalUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +34,19 @@ const homepageSettingsSchema = new mongoose.Schema<IHomepageSettings>(
     heroVideoPosterUrl: { type: String, trim: true },
     heroBackgroundImageUrl: { type: String, trim: true },
     heroShowcaseImages: { type: [String], default: undefined },
+    trendingSearches: { type: [String], default: undefined },
+    faqs: {
+      type: [
+        new mongoose.Schema<IHomepageFaq>(
+          { question: { type: String, trim: true }, answer: { type: String, trim: true } },
+          { _id: false }
+        ),
+      ],
+      default: undefined,
+    },
+    playStoreUrl: { type: String, trim: true },
+    appStoreUrl: { type: String, trim: true },
+    beyondTheMedalUrl: { type: String, trim: true },
   },
   { timestamps: true }
 );
@@ -40,9 +66,7 @@ export async function getHomepageSettingsSingleton() {
 }
 
 export async function upsertHomepageSettingsSingleton(
-  update: Partial<
-    Pick<IHomepageSettings, "heroVideoUrl" | "heroVideoPosterUrl" | "heroBackgroundImageUrl" | "heroShowcaseImages">
-  >
+  update: Partial<Omit<IHomepageSettings, "createdAt" | "updatedAt">>
 ) {
   return HomepageSettings.findByIdAndUpdate(
     SINGLETON_ID,

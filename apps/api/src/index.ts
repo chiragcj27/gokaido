@@ -31,7 +31,7 @@ const app: Express = express();
 // in dev — different ports), so every real request is cross-origin.
 const allowedOrigins = (
   process.env.CORS_ORIGINS ??
-    "http://localhost:3000,http://localhost:3002,https://gokaido-admin.vercel.app"
+    "http://localhost:3000,http://localhost:3002,https://gokaido-web.vercel.app,https://gokaido-admin.vercel.app"
 )
   .split(",")
   .map((origin) => origin.trim().replace(/\/+$/, ""))

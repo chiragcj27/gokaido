@@ -96,7 +96,7 @@ The old hard-coded page is kept temporarily at `/sample-product/karate-guards` (
 
 ## Dummy Data Tracker
 
-Every hard-coded / placeholder / stubbed piece of storefront data is listed in `DUMMY_DATA.md` (repo root), with its real source. **Add a row whenever you introduce dummy data and remove it when you wire the real thing.** `/search` currently returns dummy results for every query (`USE_DUMMY_SEARCH` in `apps/web/app/lib/search/dummySearch.ts`) — temporary, remove only when the user asks.
+Every hard-coded / placeholder / stubbed piece of storefront data is listed in `DUMMY_DATA.md` (repo root), with its real source. **Add a row whenever you introduce dummy data and remove it when you wire the real thing.** Storefront data is **dynamic with a dummy fallback**: every section fetches its real source (`apps/web/app/lib/catalog.ts`, `lib/homepage.ts`, …) and falls back to placeholders from `lib/fallbacks.ts` only when the API is down or has nothing yet — follow that pattern for new sections rather than hard-coding. Admin-editable site content without its own model (trending searches, store FAQs, app-store links, "Beyond the Medal" CTA) lives on the `HomepageSettings` singleton.
 
 ## Payment Gateway (ICICI Bank PG)
 

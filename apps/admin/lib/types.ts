@@ -13,6 +13,11 @@ export interface HomepageSettings {
   heroVideoPosterUrl: string | null;
   heroBackgroundImageUrl: string | null;
   heroShowcaseImages: string[];
+  trendingSearches: string[];
+  faqs: { question: string; answer: string }[];
+  playStoreUrl: string | null;
+  appStoreUrl: string | null;
+  beyondTheMedalUrl: string | null;
 }
 
 export interface SizeGuideMeasurementPoint {
