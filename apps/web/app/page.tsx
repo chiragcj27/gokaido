@@ -45,7 +45,7 @@ export default async function Home() {
           hero's fixed video layer (z-20). */}
       <div className="relative z-[25] max-md:-mt-[calc(100svh-112.93vw)]">
         <UnifyKits
-          categories={categories.map((c) => ({ name: c.name, image: c.image ?? CATEGORY_PLACEHOLDER_IMAGE }))}
+          categories={categories.map((c) => ({ name: c.name, image: c.image ?? CATEGORY_PLACEHOLDER_IMAGE, href: c.href }))}
           backgroundUrl="/home/unify_your_kits_bg.png"
         />
       </div>

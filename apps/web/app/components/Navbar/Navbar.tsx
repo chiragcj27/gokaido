@@ -36,6 +36,8 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const categoryRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   // Sticky, but slides away while scrolling down and returns on any scroll up.
   // Mainly for the homepage hero: its reel morphs into a full-viewport card
@@ -108,6 +110,25 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
     };
   }, [categoryOpen]);
 
+  // Mobile menu: close on a tap outside the panel (the toggle handles its own clicks).
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (navRef.current?.contains(target) || menuToggleRef.current?.contains(target)) return;
+      setMobileOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mobileOpen]);
+
   return (
     <header ref={headerRef} className={hidden ? `${styles.header} ${styles.headerHidden}` : styles.header}>
       <div className={styles.inner}>
@@ -117,6 +138,7 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
           </Link>
 
           <nav
+            ref={navRef}
             className={mobileOpen ? `${styles.navLinks} ${styles.navLinksOpen}` : styles.navLinks}
             aria-label="Primary"
           >
@@ -198,6 +220,7 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
 
           <button
             type="button"
+            ref={menuToggleRef}
             className={styles.menuToggle}
             aria-expanded={mobileOpen}
             aria-label="Toggle menu"

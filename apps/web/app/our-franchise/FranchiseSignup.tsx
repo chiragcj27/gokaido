@@ -6,14 +6,18 @@ import EnquiryForm from "../components/EnquiryForm/EnquiryForm";
  */
 export default function FranchiseSignup() {
   return (
-    <section id="franchise-signup" aria-labelledby="franchise-signup-title" className="relative pb-24">
+    <section id="franchise-signup" aria-labelledby="franchise-signup-title" className="relative bg-black pb-24">
       <div className="relative aspect-1580/715 w-full overflow-hidden">
-        <Image src="/franchise/image 261.png" alt="" fill sizes="100vw" className="object-cover" />
-        {/* Fade the banner into the page on every side, strongest at the bottom where the form overlaps. */}
-        <div className="absolute inset-0 bg-linear-to-b from-ink via-transparent to-ink" />
-        <div className="absolute inset-0 bg-linear-to-r from-ink/60 via-transparent to-ink/60" />
+        {/* Full-colour banner; only its top and bottom edges are masked so it melts into the page — the top fade is long and eased so there is no visible line against the black above. */}
+        <Image
+          src="/franchise/image 261.png"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover mask-[linear-gradient(to_bottom,transparent,rgb(0_0_0/0.15)_12%,rgb(0_0_0/0.6)_26%,black_42%,black_72%,transparent)]"
+        />
 
-        <h2 id="franchise-signup-title" className="absolute inset-x-0 top-[2%] m-0">
+        <h2 id="franchise-signup-title" className="absolute inset-x-0 top-[-11%] m-0">
           <span className="sr-only">Sign up today</span>
           {/* Arched title: text laid along a shallow upward curve. */}
           <svg aria-hidden viewBox="0 0 1000 260" className="mx-auto block w-[88%]">

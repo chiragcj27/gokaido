@@ -348,11 +348,14 @@ export default function ProductInfo({
           </button>
 
           <div
-            className={`grid overflow-hidden transition-all duration-300 ease-out ${
+            className={`-mx-1 grid overflow-hidden transition-all duration-300 ease-out ${
               sizePickerOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
             }`}
           >
-            <div className="flex min-h-0 flex-wrap gap-2.5 overflow-hidden pt-1">
+            {/* p-1 leaves room for the selected chip's ring (2px + 2px offset), which the
+                overflow-hidden needed for the collapse animation would otherwise clip;
+                -mx-1 above keeps the chips aligned with the field. */}
+            <div className="flex min-h-0 flex-wrap gap-2.5 overflow-hidden p-1">
               {sizes.map((size) => (
                 <button
                   key={size}

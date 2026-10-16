@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
 
 interface Point {
   lead?: string;
@@ -63,12 +64,18 @@ const ROWS: Row[] = [
   },
 ];
 
+// Desktop stack geometry: each arriving row stops PEEK px lower than the one before,
+// while the rows already there are pushed up another LIFT px, so they fan out above it.
+const PEEK = 64;
+const LIFT = 115.2;
+
 /**
- * Why / What / Who cards. On desktop the section pins and the rows stack in one
- * spot: scrolling slides each next row up from below to cover the previous one,
- * and when a row lands its contents reveal — the big question word pops up with a
- * tilt, the card scales in, then its title and list items fade in one by one.
- * On mobile the rows just flow and each one reveals as it scrolls into view.
+ * Why / What / Who cards. On desktop the section pins and the rows stack like a deck:
+ * scrolling slides each next row up over the previous ones, which get nudged up so
+ * their tops stay peeking out. Each row reveals once, as soon as 15% of it is on
+ * screen — the big question word springs up from a random tilt, the card scales in,
+ * its title pops in letter by letter, then the list items rise in one after another.
+ * On mobile the rows just flow, with the same reveal.
  */
 export default function WhyWhatWho() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -76,105 +83,95 @@ export default function WhyWhatWho() {
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
-    gsap.registerPlugin(ScrollTrigger);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    gsap.registerPlugin(ScrollTrigger, SplitText);
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const rows = gsap.utils.toArray<HTMLElement>("[data-row]", section);
+    const observers: IntersectionObserver[] = [];
 
-    // Paused reveal timeline for one row's contents.
-    const reveal = (row: HTMLElement, i: number) => {
-      const tl = gsap.timeline({ paused: true });
-      const question = row.querySelector("[data-question]");
-      if (question) {
-        tl.fromTo(
-          question,
-          { autoAlpha: 0, y: 80, scale: 0.6, rotation: ROWS[i].tilt * -2.5 },
-          { autoAlpha: 1, y: 0, scale: 1, rotation: ROWS[i].tilt, duration: 0.9, ease: "back.out(1.6)" },
-          0,
-        );
-      }
-      tl.fromTo(row.querySelector("[data-card]"), { autoAlpha: 0, scale: 0.8 }, { autoAlpha: 1, scale: 1, duration: 0.7, ease: "power3.out" }, 0)
-        .fromTo(row.querySelector("[data-title]"), { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.25)
-        .fromTo(
-          row.querySelectorAll("[data-item]"),
-          { autoAlpha: 0, y: 12 },
-          { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out", stagger: 0.07 },
-          0.4,
-        );
-      return tl;
-    };
-
-    if (reduceMotion) {
-      rows.forEach((row, i) => gsap.set(row.querySelector("[data-question]"), { rotation: ROWS[i].tilt }));
-      return;
-    }
-
-    const mm = gsap.matchMedia(section);
-
-    mm.add("(min-width: 1024px)", () => {
-      const reveals = rows.map(reveal);
-
-      // First row reveals as the section comes into view.
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top 60%",
-        onEnter: () => reveals[0].play(),
-        onLeaveBack: () => reveals[0].reverse(),
-      });
-
-      const stack = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: () => `+=${window.innerHeight * (rows.length - 1)}`,
-          pin: true,
-          scrub: 1,
-          invalidateOnRefresh: true,
-        },
-      });
-      rows.slice(1).forEach((row, j) => {
-        const i = j + 1;
-        // Reveal as the row starts sliding in, so it never arrives as an empty slab.
-        // Fires both ways as the scrub crosses this point.
-        stack.call(() => {
-          if (stack.scrollTrigger?.direction === -1) reveals[i].reverse();
-          else reveals[i].play();
-        });
-        stack.fromTo(row, { y: () => window.innerHeight }, { y: 0, ease: "none", duration: 1 });
-      });
-    });
-
-    mm.add("(max-width: 1023px)", () => {
+    const ctx = gsap.context(() => {
       rows.forEach((row, i) => {
-        const tl = reveal(row, i);
-        ScrollTrigger.create({
-          trigger: row,
-          start: "top 80%",
-          onEnter: () => tl.play(),
-          onLeaveBack: () => tl.reverse(),
-        });
-      });
-    });
+        const question = row.querySelector("[data-question]");
+        const card = row.querySelector("[data-card]");
+        const title = row.querySelector<HTMLElement>("[data-title]");
+        const items = row.querySelectorAll("[data-item]");
+        const chars = title ? SplitText.create(title, { type: "words,chars" }).chars : [];
 
-    return () => mm.revert();
+        if (question) gsap.set(question, { autoAlpha: 0, y: 80, scale: 0.6, rotation: "random(-20, 20)" });
+        gsap.set(card, { autoAlpha: 0, scale: 0.8 });
+        gsap.set(chars, { opacity: 0, y: 60, scaleX: 0.8, scaleY: 0.5 });
+        gsap.set(items, { autoAlpha: 0, yPercent: 50 });
+
+        // IntersectionObserver rather than ScrollTrigger: it sees the rows' live,
+        // transformed positions while the desktop stack is being scrubbed.
+        const io = new IntersectionObserver(
+          ([entry]) => {
+            if (!entry.isIntersecting) return;
+            io.disconnect();
+            ctx.add(() => {
+              const tl = gsap.timeline();
+              if (question) {
+                tl.to(question, { autoAlpha: 1, y: 0, scale: 1, rotation: ROWS[i].tilt, duration: 0.8, ease: "back.out(2.5)" }, 0);
+              }
+              tl.to(card, { autoAlpha: 1, scale: 1, duration: 0.7, ease: "power4.out" }, 0)
+                .to(chars, { opacity: 1, y: 0, scaleX: 1, scaleY: 1, duration: 0.48, stagger: 0.028, ease: "back.out(1.7)" }, ">-0.35")
+                .to(items, { autoAlpha: 1, yPercent: 0, duration: 0.8, stagger: 0.12, ease: "power3.out" }, ">-0.3");
+            });
+          },
+          { threshold: 0.15 },
+        );
+        io.observe(row);
+        observers.push(io);
+      });
+
+      gsap.matchMedia().add("(min-width: 1024px)", () => {
+        if (rows.length < 2) return;
+        const stack = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: `top-=${PEEK}px top`,
+            end: () => `+=${(rows.length - 1) * rows[0].offsetHeight}`,
+            pin: true,
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        });
+        for (let i = 1; i < rows.length; i++) {
+          stack
+            .to(rows.slice(i), { y: () => -rows[i].offsetTop + PEEK * i, ease: "none", duration: 1 })
+            .to(rows.slice(0, i), { y: `-=${LIFT}`, ease: "none", duration: 1 }, "<");
+        }
+      });
+    }, section);
+
+    return () => {
+      observers.forEach((io) => io.disconnect());
+      ctx.revert();
+    };
   }, []);
 
+  // The outer div is React's stable handle: ScrollTrigger's pin wraps the <section> in a
+  // pin-spacer, and the pin is only reverted in effect cleanup — after React has already
+  // detached the DOM on navigation. Without this wrapper React would call removeChild on
+  // the moved <section> and crash ("The node to be removed is not a child of this node").
   return (
+    // -mb-40: the stack settles well short of the pinned screen's bottom, so the next section tucks up into that gap.
+    <div className="lg:-mb-40">
     <section
       ref={sectionRef}
-      className="relative flex flex-col px-4 pb-16 sm:px-15 lg:grid lg:pb-0 lg:h-screen lg:content-center lg:justify-items-center lg:overflow-hidden lg:px-20"
+      className="relative flex flex-col px-2.5 pb-16 lg:h-screen lg:min-h-220 lg:pb-0"
     >
       {ROWS.map((row, i) => (
         <div
           key={row.question}
           data-row
-          className="flex w-full max-w-360 flex-col gap-2.5 border-b border-dashed border-paper/30 bg-ink py-2.5 first:border-t lg:[grid-area:1/1] lg:grid lg:grid-cols-2 lg:border-t"
+          className="flex w-full flex-col gap-2.5 border-b border-dashed border-paper/30 bg-ink py-2.5 first:border-t will-change-transform lg:grid lg:grid-cols-2"
           style={{ zIndex: i }}
         >
           <div className={`hidden items-center justify-center text-center lg:flex ${i % 2 ? "lg:order-2" : ""}`}>
             <h2
               data-question
-              className="m-0 font-heading text-[11.25rem] leading-none font-light text-paper uppercase"
+              className="m-0 font-heading text-[10rem] leading-none font-extrabold tracking-tight text-paper uppercase"
               style={{ transform: `rotate(${row.tilt}deg)` }}
             >
               {row.question}
@@ -186,7 +183,7 @@ export default function WhyWhatWho() {
             className="flex min-h-110 flex-col justify-between gap-10 rounded-xl p-5 text-paper lg:min-h-120 lg:p-10"
             style={{ backgroundColor: row.color }}
           >
-            <h3 data-title className="m-0 max-w-[12ch] font-heading text-5xl leading-none font-light uppercase lg:text-[5rem]">
+            <h3 data-title className="m-0 max-w-[12ch] font-heading text-5xl leading-[0.95] font-extrabold tracking-tight uppercase lg:text-[4.5rem]">
               {row.title}
             </h3>
             <ul className="m-0 flex w-full list-none flex-col p-0">
@@ -210,5 +207,6 @@ export default function WhyWhatWho() {
         </div>
       ))}
     </section>
+    </div>
   );
 }

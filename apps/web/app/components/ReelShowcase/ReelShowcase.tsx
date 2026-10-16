@@ -79,7 +79,7 @@ function ReelCard({
   return (
     <div
       onClick={active ? undefined : onSelect}
-      className={`absolute left-1/2 top-1/2 w-(--reel-w) aspect-[9/13] overflow-hidden rounded-[10px] bg-panel transition-[transform,opacity] duration-500 ease-out ${
+      className={`absolute left-1/2 top-1/2 w-(--reel-w) aspect-[9/16] overflow-hidden rounded-[10px] bg-panel transition-[transform,opacity] duration-500 ease-out ${
         near ? "opacity-100" : "pointer-events-none opacity-0"
       } ${active ? "" : "cursor-pointer"}`}
       style={{
@@ -236,7 +236,7 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
       <h2 className="m-0 text-center font-heading text-[clamp(32px,4.2vw,64px)] font-bold leading-none">{title}</h2>
 
       <div
-        className="relative mx-auto mt-8 h-[calc(var(--reel-w)*1.5)] w-full touch-pan-y [--reel-w:62vw] sm:[--reel-w:min(40vw,340px)] lg:mt-12 lg:[--reel-w:min(28vw,426px)]"
+        className="relative mx-auto mt-8 h-[calc(var(--reel-w)*1.8)] w-full touch-pan-y [--reel-w:min(62vw,calc((100svh_-_160px)*9/16))] sm:[--reel-w:min(40vw,340px,calc((100svh_-_200px)*9/16))] lg:mt-12 lg:[--reel-w:min(28vw,426px,calc((100svh_-_200px)*9/16))]"
         ref={stageRef}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}

@@ -193,7 +193,7 @@ function MobileCarousel({ productName, color }: { productName: string; color: Pr
       <div
         ref={trackRef}
         onScroll={handleScroll}
-        className="flex aspect-856/630 snap-x snap-mandatory overflow-x-auto overscroll-x-contain"
+        className="flex aspect-square snap-x snap-mandatory overflow-x-auto overscroll-x-contain"
       >
         {color.images.map((image, index) => (
           <div key={`${image}-${index}`} className="relative h-full w-full shrink-0 snap-center">

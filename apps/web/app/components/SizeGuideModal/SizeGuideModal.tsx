@@ -57,9 +57,16 @@ export default function SizeGuideModal({
 
   const [chestPoint, lengthPoint] = sizeGuide.measurementGuide;
 
+  // The mobile design highlights the title's last word in red ("SIZE GUIDE").
+  const titleWords = sizeGuide.title.trim().split(/\s+/);
+  const titleLead = titleWords.slice(0, -1).join(" ");
+  const titleLast = titleWords[titleWords.length - 1];
+
+  // Below `lg` the design is a full-screen sheet ordered header → size chart → how to measure → note;
+  // desktop keeps the centred dialog with how-to-measure first. Sections use `order` to swap.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-sm animate-pane-fade"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4 backdrop-blur-sm animate-pane-fade max-lg:p-0"
       onClick={onClose}
     >
       <div
@@ -67,14 +74,18 @@ export default function SizeGuideModal({
         aria-modal="true"
         aria-labelledby="size-guide-modal-title"
         onClick={(event) => event.stopPropagation()}
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-8 overflow-y-auto rounded-2xl border border-white/10 bg-ink p-6 sm:p-10"
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-8 overflow-y-auto rounded-2xl border border-white/10 bg-ink p-6 sm:p-10 max-lg:h-full max-lg:max-h-none max-lg:max-w-none max-lg:gap-10 max-lg:rounded-none max-lg:border-0 max-lg:px-5 max-lg:py-8"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-2">
-            <h2 id="size-guide-modal-title" className="m-0 font-heading text-3xl font-bold text-paper uppercase">
-              {sizeGuide.title}
+        <div className="flex items-start justify-between gap-4 max-lg:order-1">
+          <div className="flex flex-col gap-2 max-lg:gap-5">
+            <h2
+              id="size-guide-modal-title"
+              className="m-0 font-heading text-3xl font-bold text-paper uppercase max-lg:text-[28px]"
+            >
+              {titleLead && `${titleLead} `}
+              <span className="max-lg:text-red">{titleLast}</span>
             </h2>
-            <p className="m-0 max-w-[52ch] font-sans text-sm leading-relaxed text-paper/55">
+            <p className="m-0 max-w-[52ch] font-sans text-sm leading-relaxed text-paper/55 max-lg:text-[13px] max-lg:leading-[1.8] max-lg:text-paper/70">
               {sizeGuide.description}
             </p>
           </div>
@@ -97,28 +108,31 @@ export default function SizeGuideModal({
           </button>
         </div>
 
-        <div className="border-t border-white/10" />
+        <div className="border-t border-white/10 max-lg:hidden" />
 
         {sizeGuide.measurementGuide.length > 0 && (
-          <div className="flex flex-col gap-5">
-            <span className="font-heading text-xs font-bold tracking-[0.08em] text-paper/50 uppercase">
+          <div className="flex flex-col gap-5 max-lg:order-3">
+            <span className="font-heading text-xs font-bold tracking-[0.08em] text-paper/50 uppercase max-lg:text-2xl max-lg:font-normal max-lg:tracking-wide max-lg:text-paper">
               How To Measure
             </span>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
-              <div className="relative w-full max-w-55 justify-self-center overflow-hidden rounded-xl bg-paper sm:justify-self-start">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[auto_1fr] lg:items-center">
+              <div className="relative w-full max-w-55 justify-self-center overflow-hidden rounded-xl bg-paper lg:justify-self-start max-lg:max-w-none max-lg:rounded-none">
                 <Image
                   src={sizeGuide.measurementImageSrc}
                   alt="Diagram showing how to measure chest circumference and length"
                   width={220}
                   height={220}
+                  sizes="(max-width: 1023px) 100vw, 220px"
                   className="h-auto w-full object-contain"
                 />
+                {/* Desktop overlays A/B markers on the small thumbnail; the mobile design shows the
+                    diagram full-width with its own annotations, so the markers are hidden there. */}
                 {sizeGuide.measurementGuide.map((point, index) => (
                   <span
                     key={point.letter}
                     aria-hidden="true"
-                    className="absolute flex h-6 w-6 items-center justify-center rounded-full border-2 border-paper bg-red font-heading text-xs font-bold text-paper shadow-md"
+                    className="absolute flex h-6 w-6 items-center justify-center rounded-full border-2 border-paper bg-red font-heading text-xs font-bold text-paper shadow-md max-lg:hidden"
                     style={
                       index === 0
                         ? { top: "26%", right: "6%", transform: "translate(50%, -50%)" }
@@ -130,18 +144,22 @@ export default function SizeGuideModal({
                 ))}
               </div>
 
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 max-lg:gap-6">
                 {sizeGuide.measurementGuide.map((point) => (
-                  <div key={point.letter} className="flex items-start gap-3">
+                  <div key={point.letter} className="flex items-start gap-3 max-lg:gap-5">
                     <span
                       aria-hidden="true"
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red font-heading text-xs font-bold text-paper"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red font-heading text-xs font-bold text-paper max-lg:h-11 max-lg:w-11 max-lg:text-base"
                     >
                       {point.letter}
                     </span>
-                    <div className="flex flex-col gap-1">
-                      <span className="font-heading text-sm font-semibold text-paper">{point.title}</span>
-                      <span className="font-sans text-xs leading-relaxed text-paper/55">{point.description}</span>
+                    <div className="flex flex-col gap-1 max-lg:gap-2">
+                      <span className="font-heading text-sm font-semibold text-paper max-lg:font-sans max-lg:text-lg">
+                        {point.title}
+                      </span>
+                      <span className="font-sans text-xs leading-relaxed text-paper/55 max-lg:text-[13px] max-lg:leading-[1.7] max-lg:text-paper/70">
+                        {point.description}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -150,20 +168,24 @@ export default function SizeGuideModal({
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 max-lg:order-2 max-lg:gap-6">
           <div className="flex items-center justify-between gap-4">
-            <span className="font-heading text-xs font-bold tracking-[0.08em] text-paper/50 uppercase">
+            <span className="font-heading text-xs font-bold tracking-[0.08em] text-paper/50 uppercase max-lg:text-2xl max-lg:tracking-wide max-lg:text-paper">
               Size Chart
             </span>
 
-            <div role="group" aria-label="Measurement unit" className="flex rounded-lg border border-white/15 p-1">
+            <div
+              role="group"
+              aria-label="Measurement unit"
+              className="flex rounded-lg border border-white/15 p-1 max-lg:border-white/25"
+            >
               {(["cm", "in"] as Unit[]).map((option) => (
                 <button
                   key={option}
                   type="button"
                   aria-pressed={unit === option}
                   onClick={() => setUnit(option)}
-                  className={`cursor-pointer rounded-md px-3 py-1 font-heading text-xs font-bold uppercase transition-colors duration-200 ${
+                  className={`cursor-pointer rounded-md px-3 py-1 font-heading text-xs font-bold uppercase transition-colors duration-200 max-lg:px-6 max-lg:py-1.5 ${
                     unit === option ? "bg-red text-paper" : "bg-transparent text-paper/50 hover:text-paper"
                   }`}
                 >
@@ -173,16 +195,20 @@ export default function SizeGuideModal({
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-white/10">
+          <div className="overflow-hidden rounded-xl border border-white/10 max-lg:border-white/20">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-white/10 bg-white/3">
-                  <th className="px-4 py-3 text-left font-sans text-xs font-semibold text-paper/50">Size</th>
-                  <th className="px-4 py-3 text-right font-sans text-xs font-semibold text-paper/50">
-                    Chest Circumference{chestPoint ? ` (${chestPoint.letter})` : ""}
+                  <th className="px-4 py-3 text-left font-sans text-xs font-semibold text-paper/50 max-lg:py-5 max-lg:text-paper/80">
+                    Size
                   </th>
-                  <th className="px-4 py-3 text-right font-sans text-xs font-semibold text-paper/50">
+                  <th className="px-4 py-3 text-right font-sans text-xs font-semibold text-paper/50 max-lg:py-5 max-lg:text-center max-lg:text-paper/80">
+                    Chest Circumference{chestPoint ? ` (${chestPoint.letter})` : ""}
+                    <span className="block font-normal text-paper/50 lg:hidden">{unit}</span>
+                  </th>
+                  <th className="px-4 py-3 text-right font-sans text-xs font-semibold text-paper/50 max-lg:py-5 max-lg:text-paper/80">
                     Length{lengthPoint ? ` (${lengthPoint.letter})` : ""}
+                    <span className="block font-normal text-paper/50 lg:hidden">{unit}</span>
                   </th>
                 </tr>
               </thead>
@@ -203,19 +229,21 @@ export default function SizeGuideModal({
                           aria-disabled={!available}
                           disabled={!available}
                           onClick={() => available && onSizeSelect(row.size)}
-                          className={`flex w-full items-center gap-3 px-4 py-3 text-left ${
+                          className={`flex w-full items-center gap-3 px-4 py-3 text-left max-lg:gap-4 max-lg:py-4.5 ${
                             available ? "cursor-pointer" : "cursor-not-allowed"
                           }`}
                         >
                           <span
                             aria-hidden="true"
-                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                              selected ? "border-red" : "border-white/30"
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border max-lg:h-5 max-lg:w-5 max-lg:border-2 ${
+                              selected ? "border-red" : "border-white/30 max-lg:border-white/50"
                             }`}
                           >
-                            {selected && <span className="h-2 w-2 rounded-full bg-red" />}
+                            {selected && <span className="h-2 w-2 rounded-full bg-red max-lg:h-2.5 max-lg:w-2.5" />}
                           </span>
-                          <span className="font-heading text-sm font-bold text-paper">{row.size}</span>
+                          <span className="font-heading text-sm font-bold text-paper max-lg:font-sans max-lg:text-base">
+                            {row.size}
+                          </span>
                           {!available && (
                             <span className="font-sans text-[10px] tracking-[0.06em] text-paper/40 uppercase">
                               Unavailable
@@ -223,10 +251,10 @@ export default function SizeGuideModal({
                           )}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-right font-sans text-sm text-paper/70">
+                      <td className="px-4 py-3 text-right font-sans text-sm text-paper/70 max-lg:text-center max-lg:text-base max-lg:text-paper/80">
                         {formatMeasurement(row.chestMinCm, unit)} - {formatMeasurement(row.chestMaxCm, unit)}
                       </td>
-                      <td className="px-4 py-3 text-right font-sans text-sm text-paper/70">
+                      <td className="px-4 py-3 text-right font-sans text-sm text-paper/70 max-lg:text-base max-lg:text-paper/80">
                         {formatMeasurement(row.lengthCm, unit)}
                       </td>
                     </tr>
@@ -238,13 +266,13 @@ export default function SizeGuideModal({
         </div>
 
         {sizeGuide.footerNote && (
-          <div className="flex items-start gap-3 border-t border-white/10 pt-4">
+          <div className="flex items-start gap-3 border-t border-white/10 pt-4 max-lg:order-4 max-lg:items-center max-lg:gap-4 max-lg:rounded-xl max-lg:border max-lg:border-red/40 max-lg:bg-red/15 max-lg:p-5">
             <svg
               viewBox="0 0 24 24"
               width="18"
               height="18"
               aria-hidden="true"
-              className="mt-0.5 shrink-0 text-paper/50"
+              className="mt-0.5 shrink-0 text-paper/50 max-lg:mt-0 max-lg:h-6 max-lg:w-6 max-lg:text-red"
             >
               <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.4" />
               <path
@@ -255,7 +283,9 @@ export default function SizeGuideModal({
                 strokeLinecap="round"
               />
             </svg>
-            <p className="m-0 font-sans text-xs leading-relaxed text-paper/50">{sizeGuide.footerNote}</p>
+            <p className="m-0 font-sans text-xs leading-relaxed text-paper/50 max-lg:text-[11px] max-lg:leading-[1.8] max-lg:text-paper/70">
+              {sizeGuide.footerNote}
+            </p>
           </div>
         )}
       </div>

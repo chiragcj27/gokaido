@@ -70,24 +70,23 @@ export default function BeforeAfterSlider({
       />
 
       {/* "Before" (competitor) is the clipped layer, so it occupies the left of the handle — the same
-          side as its label. Desktop greys it out; the mobile design blurs and hazes it instead. */}
+          side as its label. Both photos are shown exactly as uploaded, with no filters. */}
       <div className="pointer-events-none absolute inset-0" style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}>
         <Image
           src={beforeSrc}
           alt={beforeAlt}
           fill
           draggable={false}
-          className="object-contain p-10 grayscale max-lg:object-cover max-lg:p-0 max-lg:blur-sm max-lg:grayscale-0"
+          className="object-contain p-10 max-lg:object-cover max-lg:p-0"
         />
-        <div className="absolute inset-0 bg-paper/15 lg:hidden" />
       </div>
 
       <div
-        className="absolute inset-y-0 z-10 w-0.5 -translate-x-1/2 bg-paper/80 max-lg:w-px max-lg:bg-ink/60"
+        className="absolute inset-y-0 z-10 w-1 -translate-x-1/2 bg-paper shadow-[0_0_6px_rgba(0,0,0,0.6)]"
         style={{ left: `${position}%` }}
       >
-        <span className="absolute top-1/2 left-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-ink text-paper shadow-lg max-lg:h-5 max-lg:w-5 max-lg:border-ink max-lg:bg-transparent max-lg:shadow-none">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" className="max-lg:hidden">
+        <span className="absolute top-1/2 left-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-paper bg-ink text-paper shadow-lg max-lg:h-8 max-lg:w-8">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <path
               d="M8 7 3 12l5 5M16 7l5 5-5 5"
               fill="none"

@@ -415,7 +415,8 @@
   .heading {
     font-size: 15px;
     letter-spacing: 0.08em;
-    color: #f0ad3d;
+    color: #fff;
+    font-weight: 700;
   }
 
   .list {

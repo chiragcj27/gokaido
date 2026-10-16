@@ -36,7 +36,7 @@ function formatInr(amount: number) {
 /**
  * "Bestsellers" section: centred heading over product cards.
  * Carousel: four-up from lg, a 2-column grid below that (2×2 for four products).
- * Grid: 1 → 2 → 4 columns, wrapping into as many rows as there are products.
+ * Grid: 2 columns (2×2 on mobile) → 4 from lg, wrapping into as many rows as there are products.
  */
 export default function Bestsellers({
   title = "Bestsellers",
@@ -53,7 +53,7 @@ export default function Bestsellers({
       <div
         className={
           layout === "grid"
-            ? "mx-auto mt-6 grid max-w-7xl grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:mt-10 lg:grid-cols-4 lg:gap-y-14"
+            ? "mx-auto mt-6 grid max-w-7xl grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:mt-10 lg:grid-cols-4 lg:gap-y-14"
             : "mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:mt-10 lg:grid-cols-4 lg:gap-6"
         }
       >

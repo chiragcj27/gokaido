@@ -31,7 +31,7 @@ export default function AboutUsPage() {
     <TeamPhoto />
     <StatsTrail />
     <section className="mx-auto max-w-360 px-4 pb-16 sm:px-15 sm:pb-24 lg:px-20">
-      <p className="m-0 max-w-6xl font-sans text-[clamp(1.125rem,2vw,1.875rem)] leading-snug text-paper/50 [&_em]:text-red [&_em]:not-italic">
+      <p className="m-0 mx-auto max-w-6xl text-center font-sans text-[clamp(1.125rem,2vw,1.875rem)] leading-snug text-paper/50 [&_em]:text-red [&_em]:not-italic">
         <em>GOKAIDO</em> is a brand dedicated to the world of martial arts, built on decades of experience, discipline,
         and a passion for the craft. Since <em>1975</em>, GOKAIDO has been creating and supplying quality martial arts
         equipment for practitioners, athletes, and training communities. Inspired by the spirit of discipline, precision,
