@@ -15,6 +15,9 @@ export interface ReelShowcaseProps {
 // ~83% of the centre card and sit ~30px clear of it.
 const STEP = 0.99;
 const SIDE_SCALE = 0.83;
+// Auto-advance: a playing video moves on when it ends; anything that isn't
+// playing (Instagram embed, poster only, autoplay blocked) moves on after this.
+const STILL_DWELL_MS = 6000;
 
 /** Instagram's iframe embed URL for a reel/post permalink, or null if it isn't one. */
 function instagramEmbedUrl(url: string | null) {
@@ -38,13 +41,20 @@ function ReelCard({
   reel,
   offset,
   inView,
+  hold,
   onSelect,
+  onPlaying,
+  onEnded,
 }: {
   reel: Reel;
   offset: number;
   /** Whether the carousel is on screen — iOS refuses play() on off-screen video and never retries. */
   inView: boolean;
+  /** Visitor is hovering / focused on the carousel — keep looping rather than advancing. */
+  hold: boolean;
   onSelect: () => void;
+  onPlaying: () => void;
+  onEnded: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
@@ -95,7 +105,11 @@ function ReelCard({
           src={reel.videoUrl}
           poster={reel.posterUrl ?? undefined}
           muted={muted}
-          loop
+          // Loops only while someone's watching (unmuted or hovering);
+          // otherwise it plays once and `ended` advances the carousel.
+          loop={!muted || hold}
+          onPlaying={active ? onPlaying : undefined}
+          onEnded={active ? onEnded : undefined}
           playsInline
           preload={active ? "auto" : "metadata"}
           className="absolute inset-0 h-full w-full object-cover"
@@ -201,7 +215,13 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
   const drag = useRef<{ x: number } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
+  const [hover, setHover] = useState(false);
+  const [focused, setFocused] = useState(false);
+  // Whether the centre reel's video is actually playing — if so we wait for it
+  // to end; if not, a timer advances instead.
+  const [playing, setPlaying] = useState(false);
   const n = reels.length;
+  const hold = hover || focused;
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -210,6 +230,16 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
     io.observe(stage);
     return () => io.disconnect();
   }, [n]);
+
+  useEffect(() => setPlaying(false), [active]);
+
+  useEffect(() => {
+    if (n < 2 || !inView || hold || playing) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setTimeout(() => setActive((a) => (a + 1) % n), STILL_DWELL_MS);
+    return () => clearTimeout(t);
+  }, [active, n, inView, hold, playing]);
+
   if (n === 0) return null;
 
   const go = (delta: number) => setActive((a) => (a + delta + n) % n);
@@ -241,6 +271,12 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={() => (drag.current = null)}
+        onPointerEnter={(e) => e.pointerType === "mouse" && setHover(true)}
+        onPointerLeave={(e) => e.pointerType === "mouse" && setHover(false)}
+        // Keyboard focus only — a tap/click also focuses the stage, and that
+        // shouldn't stop the carousel.
+        onFocus={(e) => e.target.matches(":focus-visible") && setFocused(true)}
+        onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setFocused(false)}
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft") go(-1);
           if (e.key === "ArrowRight") go(1);
@@ -253,7 +289,10 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
             reel={reel}
             offset={ringOffset(i, active, n)}
             inView={inView}
+            hold={hold || n < 2}
             onSelect={() => setActive(i)}
+            onPlaying={() => setPlaying(true)}
+            onEnded={() => n > 1 && go(1)}
           />
         ))}
       </div>

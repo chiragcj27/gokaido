@@ -1,3 +1,4 @@
+import WordFadeText from "../components/WordFadeText/WordFadeText";
 import AwardsFloat from "./AwardsFloat";
 import StatsTrail from "./StatsTrail";
 import TeamPhoto from "./TeamPhoto";
@@ -31,7 +32,7 @@ export default function AboutUsPage() {
     <TeamPhoto />
     <StatsTrail />
     <section className="mx-auto max-w-360 px-4 pb-16 sm:px-15 sm:pb-24 lg:px-20">
-      <p className="m-0 mx-auto max-w-6xl text-center font-sans text-[clamp(1.125rem,2vw,1.875rem)] leading-snug text-paper/50 [&_em]:text-red [&_em]:not-italic">
+      <WordFadeText className="m-0 mx-auto max-w-6xl text-center font-sans text-[clamp(1.125rem,2vw,1.875rem)] leading-snug text-paper [&_em]:text-red [&_em]:not-italic">
         <em>GOKAIDO</em> is a brand dedicated to the world of martial arts, built on decades of experience, discipline,
         and a passion for the craft. Since <em>1975</em>, GOKAIDO has been creating and supplying quality martial arts
         equipment for practitioners, athletes, and training communities. Inspired by the spirit of discipline, precision,
@@ -39,7 +40,7 @@ export default function AboutUsPage() {
         products. From uniforms and belts to protective <em>gear</em> and training <em>equipment</em>, every product is
         made to support the journey from practice to performance. Here, martial arts is more than a sport it is a way of
         life shaped by <em>discipline</em>, dedication, and the pursuit of mastery.
-      </p>
+      </WordFadeText>
     </section>
     <section className="mx-auto grid max-w-360 gap-10 px-4 pb-16 sm:grid-cols-2 sm:gap-16 sm:px-15 sm:pb-24 lg:px-20">
       {SEGMENTS.map((s, i) => (

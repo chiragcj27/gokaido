@@ -155,15 +155,14 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
                   alt="Category"
                   width={108}
                   height={41}
-                  style={{ width: 108, height: 41 }}
+                  className={styles.navText}
                 />
                 <Image
                   src="/navbar/category-chevron.png"
                   alt=""
                   width={20}
                   height={46}
-                  style={{ width: 18, height: 41 }}
-                  className={categoryOpen ? `${styles.chevron} ${styles.chevronOpen}` : styles.chevron}
+                  className={categoryOpen ? `${styles.navText} ${styles.chevron} ${styles.chevronOpen}` : `${styles.navText} ${styles.chevron}`}
                 />
               </button>
               {categoryOpen && (
@@ -194,7 +193,7 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
                   alt={link.label}
                   width={link.width}
                   height={link.height}
-                  style={{ width: link.width, height: link.height }}
+                  className={styles.navText}
                 />
               </Link>
             ))}

@@ -78,6 +78,12 @@
   display: block;
 }
 
+/* Text-as-image nav labels: height drives size, width follows the aspect ratio. */
+.navText {
+  height: 41px;
+  width: auto;
+}
+
 .chevron {
   transition: transform 0.2s ease;
 }
@@ -175,6 +181,11 @@
 
   .navLinksOpen {
     display: flex;
+  }
+
+  /* Keep the menu labels smaller than the logo. */
+  .navText {
+    height: 24px;
   }
 
   .menuToggle {

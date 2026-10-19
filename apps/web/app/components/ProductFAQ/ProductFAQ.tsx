@@ -12,7 +12,7 @@ export default function ProductFAQ({ faqs, darkOnMobile = false }: ProductFAQPro
 
   return (
     <section
-      className={`-mx-6 flex flex-col gap-10 bg-paper px-6 py-16 text-ink lg:-mx-10 lg:px-10 ${
+      className={`-mx-6 flex flex-col gap-10 bg-[#CCCCCC] px-6 py-16 text-ink lg:-mx-10 lg:px-10 ${
         dm ? "max-lg:mx-0 max-lg:gap-6 max-lg:bg-transparent max-lg:px-0 max-lg:py-0 max-lg:text-paper" : ""
       }`}
     >
