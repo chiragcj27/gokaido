@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import SearchModal, { type SearchModalProduct } from "../SearchModal/SearchModal";
+import { useCart } from "../../lib/cartStore";
 import styles from "./Navbar.module.css";
 
 const navLinks = [
@@ -39,6 +40,8 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
   const navRef = useRef<HTMLElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
+  const { itemCount, lastAdded } = useCart();
+  const cartIconRef = useRef<HTMLSpanElement>(null);
   // Sticky, but slides away while scrolling down and returns on any scroll up.
   // Mainly for the homepage hero: its reel morphs into a full-viewport card
   // painted on a fixed layer (Hero.tsx, z-20) that this header (z-40) would
@@ -73,6 +76,24 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [menuOpen]);
+
+  // Something was just added: bring the navbar back if it was scrolled away so the badge is
+  // visible, and give the cart icon a "hit" wiggle.
+  useEffect(() => {
+    if (!lastAdded) return;
+    setHidden(false);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    cartIconRef.current?.animate(
+      [
+        { transform: "none" },
+        { transform: "scale(1.18) rotate(-12deg)" },
+        { transform: "scale(1.1) rotate(9deg)" },
+        { transform: "scale(1.04) rotate(-4deg)" },
+        { transform: "none" },
+      ],
+      { duration: 600, delay: 250, easing: "ease-out" },
+    );
+  }, [lastAdded]);
 
   // New page → always start with the navbar showing.
   useEffect(() => setHidden(false), [pathname]);
@@ -132,6 +153,20 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
   return (
     <header ref={headerRef} className={hidden ? `${styles.header} ${styles.headerHidden}` : styles.header}>
       <div className={styles.inner}>
+        {/* First in the DOM so on mobile it sits at the left edge, opposite the icons. */}
+        <button
+          type="button"
+          ref={menuToggleRef}
+          className={styles.menuToggle}
+          aria-expanded={mobileOpen}
+          aria-label="Toggle menu"
+          onClick={() => setMobileOpen((open) => !open)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
         <div className={styles.left}>
           <Link href="/" className={styles.logoLink} aria-label="Gokaido home">
             <Image src="/navbar/logo.png" alt="Gokaido" width={256} height={87} className={styles.logo} priority />
@@ -208,27 +243,26 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
             aria-haspopup="dialog"
             onClick={() => setSearchOpen(true)}
           >
-            <Image src="/navbar/icon-search.png" alt="" width={37} height={56} style={{ width: 29, height: 43 }} />
+            <Image src="/navbar/icon-search.png" alt="" width={37} height={56} className={styles.iconImg} />
           </button>
           <Link href="/account" className={styles.iconButton} aria-label="Account">
-            <Image src="/navbar/icon-account.png" alt="" width={37} height={56} style={{ width: 29, height: 43 }} />
+            <Image src="/navbar/icon-account.png" alt="" width={37} height={56} className={styles.iconImg} />
           </Link>
-          <Link href="/cart" className={styles.iconButton} aria-label="Cart">
-            <Image src="/navbar/icon-cart.png" alt="" width={37} height={56} style={{ width: 29, height: 43 }} />
-          </Link>
-
-          <button
-            type="button"
-            ref={menuToggleRef}
-            className={styles.menuToggle}
-            aria-expanded={mobileOpen}
-            aria-label="Toggle menu"
-            onClick={() => setMobileOpen((open) => !open)}
+          <Link
+            href="/cart"
+            className={styles.iconButton}
+            aria-label={itemCount > 0 ? `Cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}` : "Cart"}
           >
-            <span />
-            <span />
-            <span />
-          </button>
+            <span ref={cartIconRef} className={styles.cartIcon}>
+              <Image src="/navbar/icon-cart.png" alt="" width={37} height={56} className={styles.iconImg} />
+              {itemCount > 0 && (
+                // Keyed by count so every change replays the pop.
+                <span key={itemCount} className={styles.cartBadge} aria-hidden="true">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </span>
+          </Link>
         </div>
       </div>
       <SearchModal

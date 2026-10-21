@@ -31,8 +31,19 @@ export interface AddCartItemInput extends Omit<CartItem, "quantity"> {
   quantity?: number;
 }
 
+/** The most recent add, for the "added to bag" toast. `key` changes on every add so repeat adds re-trigger it. */
+export interface CartAddEvent {
+  key: number;
+  item: AddCartItemInput;
+  quantity: number;
+}
+
 interface CartContextValue {
   items: CartItem[];
+  /** Total units across all lines — what the navbar badge shows. */
+  itemCount: number;
+  lastAdded: CartAddEvent | null;
+  dismissLastAdded: () => void;
   addItem: (item: AddCartItemInput) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
@@ -44,6 +55,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [lastAdded, setLastAdded] = useState<CartAddEvent | null>(null);
 
   useEffect(() => {
     try {
@@ -74,7 +86,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, quantity: item.quantity ?? 1 }];
     });
+    setLastAdded({ key: Date.now(), item, quantity: item.quantity ?? 1 });
   }, []);
+
+  const dismissLastAdded = useCallback(() => setLastAdded(null), []);
 
   const updateQuantity = useCallback((id: string, quantity: number) => {
     setItems((prev) => prev.map((line) => (line.id === id ? { ...line, quantity } : line)));
@@ -95,9 +110,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   }, []);
 
+  const itemCount = useMemo(() => items.reduce((sum, line) => sum + line.quantity, 0), [items]);
+
   const value = useMemo(
-    () => ({ items, addItem, updateQuantity, removeItem, clearCart }),
-    [items, addItem, updateQuantity, removeItem, clearCart],
+    () => ({ items, itemCount, lastAdded, dismissLastAdded, addItem, updateQuantity, removeItem, clearCart }),
+    [items, itemCount, lastAdded, dismissLastAdded, addItem, updateQuantity, removeItem, clearCart],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createHeroReelGL, type HeroReelGL } from "./heroReelGL";
@@ -12,6 +12,9 @@ export interface HeroProps {
   backgroundUrl?: string;
   /** Product tiles in the white card between "MADE" and "TO", left to right. */
   showcaseImages?: string[];
+  /** Rendered straight under the reel strip, inside the block that pins on
+   *  phones, so it stays glued to the strip while the video grows into it. */
+  children?: ReactNode;
 }
 
 /**
@@ -56,7 +59,7 @@ export interface HeroProps {
  * `showcaseImages` (the MADE/TO card) are static product tiles that scroll
  * normally — no morph, no GL, they're just images in the headline row.
  */
-export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImages }: HeroProps) {
+export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImages, children }: HeroProps) {
   const stackRef = useRef<HTMLDivElement>(null);
   const slotRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -262,12 +265,10 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
         tween({ endTrigger: card, end: "top top" });
       });
       // Phones: the end box is a short strip right under the hero, so it is
-      // already on screen. Pin hero + strip while the video grows into it,
-      // then release to normal scrolling. Meanwhile the next section rises
-      // from the bottom and ends up just under the strip (page.tsx offsets
-      // it so the two line up exactly at the end of this range). Without
-      // the pin the strip scrolls away as the video arrives and it never
-      // shows fully in place.
+      // already on screen. Pin hero + strip (+ `children`, the next section,
+      // sitting directly under the strip) while the video grows into it,
+      // then release to normal scrolling. Without the pin the strip scrolls
+      // away as the video arrives and it never shows fully in place.
       mm.add("(max-width: 767px)", () => {
         tween({ pin: stack, end: () => `+=${window.innerHeight * 0.6}` });
       });
@@ -290,7 +291,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
 
   return (
     <>
-      <div ref={stackRef} className="relative max-md:flex max-md:min-h-svh max-md:flex-col">
+      <div ref={stackRef} className="relative">
         <section className="relative flex aspect-[1602/908] w-full shrink-0 md:aspect-auto md:h-[calc(100svh-var(--navbar-h))] flex-col items-center justify-center overflow-hidden bg-ink text-paper">
           {backgroundUrl && (
             // Background art is already near-black with its own spotlights and
@@ -340,13 +341,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
         {/* End of the morph. A REAL in-flow element — that's what lets the
             reel scroll away naturally once it's full size, instead of being
             stuck to the viewport. */}
-        <section className="relative w-full bg-ink max-md:flex-1 md:h-screen">
-          {/* Phones: the pinned hero + strip is shorter than the screen, so
-              fill the rest with the "Unify your kits" backdrop (same art as
-              the next section) instead of plain black. Darkened so the reel
-              strip stays the focus. */}
-          <Image src="/home/unify_your_kits_bg.png" alt="" fill sizes="100vw" className="object-cover md:hidden" />
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink via-ink/40 to-ink/20 md:hidden" />
+        <section className="relative w-full bg-ink md:h-screen">
           {/* Phones: a full-width 16:9 strip so the reel shows uncropped.
               md+: the whole viewport. */}
           <div ref={cardRef} aria-hidden="true" className="relative z-10 aspect-video w-full overflow-hidden md:absolute md:inset-0 md:aspect-auto">
@@ -358,6 +353,8 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
             )}
           </div>
         </section>
+
+        {children}
       </div>
 
       {/* Painting surfaces. Both fixed & full-viewport; only one is ever

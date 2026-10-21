@@ -61,16 +61,20 @@
 
 .categoryWrap {
   position: relative;
+  /* Flex, not block: a block wrapper adds a line-box descender gap under the
+     inline-flex button, which lifted "Category" above the other labels. */
+  display: flex;
 }
 
 .categoryButton {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   background: none;
   border: none;
-  /* Vertical padding kept small so the logo, not the links, sets the header height. */
-  padding: 4px 7px;
+  /* Vertical padding kept small so the logo, not the links, sets the header height.
+     No side padding, so it lines up with the other links in the mobile menu. */
+  padding: 4px 0;
   cursor: pointer;
 }
 
@@ -85,6 +89,10 @@
 }
 
 .chevron {
+  /* Both PNGs carry transparent side padding; pull the arrow in next to the text. */
+  margin-left: -10px;
+  /* Make up the space the button's side padding used to give before the next link. */
+  margin-right: 10px;
   transition: transform 0.2s ease;
 }
 
@@ -147,6 +155,59 @@
   cursor: pointer;
 }
 
+.iconImg {
+  width: 29px;
+  height: 43px;
+}
+
+.cartIcon {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Item count over the cart icon. */
+.cartBadge {
+  position: absolute;
+  top: 2px;
+  right: -7px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #c8102e;
+  box-shadow: 0 0 0 2px #0b0a09;
+  color: #f5f5f5;
+  font-family: var(--font-heading);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  animation: cart-badge-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+@keyframes cart-badge-pop {
+  0% {
+    transform: scale(0.3);
+    background: #f0ad3d;
+    color: #050505;
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartBadge {
+    animation: none;
+  }
+}
+
 .menuToggle {
   display: none;
   flex-direction: column;
@@ -160,12 +221,34 @@
 
 .menuToggle span {
   display: block;
-  width: 20px;
-  height: 2px;
+  width: 24px;
+  height: 2.5px;
+  border-radius: 2px;
   background: #f0ad3d;
 }
 
 @media (max-width: 960px) {
+  /* Hamburger | centred logo | search + cart. Equal 1fr side columns keep the logo truly centred. */
+  .inner {
+    display: grid;
+    /* minmax(0, …) so a wide icon group can't push the logo off-centre. */
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .menuToggle {
+    justify-self: start;
+    margin-left: -5px;
+  }
+
+  .left {
+    justify-self: center;
+  }
+
+  .actions {
+    justify-self: end;
+  }
+
   .navLinks {
     display: none;
     position: absolute;
@@ -188,6 +271,11 @@
     height: 24px;
   }
 
+  .chevron {
+    margin-left: -6px;
+    margin-right: 0;
+  }
+
   .menuToggle {
     display: flex;
   }
@@ -199,15 +287,19 @@
   }
 
   .logo {
-    height: 40px;
+    height: 46px;
   }
 
   .iconButton {
-    padding: 0 5px;
+    padding: 0 4px;
   }
 
-  .menuToggle {
-    padding: 5px;
-    margin-left: 4px;
+  .iconImg {
+    width: 24px;
+    height: 36px;
+  }
+
+  .iconButton:last-child {
+    padding-right: 0;
   }
 }

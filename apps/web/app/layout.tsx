@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
 import SiteFooter from "./components/Footer/SiteFooter";
+import CartToast from "./components/CartToast/CartToast";
 import { CartProvider } from "./lib/cartStore";
 import { AuthProvider } from "./lib/auth/authStore";
 import { getBestsellers, getCategories } from "./lib/catalog";
@@ -39,6 +40,7 @@ export default async function RootLayout({
               bestsellers={bestsellers.products}
             />
             {children}
+            <CartToast />
             <SiteFooter>
               <Footer />
             </SiteFooter>

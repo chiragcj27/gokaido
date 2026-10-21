@@ -36,20 +36,18 @@ export default async function Home() {
             ? settings.heroShowcaseImages
             : ["/hero/showcase-1.png", "/hero/showcase-2.png", "/hero/showcase-3.png"]
         }
-      />
-      {/* Phones: while the hero is pinned and its video grows (see Hero.tsx),
-          this rises from the bottom and settles just under the video strip.
-          The pull-up is the pinned block's height minus the hero (16:9 art)
-          plus the strip (16:9) — both are 100vw wide — so at the end of the
-          pin its top meets the strip's bottom. z-25 keeps it above the
-          hero's fixed video layer (z-20). */}
-      <div className="relative z-[25] max-md:-mt-[calc(100svh-112.93vw)]">
-        <UnifyKits
-          categories={categories.map((c) => ({ name: c.name, image: c.image ?? CATEGORY_PLACEHOLDER_IMAGE, href: c.href }))}
-          backgroundUrl="/home/unify_your_kits_bg.png"
-        />
-      </div>
-      <Bestsellers products={bestsellers.products} />
+      >
+        {/* Inside the hero so on phones it sits directly under the video
+            strip and pins along with it (no gap/filler between them). z-25
+            keeps it above the hero's fixed video layer (z-20). */}
+        <div className="relative z-[25]">
+          <UnifyKits
+            categories={categories.map((c) => ({ name: c.name, image: c.image ?? CATEGORY_PLACEHOLDER_IMAGE, href: c.href }))}
+            backgroundUrl="/home/unify_your_kits_bg.png"
+          />
+        </div>
+      </Hero>
+      <Bestsellers products={bestsellers.products} mobileTitle="Meet What’s New" shopAllHref="/best-sellers" />
       <PresenceMap />
       <StoreLocator stores={stores} />
       <ReelShowcase reels={reels.length > 0 ? reels : DUMMY_REELS} />

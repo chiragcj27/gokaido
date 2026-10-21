@@ -35,23 +35,24 @@ interface RingKeyframes {
 }
 
 const DESKTOP: RingKeyframes = {
-  cardWidth: 38,
-  x: [0, 28, 43, 52],
+  cardWidth: 30,
+  x: [0, 22, 34, 41],
   y: [0, 2, 3.5, 4],
   scale: [1, 0.47, 0.34, 0.25],
   opacity: [1, 1, 1, 0],
   brightness: [1, 0.72, 0.5, 0.4],
 };
 
-// Narrow screens: bigger front card, neighbours pushed mostly off-screen so
-// only their edges peek in.
+// Narrow screens: a mid-size front card with two neighbours fully in view on
+// each side, tucked behind it — the first half-size, the second smaller still
+// towards the edge.
 const MOBILE: RingKeyframes = {
-  cardWidth: 78,
-  x: [0, 56, 82, 100],
-  y: [0, 4, 7, 8],
-  scale: [1, 0.55, 0.4, 0.3],
+  cardWidth: 48,
+  x: [0, 27, 41, 50],
+  y: [0, -1, -1.5, -1.5],
+  scale: [1, 0.5, 0.32, 0.2],
   opacity: [1, 1, 1, 0],
-  brightness: [1, 0.65, 0.45, 0.4],
+  brightness: [1, 0.8, 0.65, 0.5],
 };
 
 function sample(values: number[], at: number) {
@@ -257,19 +258,22 @@ export default function UnifyKits({ categories, backgroundUrl }: UnifyKitsProps)
   }, [categories.length]);
 
   return (
-    <section ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-ink text-paper max-md:touch-pan-y max-md:select-none">
+        // Phones: 3/4 of the screen, heading and ring stacked as one group and
+    // centred vertically (desktop keeps the full-screen absolute layout).
+    <section ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-ink text-paper max-md:flex max-md:h-[75svh] max-md:touch-pan-y max-md:select-none max-md:flex-col max-md:justify-center max-md:gap-[8vw]">
       {backgroundUrl && (
         <Image src={backgroundUrl} alt="" fill sizes="100vw" className="object-cover" />
       )}
 
-      <h2 className="absolute inset-x-0 top-[13%] z-10 text-center font-heading text-[9vw] font-extrabold uppercase leading-none tracking-tight sm:text-[4.6vw]">
+      <h2 className="absolute inset-x-0 top-[8%] z-10 text-center font-heading text-[6vw] font-bold uppercase leading-none tracking-tight max-md:relative max-md:top-auto md:text-[4.6vw]">
         Unify Your Kits
       </h2>
 
       {/* Ring stage. Cards are absolutely centred here and moved purely by
           the transform written in render(); initial styles below only cover
-          the first paint before the effect runs. */}
-      <div className="absolute inset-x-0 top-[57%] bottom-0 sm:top-[55%]">
+          the first paint before the effect runs. On phones it's an in-flow
+          box one card tall, with the cards centred in it. */}
+      <div className="absolute inset-x-0 bottom-0 top-[55%] max-md:relative max-md:inset-auto max-md:h-[56vw]">
         {categories.map((category, i) => (
           <Link
             key={category.name}
@@ -279,22 +283,27 @@ export default function UnifyKits({ categories, backgroundUrl }: UnifyKitsProps)
             ref={(el) => {
               cardRefs.current[i] = el;
             }}
-            className="absolute left-1/2 top-0 block aspect-[4/3] w-[38vw] origin-center overflow-hidden rounded-[1vw] border border-white/5 bg-[radial-gradient(ellipse_at_50%_35%,#3a3a3a,#111_62%,#070707)] shadow-[0_2vw_5vw_rgba(0,0,0,0.7)] will-change-transform"
+            className="absolute left-1/2 top-0 max-md:top-1/2 flex aspect-[4/3] w-[30vw] origin-center flex-col will-change-transform max-md:aspect-[12/13]"
             style={{ transform: "translate(-50%, -50%)", opacity: i === 0 ? 1 : 0, pointerEvents: i === 0 ? "auto" : "none" }}
           >
             {/* Font sizes are in card-relative vw at scale 1 — the card's
-                own scale() shrinks the label along with it on the sides. */}
-            <div className="absolute inset-x-0 top-[8%] z-10 text-center font-heading text-[4.6vw] font-extrabold uppercase leading-none max-sm:text-[8.5vw]">
+                own scale() shrinks the label along with it on the sides.
+                3.33vw = 64px on the 1920px-wide design. Phones use a taller
+                card so the photo under the label stays roughly 6:5. */}
+            <div className="mb-[1vw] text-center font-heading text-[3.33vw] font-extrabold uppercase leading-none max-md:mb-[5vw] max-md:text-[6vw]">
               {category.name}
             </div>
-            <div className="absolute inset-x-[12%] bottom-[6%] top-[24%]">
+            {/* Category card image: a full-bleed photo, centre-cropped. Title +
+                image together keep the card at 4:3, so the image takes
+                whatever height the title leaves. */}
+            <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-[1vw] border border-white/5 bg-ink shadow-[0_2vw_5vw_rgba(0,0,0,0.7)]">
               <Image
                 src={category.image}
                 alt={category.name}
                 fill
                 draggable={false}
-                sizes="(max-width: 767px) 72vw, 38vw"
-                className="object-contain drop-shadow-[0_1.5vw_2vw_rgba(0,0,0,0.6)]"
+                sizes="(max-width: 767px) 48vw, 30vw"
+                className="object-cover"
               />
             </div>
           </Link>
