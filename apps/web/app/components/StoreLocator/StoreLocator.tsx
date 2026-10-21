@@ -27,39 +27,17 @@ function telHref(phone: string) {
  * comes from the admin Stores page; the parent passes placeholders when none
  * exist yet.
  *
- * Phones get their own order: heading → city chips → photo → details. The
- * picker has to sit above what it changes, or a tap swaps content that's
- * already scrolled out of view. The photo also swipes / has arrows to step
- * through stores, and "Call" becomes a button.
+ * Phones: heading → photo → details → the same city dot row as desktop,
+ * scrolling sideways with a red "next" arrow on its right. The photo also
+ * swipes / has arrows to step through stores, and "Call" becomes a button.
  */
 export default function StoreLocator({ stores, fallbackImage = "/stores/store-placeholder.png" }: StoreLocatorProps) {
   const [activeId, setActiveId] = useState(stores[0]?.id);
   const chipRowRef = useRef<HTMLUListElement>(null);
   const drag = useRef<{ x: number } | null>(null);
-  // Which ends of the phone chip row have more chips hidden past them —
-  // drives the edge fades and the arrow buttons.
-  const [overflow, setOverflow] = useState({ left: false, right: false });
-
-  useEffect(() => {
-    const row = chipRowRef.current;
-    if (!row) return;
-    const update = () =>
-      setOverflow({
-        left: row.scrollLeft > 4,
-        right: row.scrollLeft + row.clientWidth < row.scrollWidth - 4,
-      });
-    update();
-    row.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      row.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [stores.length]);
-
   // One-time nudge: the first time the row scrolls into view, slide it a
   // little and spring back, so it's visibly scrollable rather than relying
-  // on the cut-off chip alone. Skipped if nothing overflows, the visitor has
+  // on the cut-off dot alone. Skipped if nothing overflows, the visitor has
   // already scrolled it, or they prefer reduced motion.
   useEffect(() => {
     const row = chipRowRef.current;
@@ -84,12 +62,7 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
     };
   }, []);
 
-  const scrollChips = (dir: 1 | -1) => {
-    const row = chipRowRef.current;
-    row?.scrollBy({ left: dir * row.clientWidth * 0.7, behavior: "smooth" });
-  };
-
-  // Keep the selected chip centred in the phone chip row (e.g. after a swipe
+  // Keep the selected dot centred in the city row (e.g. after a swipe
   // on the photo picks a store whose chip is off to the side). Scrolls the
   // row only — scrollIntoView would also yank the page vertically.
   useEffect(() => {
@@ -125,65 +98,8 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
   return (
     <section className="w-full bg-black py-16 text-paper md:py-24">
       <div className="mx-auto w-full px-4 md:px-20">
-        {/* Phones: heading + city chips first, above the content they control. */}
-        <div className="md:hidden">
-          <h2 className="font-heading text-4xl font-semibold leading-tight">Visit Our Store</h2>
-          <div className="relative -mx-4 mt-5">
-            <ul
-              ref={chipRowRef}
-              className="relative flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 pb-1"
-              style={{
-                // Fade only the edge(s) that actually have more chips past them.
-                maskImage: `linear-gradient(to right, ${overflow.left ? "transparent, #000 14%" : "#000, #000"}, ${
-                  overflow.right ? "#000 86%, transparent" : "#000"
-                })`,
-              }}
-            >
-              {stores.map((store) => {
-                const selected = store.id === active.id;
-                return (
-                  <li key={store.id} data-store-id={store.id} className="shrink-0 snap-start">
-                    <button
-                      type="button"
-                      onClick={() => setActiveId(store.id)}
-                      aria-pressed={selected}
-                      className={`rounded-full border px-4 py-2 text-sm transition-colors duration-200 ${
-                        selected
-                          ? "border-red bg-red font-semibold text-paper"
-                          : "border-paper/25 bg-transparent text-paper/85"
-                      }`}
-                    >
-                      {store.city}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            {/* Arrow buttons over the faded edges — the explicit "there's more"
-                cue. Each shows only while that side has hidden chips. */}
-            {(
-              [
-                [-1, overflow.left, "left-1", "Show previous stores", "m15 18-6-6 6-6"],
-                [1, overflow.right, "right-1", "Show more stores", "m9 18 6-6-6-6"],
-              ] as const
-            ).map(([dir, show, side, label, path]) => (
-              <button
-                key={dir}
-                type="button"
-                onClick={() => scrollChips(dir)}
-                aria-label={label}
-                tabIndex={show ? 0 : -1}
-                className={`absolute ${side} top-[calc(50%-2px)] grid size-8 -translate-y-1/2 place-items-center rounded-full border border-paper/25 bg-black text-paper shadow-[0_0_12px_6px_#000] transition-opacity duration-200 ${
-                  show ? "opacity-100" : "pointer-events-none opacity-0"
-                }`}
-              >
-                <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={path} />
-                </svg>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Phones: the heading sits above the photo (desktop has it beside). */}
+        <h2 className="font-heading text-4xl font-semibold leading-tight md:hidden">Visit Our Store</h2>
 
         <div className="mt-5 grid items-center gap-6 md:mt-0 md:grid-cols-[1.45fr_1fr] md:gap-14">
           <div
@@ -269,14 +185,16 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
           </div>
         </div>
 
-        {/* Desktop city dots. Scrolls sideways when there are more cities than
-            fit; min-w keeps each label readable instead of squeezing. */}
-        <div className="mt-16 hidden overflow-x-auto border-t border-paper/20 md:block">
-          <ul className="flex min-w-max justify-between pt-8 md:min-w-0">
+        {/* City dots. Scrolls sideways when there are more cities than fit;
+            a fixed/min width keeps each label readable instead of squeezing.
+            py on the row leaves room for the selected dot's glow, which the
+            scroll container would otherwise clip. Phones add a "next" arrow. */}
+        <div className="mt-10 flex items-center gap-2 border-t border-paper/20 pt-4 md:mt-16 md:pt-6">
+          <ul ref={chipRowRef} className="flex min-w-0 flex-1 overflow-x-auto py-2 md:justify-between">
             {stores.map((store) => {
               const selected = store.id === active.id;
               return (
-                <li key={store.id} className="min-w-[6.5rem] flex-1">
+                <li key={store.id} data-store-id={store.id} className="w-[4.5rem] shrink-0 md:w-auto md:min-w-[6.5rem] md:flex-1">
                   <button
                     type="button"
                     onClick={() => setActiveId(store.id)}
@@ -299,6 +217,18 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
               );
             })}
           </ul>
+          {n > 1 && (
+            <button
+              type="button"
+              onClick={() => step(1)}
+              aria-label="Next store"
+              className="mb-9 grid size-7 shrink-0 place-items-center rounded-full bg-red text-paper md:hidden"
+            >
+              <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     </section>
