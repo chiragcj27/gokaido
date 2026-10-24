@@ -8,6 +8,7 @@ export type NotificationType =
   | "order_shipped"
   | "order_delivered"
   | "order_cancelled"
+  | "order_refunded"
   | "abandoned_cart"
   | "promotional";
 
@@ -43,6 +44,7 @@ const notificationSchema = new mongoose.Schema<INotification>(
         "order_shipped",
         "order_delivered",
         "order_cancelled",
+        "order_refunded",
         "abandoned_cart",
         "promotional",
       ],

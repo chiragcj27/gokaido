@@ -52,6 +52,7 @@ export const bulkProductRowSchema = z.object({
   size: z.string().trim().min(1),
   stock: z.coerce.number().int().min(0),
   basePrice: z.coerce.number().min(0),
+  mrp: z.coerce.number().min(0).optional(),
   variantImages: z.string().trim().optional(),
 });
 
@@ -91,6 +92,7 @@ export const BULK_TEMPLATE_HEADERS = [
   "size",
   "stock",
   "basePrice",
+  "mrp",
   "variantImages",
 ] as const;
 
@@ -104,7 +106,8 @@ type TemplateHeader = (typeof BULK_TEMPLATE_HEADERS)[number];
 // `protection*` columns, `cardImage`, `competitorImage`, etc.) only need
 // filling in once, on the product's first row — `cardImage` is the single
 // photo used on product cards/thumbnails, separate from the
-// `images`/`variantImages` gallery photos. Protection
+// `images`/`variantImages` gallery photos. `mrp` is per row (per size) and optional —
+// leave it blank for no strike-through price. Protection
 // stats: up to 3, a blank heading skips that stat, percent is optional.
 const EXAMPLE_ROWS: Partial<Record<TemplateHeader, string>>[] = [
   {
@@ -137,6 +140,7 @@ const EXAMPLE_ROWS: Partial<Record<TemplateHeader, string>>[] = [
     size: "M",
     stock: "25",
     basePrice: "1299",
+    mrp: "1599",
     variantImages: "https://example.com/chest-guard-red-1.jpg,https://example.com/chest-guard-red-2.jpg",
   },
   {
@@ -150,6 +154,7 @@ const EXAMPLE_ROWS: Partial<Record<TemplateHeader, string>>[] = [
     size: "L",
     stock: "18",
     basePrice: "1299",
+    mrp: "1599",
   },
   {
     slug: "karate-chest-guard",
@@ -162,6 +167,7 @@ const EXAMPLE_ROWS: Partial<Record<TemplateHeader, string>>[] = [
     size: "M",
     stock: "20",
     basePrice: "1299",
+    mrp: "1599",
     variantImages: "https://example.com/chest-guard-blue-1.jpg",
   },
 ];

@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import ExcelJS from "exceljs";
-import { Category, Subcategory, Color, Product } from "@gokaido/database";
+import { Category, Subcategory, Color, Product, mongoose } from "@gokaido/database";
 import { createProductSchema } from "../schemas/product.schema.js";
+import { refreshProductEmbeddings } from "../services/productEmbedding.js";
 import {
   bulkProductRowSchema,
   splitCsv,
@@ -161,6 +162,7 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
   }
 
   const created: string[] = [];
+  const createdIds: mongoose.Types.ObjectId[] = [];
   const skipped: { slug: string; reason: string }[] = [];
   const groupErrors: GroupError[] = [];
 
@@ -228,6 +230,7 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
         size: e.data.size,
         stock: e.data.stock,
         basePrice: e.data.basePrice,
+        mrp: e.data.mrp,
         images: imagesByColor.get(e.data.color.trim().toLowerCase()) ?? [],
       })),
     };
@@ -242,9 +245,13 @@ export async function bulkUploadProducts(req: Request, res: Response): Promise<v
       continue;
     }
 
-    await Product.create(validated.data);
+    const product = await Product.create(validated.data);
     created.push(slug);
+    createdIds.push(product._id);
   }
+
+  // One batched embeddings call for the whole upload, not one per product.
+  await refreshProductEmbeddings(createdIds);
 
   res.json({
     created,

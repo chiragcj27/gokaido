@@ -19,7 +19,7 @@ export interface BestsellerProduct {
 export interface BestsellersProps {
   title?: string;
   /** Optional line under the heading (e.g. a search result count or empty-state message). */
-  subtitle?: string;
+  subtitle?: ReactNode;
   /** Rendered under the cards inside the section (e.g. pagination on search results). */
   footer?: ReactNode;
   products: BestsellerProduct[];
@@ -34,6 +34,8 @@ export interface BestsellersProps {
    */
   shopAllHref?: string;
   mobileTitle?: string;
+  /** Smaller heading for pages where the title is long (e.g. search results). */
+  compactTitle?: boolean;
 }
 
 function formatInr(amount: number) {
@@ -54,26 +56,29 @@ export default function Bestsellers({
   layout = "carousel",
   shopAllHref,
   mobileTitle = title,
+  compactTitle = false,
 }: BestsellersProps) {
   const mobileHeader = Boolean(shopAllHref);
   return (
     <section className="w-full bg-ink px-4 py-16 text-paper sm:px-6 lg:px-8 lg:py-20">
       {mobileHeader && (
         <div className="flex items-center justify-between gap-4 md:hidden">
-          <h2 className="m-0 font-heading text-[22px] font-semibold leading-none">{mobileTitle}</h2>
+          <h2 className="m-0 font-heading text-[20px] font-medium leading-none">{mobileTitle}</h2>
           <Link href={shopAllHref!} className="shrink-0 font-sans text-[15px] font-medium text-paper underline underline-offset-4">
             Shop All
           </Link>
         </div>
       )}
       <h2
-        className={`m-0 text-center font-heading text-[clamp(32px,4.2vw,64px)] font-bold leading-none ${
+        className={`m-0 text-center font-heading font-semibold leading-none ${
+          compactTitle ? "text-[clamp(24px,2.6vw,40px)]" : "text-[clamp(28px,3.6vw,54px)]"
+        } ${
           mobileHeader ? "max-md:hidden" : ""
         }`}
       >
         {title}
       </h2>
-      {subtitle && <p className="m-0 mt-4 text-center font-sans text-base text-paper/60">{subtitle}</p>}
+      {subtitle && <div className="m-0 mt-4 text-center font-sans text-base text-paper/60">{subtitle}</div>}
 
       <div
         className={

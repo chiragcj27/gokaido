@@ -5,6 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import type { ApiProductSuggestion } from "../../lib/pdp/apiTypes";
+import {
+  addRecentSearch,
+  clearRecentSearches,
+  readRecentSearches,
+  removeRecentSearch,
+} from "../../lib/search/recentSearches";
 
 export interface SearchModalProps {
   open: boolean;
@@ -28,31 +35,16 @@ export interface SearchModalProduct {
 const formatInr = (amount: number) =>
   `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const RECENT_KEY = "gokaido:recent-searches";
-const MAX_RECENT = 5;
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const SUGGEST_DEBOUNCE_MS = 200;
+const SUGGEST_MIN_CHARS = 2;
+
 const CLOSE_MS = 250;
 
 const TYPE_MS = 90;
 const DELETE_MS = 45;
 const HOLD_MS = 1400;
 const GAP_MS = 300;
-
-function readRecent(): string[] {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "string").slice(0, MAX_RECENT) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeRecent(list: string[]) {
-  try {
-    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
-  } catch {
-    // storage unavailable — recents just won't persist
-  }
-}
 
 /** Types each word, holds, deletes it, then moves to the next — only while `active`. */
 function useTypewriter(words: string[], active: boolean) {
@@ -98,6 +90,37 @@ function useTypewriter(words: string[], active: boolean) {
   return text;
 }
 
+/** Product-name suggestions for the typed text (GET /products/suggest), debounced; [] on any failure. */
+function useSuggestions(query: string) {
+  const [suggestions, setSuggestions] = useState<ApiProductSuggestion[]>([]);
+
+  useEffect(() => {
+    const term = query.trim();
+    if (term.length < SUGGEST_MIN_CHARS) {
+      setSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const id = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/products/suggest?q=${encodeURIComponent(term)}`, {
+          signal: controller.signal,
+        });
+        const data = res.ok ? ((await res.json()) as { suggestions?: ApiProductSuggestion[] }) : {};
+        setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+      } catch {
+        if (!controller.signal.aborted) setSuggestions([]);
+      }
+    }, SUGGEST_DEBOUNCE_MS);
+    return () => {
+      clearTimeout(id);
+      controller.abort();
+    };
+  }, [query]);
+
+  return suggestions;
+}
+
 export default function SearchModal({ open, onClose, trendingSearches, bestsellers }: SearchModalProps) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -111,7 +134,7 @@ export default function SearchModal({ open, onClose, trendingSearches, bestselle
   useEffect(() => {
     if (open) {
       setMounted(true);
-      setRecent(readRecent());
+      setRecent(readRecentSearches());
       const frame = requestAnimationFrame(() => setShown(true));
       return () => cancelAnimationFrame(frame);
     }
@@ -143,16 +166,14 @@ export default function SearchModal({ open, onClose, trendingSearches, bestselle
   }, [open, onClose]);
 
   const animatedWord = useTypewriter(trendingSearches, open && query === "" && !focused);
+  const suggestions = useSuggestions(query);
+  const typed = query.trim();
 
   const submit = useCallback(
     (raw: string) => {
       const term = raw.trim();
       if (!term) return;
-      const next = [term, ...readRecent().filter((r) => r.toLowerCase() !== term.toLowerCase())].slice(
-        0,
-        MAX_RECENT,
-      );
-      writeRecent(next);
+      addRecentSearch(term);
       onClose();
       router.push(`/search?q=${encodeURIComponent(term)}`);
     },
@@ -164,10 +185,8 @@ export default function SearchModal({ open, onClose, trendingSearches, bestselle
     submit(query);
   };
 
-  const clearRecent = () => {
-    writeRecent([]);
-    setRecent([]);
-  };
+  const clearRecent = () => setRecent(clearRecentSearches());
+  const removeRecent = (term: string) => setRecent(removeRecentSearch(term));
 
   if (!mounted || typeof document === "undefined") return null;
 
@@ -240,6 +259,44 @@ export default function SearchModal({ open, onClose, trendingSearches, bestselle
         </form>
 
         <div className="flex flex-col gap-8 p-4 sm:p-8">
+          {typed.length >= SUGGEST_MIN_CHARS && (
+            <section aria-label="Suggestions" className="flex flex-col gap-1">
+              {suggestions.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/products/${item.slug}`}
+                  onClick={onClose}
+                  className="flex items-center gap-4 rounded-lg px-3 py-2 text-inherit no-underline transition-colors duration-200 hover:bg-white/6"
+                >
+                  <div className="relative h-12 w-15 shrink-0 overflow-hidden rounded-md bg-ink">
+                    {item.cardImage && (
+                      <Image src={item.cardImage} alt="" fill sizes="60px" className="object-cover" />
+                    )}
+                  </div>
+                  <span className="min-w-0 flex-1 truncate font-sans text-base text-paper">{item.name}</span>
+                  {item.minPrice != null && (
+                    <span className="shrink-0 font-heading text-sm font-bold text-paper/70">
+                      {formatInr(item.minPrice)}
+                    </span>
+                  )}
+                </Link>
+              ))}
+              <button
+                type="button"
+                onClick={() => submit(typed)}
+                className="flex cursor-pointer items-center gap-4 rounded-lg border-0 bg-transparent px-3 py-3 text-left font-sans text-base text-paper/70 transition-colors duration-200 hover:bg-white/6 hover:text-paper"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="ml-1 shrink-0 text-red">
+                  <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                <span className="truncate">
+                  Search for &ldquo;<span className="text-paper">{typed}</span>&rdquo;
+                </span>
+              </button>
+            </section>
+          )}
+
           {recent.length > 0 && (
             <section className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
@@ -254,18 +311,29 @@ export default function SearchModal({ open, onClose, trendingSearches, bestselle
               </div>
               <div className="flex flex-wrap gap-3">
                 {recent.map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => submit(term)}
-                    className={`${chip} flex items-center gap-3 rounded-lg px-4 py-2.5 text-base`}
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" className="text-paper/50">
-                      <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-                      <path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    </svg>
-                    {term}
-                  </button>
+                  <div key={term} className={`${chip} flex items-center rounded-lg text-base`}>
+                    <button
+                      type="button"
+                      onClick={() => submit(term)}
+                      className="flex cursor-pointer items-center gap-3 border-0 bg-transparent py-2.5 pr-2 pl-4 font-sans text-base text-paper"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" className="text-paper/50">
+                        <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+                        <path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                      </svg>
+                      {term}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeRecent(term)}
+                      aria-label={`Remove "${term}" from recent searches`}
+                      className="flex h-full cursor-pointer items-center border-0 bg-transparent py-2.5 pr-3 pl-1 text-paper/40 transition-colors duration-200 hover:text-paper"
+                    >
+                      <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </div>
                 ))}
               </div>
             </section>

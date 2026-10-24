@@ -9,6 +9,9 @@ export interface IProductVariant {
   size: string;
   stock: number;
   basePrice: number;
+  // Printed MRP. Optional; when it's above the selling price the storefront
+  // shows it struck through with a discount %.
+  mrp?: number;
   // Indian state name -> price override (e.g. { "Maharashtra": 499 })
   regionPrices: Map<string, number>;
   images: string[];
@@ -82,6 +85,13 @@ export interface IProduct {
   avgRating: number;
   reviewCount: number;
 
+  // Semantic search — see apps/api/src/services/productEmbedding.ts. Both are
+  // `select: false` (a 512-float array has no business in normal API
+  // responses); `embeddingHash` fingerprints the text + model the vector was
+  // built from, so saves that don't touch searchable text skip re-embedding.
+  embedding?: number[];
+  embeddingHash?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -93,6 +103,7 @@ const variantSchema = new mongoose.Schema<IProductVariant>(
     size: { type: String, required: true },
     stock: { type: Number, required: true, min: 0, default: 0 },
     basePrice: { type: Number, required: true },
+    mrp: { type: Number, min: 0 },
     regionPrices: { type: Map, of: Number, default: {} },
     images: [{ type: String }],
     isActive: { type: Boolean, default: true },
@@ -168,6 +179,9 @@ const productSchema = new mongoose.Schema<IProduct>(
 
     avgRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
+
+    embedding: { type: [Number], default: undefined, select: false },
+    embeddingHash: { type: String, select: false },
   },
   { timestamps: true }
 );

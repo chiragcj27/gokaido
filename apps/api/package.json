@@ -10,7 +10,9 @@
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
     "seed:admin": "tsx src/scripts/seedAdmin.ts",
-    "seed:stores": "tsx src/scripts/seedStores.ts"
+    "seed:stores": "tsx src/scripts/seedStores.ts",
+    "search:indexes": "tsx src/scripts/setupSearchIndexes.ts",
+    "search:backfill": "tsx src/scripts/backfillEmbeddings.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1131.0",
@@ -25,7 +27,6 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.1",
     "sharp": "^0.35.4",
-    "twilio": "^6.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {

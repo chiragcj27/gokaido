@@ -30,6 +30,9 @@ export const productListQuerySchema = z.object({
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
   search: z.string().trim().min(1).optional(),
+  // false = take `search` literally: skip the LLM that infers filters like
+  // "under 1500" from it (the storefront's "search without these filters").
+  interpret: queryBoolean.optional(),
   sort: sortSchema.default("newest"),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -42,6 +45,10 @@ export const productListQuerySchema = z.object({
   status: z.enum(["active", "inactive", "all"]).optional(),
 });
 
+export const productSuggestQuerySchema = z.object({
+  q: z.string().trim().min(2).max(100),
+});
+
 export const productDetailQuerySchema = z.object({
   region: z.string().trim().optional(),
 });
@@ -50,16 +57,22 @@ export const productDetailQuerySchema = z.object({
 // document, where Mongoose's own schema defaults apply to omitted keys) and
 // update (`.partial()` in updateProductSchema below), where a default would
 // otherwise clobber an existing value the request simply didn't mention.
-const variantInputSchema = z.object({
-  sku: z.string().trim().min(1),
-  color: z.string().trim().min(1),
-  size: z.string().trim().min(1),
-  stock: z.coerce.number().int().min(0).optional(),
-  basePrice: z.coerce.number().min(0),
-  regionPrices: z.record(z.string(), z.coerce.number().min(0)).optional(),
-  images: z.array(assetUrlSchema).optional(),
-  isActive: z.boolean().optional(),
-});
+const variantInputSchema = z
+  .object({
+    sku: z.string().trim().min(1),
+    color: z.string().trim().min(1),
+    size: z.string().trim().min(1),
+    stock: z.coerce.number().int().min(0).optional(),
+    basePrice: z.coerce.number().min(0),
+    mrp: z.coerce.number().min(0).optional(),
+    regionPrices: z.record(z.string(), z.coerce.number().min(0)).optional(),
+    images: z.array(assetUrlSchema).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((v) => v.mrp === undefined || v.mrp >= v.basePrice, {
+    message: "MRP can't be lower than the selling price",
+    path: ["mrp"],
+  });
 
 export const protectionStatSchema = z.object({
   heading: z.string().trim().min(1, "Protection stat heading is required"),

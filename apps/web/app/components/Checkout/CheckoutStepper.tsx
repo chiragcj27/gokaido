@@ -1,8 +1,7 @@
-export type CheckoutStep = "customer" | "payment" | "review";
+export type CheckoutStep = "customer" | "review";
 
 const STEPS: { key: CheckoutStep; label: string }[] = [
   { key: "customer", label: "Information" },
-  { key: "payment", label: "Payment" },
   { key: "review", label: "Review" },
 ];
 

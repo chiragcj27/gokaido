@@ -265,7 +265,7 @@ export default function UnifyKits({ categories, backgroundUrl }: UnifyKitsProps)
         <Image src={backgroundUrl} alt="" fill sizes="100vw" className="object-cover" />
       )}
 
-      <h2 className="absolute inset-x-0 top-[8%] z-10 text-center font-heading text-[6vw] font-bold uppercase leading-none tracking-tight max-md:relative max-md:top-auto md:text-[4.6vw]">
+      <h2 className="absolute inset-x-0 top-[8%] z-10 text-center font-heading text-[6vw] font-semibold uppercase leading-none tracking-tight max-md:relative max-md:top-auto md:text-[4.6vw]">
         Unify Your Kits
       </h2>
 
@@ -290,7 +290,7 @@ export default function UnifyKits({ categories, backgroundUrl }: UnifyKitsProps)
                 own scale() shrinks the label along with it on the sides.
                 3.33vw = 64px on the 1920px-wide design. Phones use a taller
                 card so the photo under the label stays roughly 6:5. */}
-            <div className="mb-[1vw] text-center font-heading text-[3.33vw] font-extrabold uppercase leading-none max-md:mb-[5vw] max-md:text-[6vw]">
+            <div className="mb-[1vw] text-center font-heading text-[3.33vw] font-bold uppercase leading-none max-md:mb-[5vw] max-md:text-[6vw]">
               {category.name}
             </div>
             {/* Category card image: a full-bleed photo, centre-cropped. Title +

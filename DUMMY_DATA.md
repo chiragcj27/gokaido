@@ -38,7 +38,6 @@ These are wired to the real source; the dummy only shows when the API is unreach
 | Where | What's fake | Real source |
 |---|---|---|
 | `lib/dummyProduct.ts` + `sample-product/**` | Entire hard-coded sample PDP at `/sample-product/karate-guards` | Delete once the Figma-final dynamic PDP is signed off (see CLAUDE.md) |
-| `lib/pdp/adapter.ts` — `mrp: 0` | No strike-through/MRP price on cards or PDP | Needs an MRP field on the product/variant |
 | `components/SizeGuide/SizeGuide.tsx` — `PLACEHOLDER` | Before/after slider placeholder images (sample product only — the intro copy and stats are now per-product `protectionDescription` / `protectionStats`) | `competitorImage` / `cardImage` per product |
 | `components/BuildYourKit/BuildYourKit.tsx` | Lorem ipsum description copy | Copy from client |
 | `components/ProductInfo/ProductInfo.tsx` — `DUMMY_DELIVERY_DAYS` | Mobile pincode check accepts any 6-digit pincode and always promises "Express Delivery By" today + 4 days; desktop shows a fixed "Tue, 1 Sept - Wed, 2 Sept" line | Courier serviceability/ETA API by pincode |

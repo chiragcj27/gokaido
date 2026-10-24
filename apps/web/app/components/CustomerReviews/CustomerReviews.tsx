@@ -93,20 +93,6 @@ function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   );
 }
 
-function PencilIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-      <path
-        d="M4 20l1-4.5L15.5 5 19 8.5 8.5 19zM14 6l4 4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function PhotoIcon() {
   return (
     <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
@@ -181,6 +167,8 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
     carouselRef.current?.scrollBy({ left: direction * 220, behavior: "smooth" });
   };
 
+  const hasReviews = summary.totalCount > 0;
+
   return (
     <section className="flex flex-col gap-10">
       <h2 className="m-0 font-heading text-2xl font-bold text-paper max-lg:text-[22px] max-lg:font-semibold">Reviews Summary</h2>
@@ -195,23 +183,21 @@ export default function CustomerReviews({ summary, reviews }: CustomerReviewsPro
             </span>
             <Stars rating={summary.average} size={16} className="max-lg:h-5 max-lg:w-5" />
             <span className="font-sans text-xs text-paper/50 max-lg:basis-full max-lg:font-heading max-lg:text-sm">
-              Based on {summary.totalCount} reviews
+              {hasReviews
+                ? `Based on ${summary.totalCount} review${summary.totalCount === 1 ? "" : "s"}`
+                : "No reviews yet"}
             </span>
           </div>
-          <button
-            type="button"
-            className="flex h-10 cursor-pointer max-lg:h-9 max-lg:px-3 max-lg:text-[10px] items-center gap-2 rounded-lg border border-white/30 px-4 font-heading text-xs font-bold tracking-[0.04em] text-paper uppercase transition-colors duration-200 hover:bg-paper hover:text-ink"
-          >
-            <PencilIcon /> Write a Review
-          </button>
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 px-6 py-8 text-center max-lg:px-2">
-          <span className="font-heading text-4xl font-extrabold text-gold max-lg:text-[28px] max-lg:font-semibold max-lg:text-paper/90">
-            {summary.recommendPercent}%
+          <span
+            className={`font-heading font-extrabold text-gold max-lg:font-semibold max-lg:text-paper/90 ${hasReviews ? "text-4xl max-lg:text-[28px]" : "text-2xl max-lg:text-xl"}`}
+          >
+            {hasReviews ? `${summary.recommendPercent}%` : "Be the first"}
           </span>
           <span className="max-w-40 font-sans text-xs text-paper/50 max-lg:max-w-32 max-lg:font-heading max-lg:text-base max-lg:text-paper/90">
-            would recommend this product
+            {hasReviews ? "would recommend this product" : "to review this product"}
           </span>
         </div>
 

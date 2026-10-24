@@ -6,6 +6,7 @@ export interface ApiVariant {
   size: string;
   stock: number;
   basePrice: number;
+  mrp?: number;
   effectivePrice: number;
   images: string[];
   isActive: boolean;
@@ -85,3 +86,29 @@ export interface ApiReviewsResponse {
 
 /** Product as returned inside GET /products (list) — same shape, used for cards. */
 export type ApiListProduct = Omit<ApiProduct, "sizeGuide">;
+
+/** `search` block on GET /products?search=… — see apps/api/src/services/productSearch.ts. */
+export interface ApiSearchMeta {
+  /** Filters the API inferred from the query text ("under 1500" → maxPrice: 1500). */
+  appliedFilters: Partial<{
+    sport: string;
+    category: string;
+    subcategory: string;
+    productType: string;
+    color: string;
+    size: string;
+    minPrice: number;
+    maxPrice: number;
+  }>;
+  interpretedQuery: string | null;
+  /** True when the inferred filters matched nothing and were dropped — results are closest matches. */
+  relaxed: boolean;
+}
+
+/** GET /products/suggest — search-as-you-type. */
+export interface ApiProductSuggestion {
+  name: string;
+  slug: string;
+  cardImage?: string;
+  minPrice?: number;
+}

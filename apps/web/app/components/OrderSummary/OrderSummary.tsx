@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { FREE_SHIPPING_THRESHOLD } from "../../lib/cartStore";
 
 export interface OrderSummaryProps {
   itemCount: number;
@@ -32,10 +31,6 @@ export default function OrderSummary({ itemCount, subtotal, onApplyDiscount, onC
             Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"})
           </span>
           <span>{formatInr(subtotal)}</span>
-        </div>
-        <div className="flex items-center justify-between text-paper/50">
-          <span>Shipping</span>
-          <span>Calculated at checkout</span>
         </div>
       </div>
 
@@ -75,10 +70,8 @@ export default function OrderSummary({ itemCount, subtotal, onApplyDiscount, onC
         Proceed to Checkout <span aria-hidden="true">→</span>
       </button>
 
-      <div className="flex flex-col items-center gap-1.5 font-sans text-[11px] text-paper/40 sm:flex-row sm:justify-between">
+      <div className="flex justify-center font-sans text-[11px] text-paper/40">
         <span>Secure checkout</span>
-        <span>Free shipping above {formatInr(FREE_SHIPPING_THRESHOLD)}</span>
-        <span>Easy returns</span>
       </div>
     </aside>
   );

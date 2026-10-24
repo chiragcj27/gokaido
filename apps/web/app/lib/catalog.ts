@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { apiGet } from "./pdp/api";
 import { toRelatedProducts } from "./pdp/adapter";
-import type { ApiColor, ApiListProduct } from "./pdp/apiTypes";
+import type { ApiColor, ApiListProduct, ApiSearchMeta } from "./pdp/apiTypes";
 import type { RelatedProduct } from "./pdp/types";
 import { DUMMY_CATEGORIES, dummyProducts, type StoreCategory } from "./fallbacks";
 
@@ -49,7 +49,11 @@ export const getCategories = cache(async (): Promise<StoreCategory[]> => {
 export async function listProductCards(params: Record<string, string>, page: number, limit: number) {
   const query = new URLSearchParams({ ...params, page: String(page), limit: String(limit) });
   const [list, colors] = await Promise.all([
-    apiGet<{ products: ApiListProduct[]; pagination: { total: number; totalPages: number } }>(
+    apiGet<{
+      products: ApiListProduct[];
+      pagination: { total: number; totalPages: number };
+      search?: ApiSearchMeta;
+    }>(
       `/products?${query}`,
       { revalidate: LIST_TTL, tags: ["products"] },
     ),
@@ -61,6 +65,7 @@ export async function listProductCards(params: Record<string, string>, page: num
     products: toRelatedProducts(list.products, colors),
     total: list.pagination.total,
     totalPages: list.pagination.totalPages,
+    search: list.search,
   };
 }
 

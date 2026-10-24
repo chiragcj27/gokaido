@@ -98,7 +98,7 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
   // New page → always start with the navbar showing.
   useEffect(() => setHidden(false), [pathname]);
 
-  // Keep --navbar-h (the hero sizes itself to 100svh minus it) equal to the
+  // Keep --navbar-h (--navbar-offset is built from it) equal to the
   // real rendered height, rather than trusting the CSS fallback in globals.css.
   useEffect(() => {
     const header = headerRef.current;

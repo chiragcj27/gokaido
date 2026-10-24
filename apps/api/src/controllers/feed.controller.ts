@@ -45,6 +45,7 @@ function buildItemXml(
   const availability = variant.isActive && variant.stock > 0 ? "in_stock" : "out_of_stock";
   const title = `${product.name} - ${variant.color}`;
   const description = product.description?.trim() || product.name;
+  const hasDiscount = variant.mrp != null && variant.mrp > variant.basePrice;
 
   const fields: Array<[string, string]> = [
     ["g:id", variant.sku],
@@ -52,7 +53,14 @@ function buildItemXml(
     ["description", description],
     ["link", link],
     ["g:availability", availability],
-    ["g:price", formatPrice(variant.basePrice)],
+    // With an MRP above the selling price, Google wants the MRP as `price` and what the
+    // customer actually pays as `sale_price` — that's what renders the strike-through in Shopping.
+    ...(hasDiscount
+      ? ([
+          ["g:price", formatPrice(variant.mrp!)],
+          ["g:sale_price", formatPrice(variant.basePrice)],
+        ] as Array<[string, string]>)
+      : ([["g:price", formatPrice(variant.basePrice)]] as Array<[string, string]>)),
     ["g:brand", BRAND],
     ["g:condition", "new"],
     ["g:color", variant.color],

@@ -8,7 +8,7 @@ import {
   verifyRefreshToken,
   verifyTempToken,
 } from "../utils/jwt.js";
-import { sendOtpSms } from "../services/sms.js";
+import { sendOtp as sendOtpSms } from "../services/msg91.js";
 import { comparePassword } from "../utils/password.js";
 import {
   sendOtpSchema,

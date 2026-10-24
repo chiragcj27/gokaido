@@ -47,10 +47,14 @@ function colorLookup(colors: ApiColor[]) {
   };
 }
 
-/** Lowest active price across a product's variants — what listing/related cards show. */
-function startingPrice(product: ApiListProduct): number {
-  const prices = product.variants.filter((v) => v.isActive).map((v) => v.effectivePrice);
-  return prices.length ? Math.min(...prices) : 0;
+/** Cheapest active variant — its price (and MRP, if any) is what listing/related cards show. */
+function cheapestVariant(product: ApiListProduct) {
+  return product.variants
+    .filter((v) => v.isActive)
+    .reduce<ApiListProduct["variants"][number] | undefined>(
+      (min, v) => (!min || v.effectivePrice < min.effectivePrice ? v : min),
+      undefined
+    );
 }
 
 function distinctColors(product: ApiListProduct, resolve: ReturnType<typeof colorLookup>) {
@@ -67,7 +71,8 @@ function toCard(product: ApiListProduct, resolve: ReturnType<typeof colorLookup>
   // Cards only ever render the product's `cardImage` (see CLAUDE.md "Product Image Fields"),
   // so a product without one is left out rather than falling back to a plain gallery photo.
   if (!product.cardImage) return null;
-  const price = startingPrice(product);
+  const cheapest = cheapestVariant(product);
+  const price = cheapest?.effectivePrice ?? 0;
   if (!price) return null;
   return {
     key: product.slug,
@@ -76,7 +81,7 @@ function toCard(product: ApiListProduct, resolve: ReturnType<typeof colorLookup>
     subtitle: product.subcategory ?? product.category,
     imageSrc: product.cardImage,
     price,
-    mrp: 0,
+    mrp: cheapest?.mrp ?? 0,
     colors: distinctColors(product, resolve),
   };
 }
@@ -191,8 +196,8 @@ export function toPdpProduct(src: PdpSources): PdpProduct | null {
     colorSlug: resolve(v.color).slug,
     size: v.size,
     price: v.effectivePrice,
-    // No MRP in the catalogue model yet, so no strike-through/discount is shown.
-    mrp: v.effectivePrice,
+    // No MRP set → equal to price, so no strike-through/discount is shown.
+    mrp: v.mrp ?? v.effectivePrice,
     stock: v.stock,
   }));
 

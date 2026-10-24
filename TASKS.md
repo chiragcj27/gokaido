@@ -4,7 +4,7 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 
 ## Foundation
 
-- [x] `packages/database` — Mongoose models: User, Product, Order, Cart, Address, Review, Coupon, RewardTransaction, Referral, Notification, CampaignBlast, BlogPost, plus Category, Subcategory, Color, Asset, HomepageSettings, Reel, Store, FranchiseEnquiry. (Notification, CampaignBlast, BlogPost are schema-only — no API uses them yet)
+- [x] `packages/database` — Mongoose models: User, Product, Order, Cart, Address, Review, Coupon, RewardTransaction, Referral, Notification, CampaignBlast, BlogPost, plus Category, Subcategory, Color, Asset, HomepageSettings, Reel, Store, FranchiseEnquiry. (CampaignBlast, BlogPost are schema-only — no API uses them yet; Notification is the MSG91 send log)
 
 ## Phase 1 — Go Live
 
@@ -46,17 +46,19 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [x] Size guide modal (per-subcategory `sizeGuide`, store default as fallback) + before/after slider (placeholder images)
 - [x] Related products + Build Your Kit
 - [ ] WhatsApp share button
-- [ ] MRP / strike-through price — needs an MRP field on product/variant
+- [x] MRP / strike-through price — optional `variant.mrp` (admin form + bulk upload)
 - [ ] Per-product FAQs — currently store-wide defaults; needs an FAQ model/admin editor
 - [ ] Delete `/sample-product/**` + `lib/dummyProduct.ts` once the dynamic PDP is signed off
 
 ### 5. Search & Discovery
-- [x] Full-text search + filters (category/subcategory/size/colour/price/sport) + sort + pagination — backend
-- [x] Search results page + search modal — **`/search` still returns dummy results** (`USE_DUMMY_SEARCH`); remove only when asked
+- [x] Search + filters (category/subcategory/size/colour/price/sport) + sort + pagination — backend; hybrid keyword + semantic, see "Product Search" in CLAUDE.md
+- [x] Search results page + search modal — `/search` is API-backed (dummy results only while the catalogue is empty / API down)
 - [x] Collection pages — `/collections/[category]`, API-backed (`lib/collections/getCollection.ts`)
 - [ ] Navbar category menu from the API — currently a fixed list pointing at the sample `/collections` page
-- [ ] Search suggestions/autocomplete — modal shows hard-coded trending chips only
-- [ ] AI natural language search
+- [x] Search suggestions/autocomplete — `GET /api/products/suggest`, shown in the search modal as you type (trending chips still admin-managed)
+- [x] Recent searches — per-device (localStorage `gokaido:recent-searches`, last 5, `lib/search/recentSearches.ts`); recorded by the modal and by `/search` itself (shared links, Back, "Search without filters"), per-item remove + clear all. Not synced to the account across devices
+- [x] AI natural language search — OpenAI embeddings (`text-embedding-3-small`) + `gpt-4.1-nano` query parsing into filters; EN/HI/MR/TA queries; inferred-filter chips + "closest matches" notice on `/search`
+- [ ] Tune the semantic-match threshold (`MIN_COSINE_SIMILARITY` = 0.36 in `apps/api/src/services/productSearch.ts`) once the real catalogue is loaded — only tested on 2 products so far. Too high → vague queries miss; too low → irrelevant products at the tail
 
 ### 6. Cart & Checkout
 - [x] Persistent cart, guest + user, merge on login — backend
@@ -79,7 +81,7 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [ ] Card "add to cart" on listings (`Bestsellers`, `CollectionScroll`) — only `console.log`s; needs a size picker or link to PDP
 
 ### 7. User Account — `/account` (OTP login/signup for guests, tabbed dashboard once signed in)
-- [x] OTP login (SMS via Twilio) — backend + `LoginSignup` UI. Admin portal uses email+password instead
+- [x] OTP login (SMS via MSG91) — backend + `LoginSignup` UI. Admin portal uses email+password instead
 - [x] Registration — backend + UI
 - [x] My Orders (track + cancel) — backend + Orders tab (status, cancel for placed/confirmed)
 - [x] My Addresses — backend + Addresses tab
@@ -103,9 +105,10 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 
 ### 9. CRM & Notifications
 - [x] SMS OTP — backend
-- [ ] SMS order status — backend
-- [ ] WhatsApp order updates — backend
-- [ ] Email: registration, confirmation, invoice (Resend) — backend
+- [x] SMS order status — backend (MSG91 Flow; needs DLT templates + env IDs to go live)
+- [x] WhatsApp order updates — backend (MSG91; needs Meta-approved templates + env names)
+- [x] Email: order confirmation/status — backend (MSG91 email templates)
+- [ ] Email: registration (no email collected at signup) and invoice (blocked on invoice generation)
 - [ ] Abandoned cart recovery (WhatsApp, 1hr after) — backend job; needs a scheduler (see Infra)
 
 ### 10. Multilingual
@@ -160,6 +163,7 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 ## Infra / Cross-cutting
 
 - [x] AWS S3 bucket + upload plumbing — `gokaido-web-storage` (versioned, SSE-S3, public reads under `public/*`), browser presigned uploads, scoped `gokaido-api-runtime` IAM user. Verified live end-to-end
+- [ ] Gokaido's own OpenAI key + own MongoDB Atlas cluster before launch — search currently runs on ChandraPO's OpenAI key (shared bill) and the Atlas cluster is shared with Chandra (another client's data; its 2 vector indexes leave Gokaido 1 of the free tier's 3 search-index slots). After switching: set `OPENAI_API_KEY`/`MONGODB_URI`, run `pnpm --filter @gokaido/api search:indexes` then `search:backfill`
 - [ ] Job scheduler (cron/queue) — needed for abandoned-cart recovery and reward-point expiry
 - [ ] AWS EC2 deployment pipeline
 - [ ] CI (lint/type-check on push)

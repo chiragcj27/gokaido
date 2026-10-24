@@ -149,9 +149,20 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
     // Safari refuse the video outright — which is what blanked the hero on
     // iPhones. So only the GL path asks for CORS; the plain <video> path
     // (phones, reduced motion) plays any URL without it.
+    //
+    // The GL path also gets its own URL. S3 only sends Access-Control-Allow-
+    // Origin (and Vary: Origin) when the request has an Origin header, so a
+    // copy cached by an earlier non-CORS load (plain path, devtools device
+    // mode) has no CORS header — and the browser reuses it for the CORS
+    // request and blocks it. A distinct query string keeps the two cache
+    // entries apart; S3 ignores unknown params on public GETs (but not
+    // reserved subresource names like `cors`, `acl`, `tagging` — keep it `gl`).
     if (usingGL) video.crossOrigin = "anonymous";
     else video.removeAttribute("crossorigin");
-    if (video.getAttribute("src") !== videoUrl) video.src = videoUrl;
+    const src = usingGL && /^https?:\/\//.test(videoUrl)
+      ? `${videoUrl}${videoUrl.includes("?") ? "&" : "?"}gl=1`
+      : videoUrl;
+    if (video.getAttribute("src") !== src) video.src = src;
 
     if (usingGL) canvas.style.visibility = "visible";
     else videoWrap.style.visibility = "visible";
@@ -258,7 +269,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       const mm = gsap.matchMedia();
       // Desktop: finish exactly when the end box's top reaches the viewport
       // top, i.e. the moment it fills the screen. A fixed `+=innerHeight`
-      // overshot (the hero is 100svh minus the navbar), so the reel looked
+      // overshot (the hero's height isn't the viewport's), so the reel looked
       // full-screen at t≈0.9 with the last-staggered corner (bottom-left)
       // still peeling in until you scrolled further.
       mm.add("(min-width: 768px)", () => {
@@ -292,7 +303,11 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
   return (
     <>
       <div ref={stackRef} className="relative">
-        <section className="relative flex aspect-[1602/908] w-full shrink-0 md:aspect-auto md:h-[calc(100svh-var(--navbar-h))] flex-col items-center justify-center overflow-hidden bg-ink text-paper">
+        {/* Locked to the background art's own aspect (1602×908) at every size,
+            not viewport height — a 100svh box crops the art on any screen
+            whose shape differs from it. The headline is vw-sized, so it scales
+            with the box either way. */}
+        <section className="relative flex aspect-[1602/908] w-full shrink-0 flex-col items-center justify-center overflow-hidden bg-ink text-paper">
           {backgroundUrl && (
             // Background art is already near-black with its own spotlights and
             // red accents — no scrim, it would only mute the glow.
@@ -301,8 +316,10 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
 
           {/* Shimmer is per-word rather than on the whole block, with a small
               stagger, so the highlight travels through the headline in reading
-              order instead of every word lighting up at once. */}
-          <div className="relative z-10 flex w-full max-w-[90vw] flex-col items-center gap-[1vw] text-center font-heading font-extrabold uppercase leading-[0.9]">
+              order instead of every word lighting up at once.
+              Nudged up off true centre (vw, so it stays proportional at every
+              size); the morph reads slotRef's live rect, so the video follows. */}
+          <div className="relative z-10 translate-y-[-5vw] flex w-full max-w-[90vw] flex-col items-center gap-[1vw] text-center font-heading font-bold uppercase leading-[0.9]">
             <div className="flex w-full items-center justify-center gap-[3vw] text-[7vw]">
               <span className="shimmer-text">Made</span>
               {showcaseImages && showcaseImages.length > 0 && (
@@ -329,8 +346,16 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
                 The
               </span>
               {/* Start of the morph. Empty — reserves layout only; the video
-                  is painted over it by the fixed layer below. */}
-              <div ref={slotRef} aria-hidden="true" className="h-[9vw] w-[13vw] shrink-0" />
+                  is painted over it by the fixed layer below. The red box is
+                  part of the headline, not the video: it stays put when the
+                  video morphs away. Outline (drawn outside the box) so the
+                  video, painted exactly over the box, doesn't cover it;
+                  radius matches the video's 16px start radius. */}
+              <div
+                ref={slotRef}
+                aria-hidden="true"
+                className="h-[9vw] w-[13vw] shrink-0 rounded-2xl outline-solid outline-[3px] outline-red"
+              />
               <span className="shimmer-text" style={{ animationDelay: "0.48s" }}>
                 Game
               </span>

@@ -99,7 +99,7 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
     <section className="w-full bg-black py-16 text-paper md:py-24">
       <div className="mx-auto w-full px-4 md:px-20">
         {/* Phones: the heading sits above the photo (desktop has it beside). */}
-        <h2 className="font-heading text-4xl font-semibold leading-tight md:hidden">Visit Our Store</h2>
+        <h2 className="font-heading text-4xl font-medium leading-tight md:hidden">Visit Our Store</h2>
 
         <div className="mt-5 grid items-center gap-6 md:mt-0 md:grid-cols-[1.45fr_1fr] md:gap-14">
           <div
@@ -149,7 +149,7 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
           </div>
 
           <div>
-            <h2 className="hidden font-heading text-4xl font-semibold leading-tight md:block md:text-5xl lg:text-6xl">
+            <h2 className="hidden font-heading text-4xl font-medium leading-tight md:block md:text-5xl lg:text-6xl">
               Visit Our
               <br />
               Store

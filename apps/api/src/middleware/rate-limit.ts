@@ -42,3 +42,27 @@ export const enquiryLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Product search — each new query can cost an OpenAI call (embedding, and an
+// LLM parse for long ones), so cap per IP. Generous for a human typing; plain
+// listings without `search` aren't counted.
+export const searchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  skip: (req: Request) => !req.query.search,
+  keyGenerator: (req: Request) => ipKeyGenerator(req.ip ?? ""),
+  message: { error: "Too many searches. Please slow down." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Search-as-you-type suggestions — no OpenAI cost, but fires on every pause in
+// typing, so a looser cap than full searches.
+export const suggestLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  keyGenerator: (req: Request) => ipKeyGenerator(req.ip ?? ""),
+  message: { error: "Too many requests. Please slow down." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

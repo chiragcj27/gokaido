@@ -20,6 +20,7 @@ type SizeRowDraft = {
   size: string;
   stock: string;
   basePrice: string;
+  mrp: string;
 };
 
 type ColorGroupDraft = {
@@ -34,7 +35,7 @@ type ColorGroupDraft = {
 // on submit instead of asking staff to re-upload the same photos per size.
 function toColorGroups(variants: ProductVariant[]): ColorGroupDraft[] {
   if (variants.length === 0)
-    return [{ color: "", images: [], sizes: [{ sku: "", size: "", stock: "", basePrice: "" }] }];
+    return [{ color: "", images: [], sizes: [{ sku: "", size: "", stock: "", basePrice: "", mrp: "" }] }];
 
   const groups: ColorGroupDraft[] = [];
   const indexByColor = new Map<string, number>();
@@ -52,6 +53,7 @@ function toColorGroups(variants: ProductVariant[]): ColorGroupDraft[] {
       size: v.size,
       stock: String(v.stock),
       basePrice: String(v.basePrice),
+      mrp: v.mrp != null ? String(v.mrp) : "",
     });
   }
   return groups;
@@ -162,7 +164,7 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
   function addColorGroup() {
     setColorGroups((prev) => [
       ...prev,
-      { color: "", images: [], sizes: [{ sku: "", size: "", stock: "", basePrice: "" }] },
+      { color: "", images: [], sizes: [{ sku: "", size: "", stock: "", basePrice: "", mrp: "" }] },
     ]);
   }
 
@@ -189,7 +191,7 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
     setColorGroups((prev) =>
       prev.map((g, i) =>
         i === groupIndex
-          ? { ...g, sizes: [...g.sizes, { sku: "", size: "", stock: "", basePrice: "" }] }
+          ? { ...g, sizes: [...g.sizes, { sku: "", size: "", stock: "", basePrice: "", mrp: "" }] }
           : g
       )
     );
@@ -240,6 +242,7 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
           size: s.size,
           stock: Number(s.stock) || 0,
           basePrice: Number(s.basePrice) || 0,
+          mrp: s.mrp.trim() === "" ? undefined : Number(s.mrp),
           images: g.images,
         }))
       ),
@@ -547,6 +550,7 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
                   <th>Size</th>
                   <th>Stock</th>
                   <th>Price (₹)</th>
+                  <th>MRP (₹)</th>
                   <th></th>
                 </tr>
               </thead>
@@ -592,6 +596,16 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
                         }
                         placeholder="e.g. 999"
                         required
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={row.mrp}
+                        onChange={(e) => updateSizeRow(groupIndex, sizeIndex, "mrp", e.target.value)}
+                        placeholder="Optional"
                       />
                     </td>
                     <td>

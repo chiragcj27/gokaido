@@ -27,7 +27,7 @@ packages/
 | Assets | AWS S3 |
 | Deployment | AWS EC2 |
 | Payments | ICICI Bank Payment Gateway (UPI, Card, Net Banking) |
-| Notifications | Twilio/Plivo (SMS), WhatsApp Business API, Resend (Email), Firebase (Push) |
+| Notifications | MSG91 (SMS/OTP, WhatsApp, Email), Firebase (Push) |
 
 ## Key Architecture Decisions
 
@@ -71,6 +71,7 @@ Every color page's `<link rel="canonical">` points at the base `/en/products/{sl
 | `link` | `{SITE_URL}/products/{slug}/{colorSlug}?size={size}` |
 | `g:image_link` | `variant.images[0]` falling back to `product.images[0]` |
 | `g:price` | `variant.basePrice` — the default/national price, **not** a region override. GMC feeds are single-price-per-country; region-based pricing stays a site-only feature |
+| `g:sale_price` | Only when `variant.mrp > variant.basePrice`: then `g:price` is the MRP and `g:sale_price` is `basePrice`, so Shopping shows the strike-through. No MRP (or MRP = price) → `g:price` alone, as above |
 | `g:availability` | `in_stock` if `stock > 0 && isActive`, else `out_of_stock` |
 | `g:color`, `g:size` | direct from the variant |
 | `g:brand` | `"Gokaido"` |
@@ -88,11 +89,13 @@ Inactive variants are excluded entirely; out-of-stock-but-active variants stay i
 
 Both are product-level (not per-colour) — matches how `PoppedCard` and `BeforeAfterSlider` currently take a single static image regardless of colour selection. Optional in the schema/Zod validation; admin's `ProductForm` exposes them via the single-image `ImageUpload` component (not `MultiImageUpload`, which is for the array fields). Bulk upload (`productBulk.schema.ts` / `.controller.ts`) carries them as two more columns, filled in once on a product's first row like `images`/`description`/`tags`.
 
+**MRP** — optional `variant.mrp` (per size, like `basePrice`; admin form column + `mrp` bulk-upload column). Validated `mrp >= basePrice`. When it's above the selling price the PDP, related/kit cards and search show it struck through with a discount %; blank means no strike-through. The Google Shopping feed sends it as `g:price` with `basePrice` as `g:sale_price` (see feed table above).
+
 ### Product Page (storefront)
 
 `/products/{slug}` and `/products/{slug}/{colorSlug}` are **API-backed**: `apps/web/app/lib/pdp/` fetches the product (+ colors, reviews with rating histogram, related and kit items in parallel) from the API and `adapter.ts` maps it onto the `PdpProduct` view-model that `components/ProductPage/ProductPageClient.tsx` renders. Fetches use Next's fetch cache (product 60s, reviews 5m, colors 1h, related 10m; tags `product:{slug}`, `products`, `colors`, `reviews:{slug}` for on-demand `revalidateTag`). `?size=` is applied client-side after mount so the page stays cacheable.
 
-The old hard-coded page is kept temporarily at `/sample-product/karate-guards` (noindex; `lib/dummyProduct.ts`) — delete it, and the `DummyProduct` alias, once the Figma-final page is signed off. Known gaps in the dynamic page: no MRP field in the catalogue (no strike-through price), FAQs are store-wide defaults (no FAQ model), review "talked about"/photos and down-votes aren't collected, region pricing isn't applied (base price is what's cached and rendered).
+The old hard-coded page is kept temporarily at `/sample-product/karate-guards` (noindex; `lib/dummyProduct.ts`) — delete it, and the `DummyProduct` alias, once the Figma-final page is signed off. Known gaps in the dynamic page: FAQs are store-wide defaults (no FAQ model), review "talked about"/photos and down-votes aren't collected, region pricing isn't applied (base price is what's cached and rendered).
 
 ## Dummy Data Tracker
 
@@ -137,6 +140,27 @@ PATCH /api/admin/orders/:id         → admin: tracking info + status transition
 
 **Not yet built**: invoice generation. Deliberately deferred, tracked in `TASKS.md`.
 
+## Product Search (hybrid keyword + semantic)
+
+`GET /api/products?search=…` (same endpoint/response as listings, plus a `search` block) — `apps/api/src/services/productSearch.ts`. Chosen for **lowest running cost**:
+
+- **Keyword**: Atlas Search index `product_text` (typo-tolerant, autocomplete-ready on `name`); falls back to the `$text` index if it's missing. Created/updated by `pnpm --filter @gokaido/api search:indexes`.
+- **Semantic**: one OpenAI `text-embedding-3-small` vector per product (512 dims, not per SKU) on `Product.embedding` (`select: false` — **aggregations ignore that, so any `Product.aggregate` returning whole docs must `$project` it out**). Similarity is computed **in-process** (brute-force cosine over a 5-min cached copy), *not* Atlas `$vectorSearch`: the Atlas cluster is a free tier capped at 3 search indexes and is **shared with the Chandra project**, which uses 2 — `product_text` has the last slot. Switch to `$vectorSearch` only with a dedicated/paid cluster or a catalogue in the many thousands.
+- **Merge**: reciprocal rank fusion in app code (cluster is Mongo 8.0, `$rankFusion` needs 8.1+). Vector matches below cosine 0.36 are dropped (`MIN_COSINE_SIMILARITY` — a starting guess, tune on the real catalogue).
+- **AI query parsing**: only for queries with ≥4 words, a digit, or non-Latin script (Hindi/Marathi/Tamil) — `gpt-4.1-nano` with structured output extracts hard filters (sport/category/subcategory/type/colour/size/price) + an English `semanticQuery`. Explicit UI filters override inferred ones; if inferred filters leave zero results they're dropped (`search.relaxed: true`). Parses and query embeddings are cached in memory 24h; searches are rate-limited 30/min/IP.
+- **Autocomplete**: `GET /api/products/suggest?q=` (≥2 chars) — Atlas Search `autocomplete` on `name` (fuzzy), keyword-only so it never costs an OpenAI call; 120/min/IP, 60s browser cache. Storefront `SearchModal` calls it debounced 200ms.
+- **Storefront** (`/search`): shows the API's inferred filters as "Showing: Red · Under ₹500" with a "Search without filters" link (`?ai=0` → API `interpret=false`), and a "closest products" notice when `search.relaxed`.
+- **Embeddings stay fresh** automatically: product create/update/bulk upload re-embed (awaited, never fails the save; skipped when the text hash is unchanged). `pnpm --filter @gokaido/api search:backfill` catches up anything missed — run it after changing the embedding model.
+
+## Notifications (MSG91)
+
+All SMS, WhatsApp and email go through **MSG91** (replaced Twilio for OTP and Resend for email), with one `MSG91_AUTH_KEY`. With the key unset, sends are logged to the console instead (local dev).
+
+- **OTP**: `services/msg91.ts#sendOtp`. We still generate, hash and verify the OTP ourselves (`auth.controller.ts`); MSG91's `/v5/otp` only delivers the code we pass in, against a DLT template containing `##OTP##`. We never call MSG91's verify.
+- **Order updates**: `services/notifications.ts#notifyOrder(order, event)` is fire-and-forget (never fails the request) and is called from `order.controller.ts` whenever an order reaches `confirmed`, `shipped`, `delivered`, `cancelled` or `refunded`. That happens on the payment callback, customer cancel, or admin status change. It sends on each channel that has a template configured (`MSG91_{WHATSAPP|SMS|EMAIL}_{EVENT}` env), respects `User.notifications` opt-outs (guests get everything), and logs each attempt to `Notification` as `sent`/`failed`.
+- **Templates live in the MSG91 dashboard** (DLT for SMS, Meta approval for WhatsApp). Their variables must match `EVENT_VARIABLES` in `notifications.ts`: positional for WhatsApp (`{{1}}`…) and SMS (`##var1##`…), named for email (`{{orderNumber}}`…). WhatsApp templates are sent in `en` only for now. Hindi/Marathi/Tamil templates would each need separate Meta approval.
+- **Not built yet**: registration email (registration doesn't collect an email), invoice email (no invoices yet), abandoned-cart WhatsApp (needs a scheduler).
+
 ## Reward Points
 
 No rate card exists yet from the client — the earn rate, redemption value, and redemption cap in `apps/api/src/utils/rewardPoints.ts` are engineering defaults standing in for a business decision, not a confirmed spec. Revisit before launch.
@@ -172,7 +196,7 @@ No rate card exists yet from the client — the earn rate, redemption value, and
 
 - Domain, server, hosting costs (client's responsibility)
 - AI/LLM API costs
-- External service fees (Twilio, WhatsApp Business API, Meta API)
+- External service fees (MSG91, WhatsApp Business API, Meta API)
 - All website content: text, images, videos, assets (client provides)
 - Dojo creation feature (IKEA-style room builder)
 
@@ -195,8 +219,8 @@ API needs:
 - `SITE_URL` — public storefront base URL, used to build absolute links/images in the Google Shopping feed and to redirect the browser back to after payment
 - `API_PUBLIC_URL` — this API's own publicly reachable base URL; ICICI redirects the customer's browser to `${API_PUBLIC_URL}/api/orders/payment-return` after payment. Must be a real public URL in UAT/prod (tunnel it, e.g. ngrok, for local testing)
 - `ICICI_PG_BASE_URL`, `ICICI_MERCHANT_ID`, `ICICI_AGGREGATOR_ID`, `ICICI_SECRET_KEY` — ICICI Payment Gateway credentials (see `apps/api/.env`, not committed)
-- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE`
-- `RESEND_API_KEY`
+- `MSG91_AUTH_KEY`, `MSG91_OTP_TEMPLATE_ID`, `MSG91_WHATSAPP_NUMBER`, `MSG91_EMAIL_DOMAIN`, `MSG91_EMAIL_FROM`, `MSG91_EMAIL_FROM_NAME`, plus per-event `MSG91_{WHATSAPP|SMS|EMAIL}_{ORDER_*}` template IDs — see "Notifications (MSG91)" above
+- `OPENAI_API_KEY`, `OPENAI_EMBEDDING_MODEL` (default `text-embedding-3-small`), `OPENAI_QUERY_MODEL` (default `gpt-4.1-nano`) — product search (see "Product Search" above). Currently ChandraPO's key; get the client their own before launch
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET`
 
 Web (`apps/web`) needs:

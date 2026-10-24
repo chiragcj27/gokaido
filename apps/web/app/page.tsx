@@ -49,11 +49,12 @@ export default async function Home() {
       </Hero>
       <Bestsellers products={bestsellers.products} mobileTitle="Meet What’s New" shopAllHref="/best-sellers" />
       <PresenceMap />
+      {/* Links are set in admin → Homepage; "#" until they're filled in. */}
+      <AppDownload playStoreUrl={settings.playStoreUrl ?? "#"} appStoreUrl={settings.appStoreUrl ?? "#"} />
       <StoreLocator stores={stores} />
       <ReelShowcase reels={reels.length > 0 ? reels : DUMMY_REELS} />
-      {/* Links are set in admin → Homepage; "#" until they're filled in. */}
+      {/* Also set in admin → Homepage. */}
       <BeyondTheMedal ctaHref={settings.beyondTheMedalUrl ?? "#"} />
-      <AppDownload playStoreUrl={settings.playStoreUrl ?? "#"} appStoreUrl={settings.appStoreUrl ?? "#"} />
     </main>
   );
 }

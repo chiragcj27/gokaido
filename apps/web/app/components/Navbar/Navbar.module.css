@@ -55,7 +55,7 @@
 .navLinks {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -84,15 +84,15 @@
 
 /* Text-as-image nav labels: height drives size, width follows the aspect ratio. */
 .navText {
-  height: 41px;
+  height: 34px;
   width: auto;
 }
 
 .chevron {
   /* Both PNGs carry transparent side padding; pull the arrow in next to the text. */
-  margin-left: -10px;
+  margin-left: -8px;
   /* Make up the space the button's side padding used to give before the next link. */
-  margin-right: 10px;
+  margin-right: 8px;
   transition: transform 0.2s ease;
 }
 
@@ -156,8 +156,59 @@
 }
 
 .iconImg {
-  width: 29px;
-  height: 43px;
+  width: 24px;
+  height: 36px;
+}
+
+/* Hover: lift + gold glow. Applied to the label/icon images rather than the
+   buttons so it never fights the chevron rotate or the cart icon's add-to-cart wiggle. */
+.categoryButton,
+.navImageLink,
+.iconButton {
+  --hover-glow: drop-shadow(0 0 6px rgba(240, 173, 61, 0.55));
+}
+
+.categoryButton .navText:not(.chevron),
+.navImageLink .navText,
+.iconImg {
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.22s ease;
+}
+
+@media (hover: hover) {
+  .categoryButton:hover .navText:not(.chevron),
+  .navImageLink:hover .navText,
+  .iconButton:hover .iconImg {
+    transform: translateY(-2px) scale(1.06);
+    filter: var(--hover-glow);
+  }
+
+  .categoryButton:hover .chevron:not(.chevronOpen) {
+    transform: translateY(2px);
+  }
+}
+
+.categoryButton:focus-visible .navText:not(.chevron),
+.navImageLink:focus-visible .navText,
+.iconButton:focus-visible .iconImg {
+  filter: var(--hover-glow);
+}
+
+.categoryButton:active .navText:not(.chevron),
+.navImageLink:active .navText,
+.iconButton:active .iconImg {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .categoryButton .navText:not(.chevron),
+  .navImageLink .navText,
+  .iconImg {
+    transition: filter 0.22s ease;
+    transform: none !important;
+  }
 }
 
 .cartIcon {
@@ -268,7 +319,7 @@
 
   /* Keep the menu labels smaller than the logo. */
   .navText {
-    height: 24px;
+    height: 22px;
   }
 
   .chevron {
@@ -295,8 +346,8 @@
   }
 
   .iconImg {
-    width: 24px;
-    height: 36px;
+    width: 21px;
+    height: 32px;
   }
 
   .iconButton:last-child {

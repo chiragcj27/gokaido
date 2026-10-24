@@ -9,7 +9,6 @@ import CustomerInfoStep, {
   isCustomerInfoComplete,
   type CustomerInfo,
 } from "../components/Checkout/CustomerInfoStep";
-import PaymentStep, { type PaymentMethodId } from "../components/Checkout/PaymentStep";
 import OrderReviewStep from "../components/Checkout/OrderReviewStep";
 import { useCart } from "../lib/cartStore";
 import { useAuth } from "../lib/auth/authStore";
@@ -17,11 +16,13 @@ import { guestRequest, placeOrderAndPay, validateCustomerInfo } from "../lib/che
 
 const STEP_COPY: Record<CheckoutStep, { title: string; subtitle: string }> = {
   customer: { title: "Customer Information", subtitle: "Enter your contact details and delivery address" },
-  payment: { title: "Payment", subtitle: "Select a payment method to complete your order" },
-  review: { title: "Order Review", subtitle: "Review your order details before placing it" },
+  review: {
+    title: "Order Review",
+    subtitle: "Review your order, then pay securely by UPI, card or net banking on ICICI's page",
+  },
 };
 
-const STEP_ORDER: CheckoutStep[] = ["customer", "payment", "review"];
+const STEP_ORDER: CheckoutStep[] = ["customer", "review"];
 
 export default function CheckoutPage() {
   const { items } = useCart();
@@ -31,8 +32,6 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(EMPTY_CUSTOMER_INFO);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("upi");
-  const [upiId, setUpiId] = useState("");
 
   // Prefill contact details for a logged-in customer (name/mobile can't change after registration anyway).
   useEffect(() => {
@@ -111,12 +110,10 @@ export default function CheckoutPage() {
   const copy = STEP_COPY[step];
   const ctaLabel =
     step === "customer"
-      ? "Continue to Payment"
-      : step === "payment"
-        ? "Continue to Review"
-        : submitting
-          ? "Redirecting to Payment…"
-          : "Place Order & Pay";
+      ? "Continue to Review"
+      : submitting
+        ? "Redirecting to Payment…"
+        : "Place Order & Pay";
   const ctaDisabled =
     submitting || authStatus === "loading" || (step === "customer" && !isCustomerInfoComplete(customerInfo));
 
@@ -162,16 +159,8 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px]">
         {step === "customer" && <CustomerInfoStep value={customerInfo} onChange={setCustomerInfo} />}
-        {step === "payment" && (
-          <PaymentStep value={paymentMethod} onChange={setPaymentMethod} upiId={upiId} onUpiIdChange={setUpiId} />
-        )}
         {step === "review" && (
-          <OrderReviewStep
-            customerInfo={customerInfo}
-            paymentMethod={paymentMethod}
-            onEditCustomer={() => goToStep("customer")}
-            onEditPayment={() => goToStep("payment")}
-          />
+          <OrderReviewStep customerInfo={customerInfo} onEditCustomer={() => goToStep("customer")} />
         )}
 
         <div className="lg:sticky lg:top-6">

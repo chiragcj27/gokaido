@@ -4,11 +4,19 @@ import type { ISizeGuide } from "@gokaido/database";
 import {
   productListQuerySchema,
   productDetailQuerySchema,
+  productSuggestQuerySchema,
   createProductSchema,
   updateProductSchema,
 } from "../schemas/product.schema.js";
 import { getEffectivePrice } from "../utils/pricing.js";
 import { escapeRegex } from "../utils/regex.js";
+import {
+  invalidateVectorIndex,
+  searchProductIds,
+  suggestProducts,
+  type SearchInterpretation,
+} from "../services/productSearch.js";
+import { refreshProductEmbeddings } from "../services/productEmbedding.js";
 
 export type LeanVariant = {
   sku: string;
@@ -16,6 +24,7 @@ export type LeanVariant = {
   size: string;
   stock: number;
   basePrice: number;
+  mrp?: number;
   regionPrices?: Record<string, number>;
   images: string[];
   isActive: boolean;
@@ -60,17 +69,23 @@ function buildMatch(query: ListQuery, canSeeInactive: boolean) {
     match.variants = { $elemMatch: variantElemMatch };
   }
 
-  if (query.search) {
-    match.$text = { $search: query.search };
-  }
-
   return match;
 }
 
-function buildSort(
-  sort: ListQuery["sort"],
-  hasSearch: boolean
-): Record<string, 1 | -1 | { $meta: "textScore" }> {
+// Filters the search LLM read out of the query ("under 1500" → maxPrice),
+// only where the request didn't set that filter itself — an explicit UI
+// filter always wins over an inferred one.
+function inferredFilters(interpretation: SearchInterpretation | null, query: ListQuery): Partial<ListQuery> {
+  if (!interpretation) return {};
+  const keys = ["sport", "category", "subcategory", "productType", "color", "size", "minPrice", "maxPrice"] as const;
+  const filters: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (query[key] === undefined && interpretation[key] !== null) filters[key] = interpretation[key];
+  }
+  return filters as Partial<ListQuery>;
+}
+
+function buildSort(sort: ListQuery["sort"], hasSearch: boolean): Record<string, 1 | -1> {
   switch (sort) {
     case "price_asc":
       return { minPrice: 1 };
@@ -81,7 +96,8 @@ function buildSort(
     case "bestselling":
       return { reviewCount: -1 };
     case "relevance":
-      return hasSearch ? { score: { $meta: "textScore" } } : { createdAt: -1 };
+      // `searchRank` = position in the hybrid search ranking (0 = best).
+      return hasSearch ? { searchRank: 1 } : { createdAt: -1 };
     case "newest":
     default:
       return { createdAt: -1 };
@@ -97,30 +113,58 @@ export async function listProducts(req: Request, res: Response): Promise<void> {
 
   const query = parsed.data;
   const canSeeInactive = req.user?.role === "admin" || req.user?.role === "superadmin";
-  const match = buildMatch(query, canSeeInactive);
-  const hasSearch = Boolean(query.search);
-
-  const pipeline: mongoose.PipelineStage[] = [{ $match: match }];
-  if (hasSearch) {
-    pipeline.push({ $addFields: { score: { $meta: "textScore" } } });
-  }
-  pipeline.push({ $addFields: { minPrice: { $min: "$variants.basePrice" } } });
-  pipeline.push({ $sort: buildSort(query.sort, hasSearch) });
-  pipeline.push({
-    $facet: {
-      data: [{ $skip: (query.page - 1) * query.limit }, { $limit: query.limit }],
-      totalCount: [{ $count: "count" }],
-    },
-  });
+  const baseMatch = buildMatch(query, canSeeInactive);
 
   type FacetResult = {
     data: Array<Record<string, unknown> & { variants: LeanVariant[] }>;
     totalCount: Array<{ count: number }>;
   };
-  const [result] = (await Product.aggregate(pipeline)) as FacetResult[];
+  const runListing = async (match: Record<string, unknown>, rankedIds: mongoose.Types.ObjectId[] | null) => {
+    const pipeline: mongoose.PipelineStage[] = [
+      { $match: rankedIds ? { ...match, _id: { $in: rankedIds } } : match },
+      // Aggregations ignore the schema's `select: false`, so drop the search
+      // vector explicitly (early, so it isn't carried through the sort either).
+      { $project: { embedding: 0, embeddingHash: 0 } },
+    ];
+    if (rankedIds) {
+      pipeline.push({ $addFields: { searchRank: { $indexOfArray: [rankedIds, "$_id"] } } });
+    }
+    pipeline.push({ $addFields: { minPrice: { $min: "$variants.basePrice" } } });
+    pipeline.push({ $sort: buildSort(query.sort, Boolean(rankedIds)) });
+    pipeline.push({
+      $facet: {
+        data: [{ $skip: (query.page - 1) * query.limit }, { $limit: query.limit }, { $project: { searchRank: 0 } }],
+        totalCount: [{ $count: "count" }],
+      },
+    });
+    const [result] = (await Product.aggregate(pipeline)) as FacetResult[];
+    return { products: result?.data ?? [], total: result?.totalCount?.[0]?.count ?? 0 };
+  };
 
-  const products = result?.data ?? [];
-  const total = result?.totalCount?.[0]?.count ?? 0;
+  let listing: Awaited<ReturnType<typeof runListing>>;
+  let searchMeta: Record<string, unknown> | undefined;
+  if (query.search) {
+    const isActive = typeof baseMatch.isActive === "boolean" ? baseMatch.isActive : undefined;
+    const { ids, interpretation } = await searchProductIds(query.search, isActive, {
+      interpret: query.interpret ?? true,
+    });
+    const inferred = inferredFilters(interpretation, query);
+    const hasInferred = Object.keys(inferred).length > 0;
+
+    listing = await runListing(hasInferred ? buildMatch({ ...query, ...inferred }, canSeeInactive) : baseMatch, ids);
+    // Inferred filters that leave nothing (a size the LLM normalised
+    // differently, a colour we don't stock) shouldn't dead-end the shopper —
+    // drop them and show the plain relevance results instead.
+    let relaxed = false;
+    if (hasInferred && listing.total === 0 && ids.length > 0) {
+      listing = await runListing(baseMatch, ids);
+      relaxed = true;
+    }
+    searchMeta = { appliedFilters: relaxed ? {} : inferred, interpretedQuery: interpretation?.semanticQuery ?? null, relaxed };
+  } else {
+    listing = await runListing(baseMatch, null);
+  }
+  const { products, total } = listing;
 
   res.json({
     products: products.map((p) => ({
@@ -133,7 +177,20 @@ export async function listProducts(req: Request, res: Response): Promise<void> {
       total,
       totalPages: Math.ceil(total / query.limit),
     },
+    ...(searchMeta && { search: searchMeta }),
   });
+}
+
+export async function suggestProductsHandler(req: Request, res: Response): Promise<void> {
+  const parsed = productSuggestQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.json({ suggestions: [] });
+    return;
+  }
+  const suggestions = await suggestProducts(parsed.data.q);
+  // Short browser cache: retyping/backspacing the same prefix shouldn't refetch.
+  res.set("Cache-Control", "public, max-age=60");
+  res.json({ suggestions });
 }
 
 export async function getProductBySlug(req: Request, res: Response): Promise<void> {
@@ -185,6 +242,9 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
   }
 
   const product = await Product.create(parsed.data);
+  // Awaited rather than fire-and-forget: on Vercel the function can be frozen
+  // once the response is sent. Never throws — see refreshProductEmbeddings.
+  await refreshProductEmbeddings([product._id]);
   res.status(201).json({ product });
 }
 
@@ -211,6 +271,11 @@ export async function updateProduct(req: Request, res: Response): Promise<void> 
     return;
   }
 
+  // No-op (no OpenAI call) unless searchable text actually changed.
+  await refreshProductEmbeddings([product._id]);
+  // The vector search cache holds each product's isActive flag; refresh it
+  // now rather than leaving a (de)activated product wrong for up to 5 min.
+  if (parsed.data.isActive !== undefined) invalidateVectorIndex();
   res.json({ product });
 }
 
@@ -229,6 +294,7 @@ export async function deleteProduct(req: Request, res: Response): Promise<void> 
     res.status(404).json({ error: "Product not found" });
     return;
   }
+  invalidateVectorIndex();
 
   res.json({ product });
 }

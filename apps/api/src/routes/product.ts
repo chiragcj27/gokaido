@@ -6,9 +6,11 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  suggestProductsHandler,
 } from "../controllers/product.controller.js";
 import { bulkUploadProducts, downloadBulkTemplate } from "../controllers/productBulk.controller.js";
 import { requireAuth, requireRole, optionalAuth } from "../middleware/auth.js";
+import { searchLimiter, suggestLimiter } from "../middleware/rate-limit.js";
 
 const router: express.Router = Router();
 
@@ -24,7 +26,7 @@ const upload = multer({
   },
 });
 
-// Registered ahead of `/:slug` so "bulk"/"bulk-template" aren't swallowed as a slug lookup.
+// Registered ahead of `/:slug` so "bulk"/"bulk-template"/"suggest" aren't swallowed as a slug lookup.
 router.get(
   "/bulk-template",
   requireAuth,
@@ -39,7 +41,8 @@ router.post(
   bulkUploadProducts
 );
 
-router.get("/", optionalAuth, listProducts);
+router.get("/suggest", suggestLimiter, suggestProductsHandler);
+router.get("/", searchLimiter, optionalAuth, listProducts);
 router.get("/:slug", getProductBySlug);
 
 router.post("/", requireAuth, requireRole("admin", "superadmin"), createProduct);

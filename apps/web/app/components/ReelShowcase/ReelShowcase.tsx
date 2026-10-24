@@ -263,7 +263,7 @@ export default function ReelShowcase({ title = "See it in action", reels }: Reel
       aria-roledescription="carousel"
       aria-label={title}
     >
-      <h2 className="m-0 text-center font-heading text-[clamp(32px,4.2vw,64px)] font-bold leading-none">{title}</h2>
+      <h2 className="m-0 text-center font-heading text-[clamp(32px,4.2vw,64px)] font-semibold leading-none">{title}</h2>
 
       <div
         className="relative mx-auto mt-8 h-[calc(var(--reel-w)*1.8)] w-full touch-pan-y [--reel-w:min(62vw,calc((100svh_-_160px)*9/16))] sm:[--reel-w:min(40vw,340px,calc((100svh_-_200px)*9/16))] lg:mt-12 lg:[--reel-w:min(28vw,426px,calc((100svh_-_200px)*9/16))]"

@@ -103,6 +103,7 @@ export interface ProductVariant {
   size: string;
   stock: number;
   basePrice: number;
+  mrp?: number;
   images?: string[];
   isActive?: boolean;
 }

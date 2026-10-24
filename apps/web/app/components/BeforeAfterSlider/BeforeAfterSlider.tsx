@@ -100,8 +100,8 @@ export default function BeforeAfterSlider({
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between border-t border-white/10 bg-ink/70 px-5 py-4 backdrop-blur-sm max-lg:border-0 max-lg:bg-transparent max-lg:px-2.5 max-lg:py-2 max-lg:backdrop-blur-none">
-        <span className="font-heading text-sm font-semibold text-paper/60 max-lg:font-sans max-lg:text-[11px] max-lg:font-normal max-lg:text-paper">{beforeLabel}</span>
-        <span className="font-heading text-sm font-bold text-gold max-lg:font-sans max-lg:text-[11px] max-lg:font-normal max-lg:text-paper">{afterLabel}</span>
+        <span className="font-heading text-[28px] font-semibold text-paper/60 max-lg:font-sans max-lg:text-[22px] max-lg:font-normal max-lg:text-paper">{beforeLabel}</span>
+        <span className="font-heading text-[28px] font-bold text-gold max-lg:font-sans max-lg:text-[22px] max-lg:font-normal max-lg:text-paper">{afterLabel}</span>
       </div>
     </div>
   );

@@ -16,17 +16,17 @@ export default function BeyondTheMedal({ ctaHref }: BeyondTheMedalProps) {
     <section className="w-full bg-black py-16 text-paper md:py-24">
       <div className="mx-auto grid w-full items-center gap-10 px-4 md:grid-cols-[1fr_1.1fr] md:gap-14 md:px-20">
         <div>
-          <h2 className="m-0 font-heading font-bold uppercase leading-[1.02]">
+          <h2 className="m-0 font-heading font-semibold uppercase leading-[1.02]">
             <span className="block text-[clamp(48px,6.4vw,88px)]">Beyond</span>
             <span className="block text-[clamp(32px,4.4vw,60px)]">the medal</span>
           </h2>
 
-          <p className="mt-8 font-heading text-xl font-bold leading-snug md:mt-10 md:text-2xl">
+          <p className="mt-8 font-heading text-xl font-semibold leading-snug md:mt-10 md:text-2xl">
             Every medal has a story.
             <br />
             Tell us yours.
           </p>
-          <p className="mt-4 max-w-md text-base leading-relaxed">
+          <p className="mt-4 max-w-lg text-lg leading-relaxed md:text-xl">
             Are you a national player, international medalist, champion or rising athlete? Share your journey with us.
             Your story could inspire thousands and become part of the story behind Gokaido.
           </p>

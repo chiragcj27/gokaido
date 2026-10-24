@@ -95,7 +95,7 @@ body {
      highlight stays proportional on both "THE" and the giant "CHANGE". */
   --shimmer-spread: 4;
   --shimmer-angle: 100deg;
-  --shimmer-base: #a9a9b0;
+  --shimmer-base: #b8b8b8;
   --shimmer-glint: #ffffff;
   --shimmer-duration: 3.2s;
   --shimmer-offset: calc(var(--shimmer-spread) * 0.5ch);

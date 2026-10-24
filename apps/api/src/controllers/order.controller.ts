@@ -28,6 +28,7 @@ import {
   verifyInboundHash,
   getSecretKey,
 } from "../services/iciciPg.js";
+import { notifyOrder, type OrderEvent } from "../services/notifications.js";
 
 const SITE_URL = (process.env.SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 const API_PUBLIC_URL = (process.env.API_PUBLIC_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -219,6 +220,21 @@ async function applyGatewayResult(
   }
 
   await order.save();
+  if (isSuccess) notifyStatus(order);
+}
+
+// Customer notification sent when an order lands in each status.
+const STATUS_EVENTS: Partial<Record<OrderStatus, OrderEvent>> = {
+  confirmed: "order_confirmed",
+  shipped: "order_shipped",
+  delivered: "order_delivered",
+  cancelled: "order_cancelled",
+  refunded: "order_refunded",
+};
+
+function notifyStatus(order: mongoose.HydratedDocument<IOrder>): void {
+  const event = STATUS_EVENTS[order.status];
+  if (event) notifyOrder(order, event);
 }
 
 const ALLOWED_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -640,6 +656,7 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
     note: parsed.data.reason ?? "Cancelled by customer",
   });
   await order.save();
+  notifyStatus(order);
 
   res.json({ order });
 }
@@ -719,6 +736,7 @@ export async function adminUpdateOrder(req: Request, res: Response): Promise<voi
   if (parsed.data.trackingNumber !== undefined) order.trackingNumber = parsed.data.trackingNumber;
   if (parsed.data.courierPartner !== undefined) order.courierPartner = parsed.data.courierPartner;
 
+  const statusChanged = Boolean(parsed.data.status && parsed.data.status !== order.status);
   if (parsed.data.status && parsed.data.status !== order.status) {
     const allowed = ALLOWED_STATUS_TRANSITIONS[order.status as OrderStatus];
     if (!allowed.includes(parsed.data.status)) {
@@ -746,6 +764,7 @@ export async function adminUpdateOrder(req: Request, res: Response): Promise<voi
   }
 
   await order.save();
+  if (statusChanged) notifyStatus(order);
   await order.populate({ path: "user", select: "name mobile email" });
   res.json({ order });
 }
