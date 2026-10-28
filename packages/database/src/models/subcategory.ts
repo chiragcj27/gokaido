@@ -42,6 +42,8 @@ export interface ISubcategory {
   icon?: string;
   category: mongoose.Types.ObjectId;
   sizeGuide?: ISizeGuide;
+  // Display position within its category, 1-based ascending (ties fall back to name).
+  sortOrder: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -87,6 +89,7 @@ const subcategorySchema = new mongoose.Schema<ISubcategory>(
     icon: String,
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     sizeGuide: sizeGuideSchema,
+    sortOrder: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

@@ -14,7 +14,9 @@ export async function getHomepageSettings(_req: Request, res: Response): Promise
     settings: {
       heroVideoUrl: settings?.heroVideoUrl ?? null,
       heroVideoPosterUrl: settings?.heroVideoPosterUrl ?? null,
+      heroMobileVideoUrl: settings?.heroMobileVideoUrl ?? null,
       heroBackgroundImageUrl: settings?.heroBackgroundImageUrl ?? null,
+      heroMobileBackgroundImageUrl: settings?.heroMobileBackgroundImageUrl ?? null,
       heroShowcaseImages: settings?.heroShowcaseImages ?? [],
       trendingSearches: settings?.trendingSearches ?? [],
       faqs: (settings?.faqs ?? []).map(({ question, answer }) => ({ question, answer })),

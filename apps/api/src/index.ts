@@ -24,6 +24,8 @@ import storeRouter from "./routes/store.js";
 import reelRouter from "./routes/reel.js";
 import franchiseEnquiryRouter from "./routes/franchiseEnquiry.js";
 import adminFranchiseEnquiryRouter from "./routes/adminFranchiseEnquiry.js";
+import adminDashboardRouter from "./routes/adminDashboard.js";
+import adminCustomerRouter from "./routes/adminCustomer.js";
 
 const app: Express = express();
 
@@ -88,6 +90,8 @@ app.use("/api/stores", storeRouter);
 app.use("/api/reels", reelRouter);
 app.use("/api/franchise-enquiries", franchiseEnquiryRouter);
 app.use("/api/admin/franchise-enquiries", adminFranchiseEnquiryRouter);
+app.use("/api/admin/dashboard", adminDashboardRouter);
+app.use("/api/admin/customers", adminCustomerRouter);
 
 const mongoUri = process.env.MONGODB_URI;
 

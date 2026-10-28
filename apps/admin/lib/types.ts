@@ -4,6 +4,7 @@ export interface Category {
   slug: string;
   description?: string;
   image?: string;
+  sortOrder: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -11,7 +12,9 @@ export interface Category {
 export interface HomepageSettings {
   heroVideoUrl: string | null;
   heroVideoPosterUrl: string | null;
+  heroMobileVideoUrl: string | null;
   heroBackgroundImageUrl: string | null;
+  heroMobileBackgroundImageUrl: string | null;
   heroShowcaseImages: string[];
   trendingSearches: string[];
   faqs: { question: string; answer: string }[];
@@ -51,6 +54,7 @@ export interface Subcategory {
   icon?: string;
   category: string | { _id: string; name: string; slug: string };
   sizeGuide?: SizeGuide;
+  sortOrder: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -259,4 +263,29 @@ export interface FranchiseEnquiry {
   status: FranchiseEnquiryStatus;
   adminNotes?: string;
   createdAt: string;
+}
+
+export interface Customer {
+  _id: string;
+  name?: string;
+  mobile?: string;
+  email?: string;
+  region?: string;
+  language: string;
+  rewardPoints: number;
+  isActive: boolean;
+  lastLoginAt?: string;
+  createdAt: string;
+  /** Paid orders only. */
+  orders: number;
+  spent: number;
+  lastOrderAt?: string;
+}
+
+/** Things waiting on an admin — drives the sidebar badges. */
+export interface AttentionCounts {
+  toShip: number;
+  refundsPending: number;
+  pendingReviews: number;
+  newEnquiries: number;
 }

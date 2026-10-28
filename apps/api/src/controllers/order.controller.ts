@@ -1,4 +1,6 @@
 import type { Request, Response } from "express";
+import ExcelJS from "exceljs";
+import type { z } from "zod";
 import {
   Order,
   Cart,
@@ -15,11 +17,13 @@ import {
 import {
   createOrderSchema,
   cancelOrderSchema,
+  adminOrderFilterSchema,
   adminOrderListQuerySchema,
   adminUpdateOrderSchema,
 } from "../schemas/order.schema.js";
+import { addSheet, EXPORT_ROW_LIMIT, istDateRange, sendWorkbook } from "../utils/excel.js";
 import { escapeRegex } from "../utils/regex.js";
-import { generateOrderNumber } from "../utils/orderNumber.js";
+import { gatewayTxnNo, generateOrderNumber } from "../utils/orderNumber.js";
 import { calculatePointsEarned, calculateMaxRedeemableValue } from "../utils/rewardPoints.js";
 import {
   initiateSale,
@@ -258,7 +262,7 @@ async function refundAndCancel(
       return { ok: false, error: "Order is paid but has no gateway reference — contact support" };
     }
     const refundResult = await refundOrVoid({
-      merchantTxnNo: generateOrderNumber(),
+      merchantTxnNo: gatewayTxnNo(order.orderNumber, "R"),
       originalTxnNo: order.payment.txnID,
       amount: order.total,
     });
@@ -380,7 +384,8 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 
   const total = Math.max(subtotal - couponDiscount + deliveryCharge - rewardPointsValue, 0);
 
-  const orderNumber = generateOrderNumber();
+  const orderNumber = await generateOrderNumber();
+  const merchantTxnNo = gatewayTxnNo(orderNumber);
   const cartItems = cart.items as ICartItem[];
 
   const order = new Order({
@@ -409,7 +414,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     rewardPointsUsed,
     rewardPointsValue,
     total,
-    payment: { gateway: "icici", merchantTxnNo: orderNumber, status: "pending" },
+    payment: { gateway: "icici", merchantTxnNo, status: "pending" },
     status: "placed",
     statusHistory: [{ status: "placed", timestamp: new Date() }],
   });
@@ -443,7 +448,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
   }
 
   const saleResult = await initiateSale({
-    merchantTxnNo: orderNumber,
+    merchantTxnNo,
     amount: total,
     customerEmailID,
     customerMobileNo: shippingAddress.mobile,
@@ -544,7 +549,7 @@ export async function checkPaymentStatus(req: Request, res: Response): Promise<v
     return;
   }
 
-  const statusResult = await checkTransactionStatus(generateOrderNumber(), order.payment.txnID);
+  const statusResult = await checkTransactionStatus(gatewayTxnNo(order.orderNumber, "S"), order.payment.txnID);
   if (statusResult.txnStatus === "SUC") {
     await applyGatewayResult(order, {
       responseCode: "000",
@@ -598,7 +603,7 @@ export async function retryPayment(req: Request, res: Response): Promise<void> {
     | { email?: string }
     | null;
 
-  const newMerchantTxnNo = generateOrderNumber();
+  const newMerchantTxnNo = gatewayTxnNo(order.orderNumber, "P");
   const saleResult = await initiateSale({
     merchantTxnNo: newMerchantTxnNo,
     amount: order.total,
@@ -661,14 +666,13 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
   res.json({ order });
 }
 
-export async function adminListOrders(req: Request, res: Response): Promise<void> {
-  const parsed = adminOrderListQuerySchema.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid query" });
-    return;
-  }
-  const { page, limit, status, paymentStatus, search } = parsed.data;
-
+function buildAdminOrderFilter({
+  status,
+  paymentStatus,
+  search,
+  from,
+  to,
+}: z.infer<typeof adminOrderFilterSchema>): Record<string, unknown> {
   const filter: Record<string, unknown> = {};
   if (status) filter.status = status;
   if (paymentStatus) filter["payment.status"] = paymentStatus;
@@ -680,8 +684,22 @@ export async function adminListOrders(req: Request, res: Response): Promise<void
       { guestMobile: pattern },
       { "shippingAddress.name": pattern },
       { "shippingAddress.mobile": pattern },
+      { trackingNumber: pattern },
     ];
   }
+  const createdAt = istDateRange(from, to);
+  if (createdAt) filter.createdAt = createdAt;
+  return filter;
+}
+
+export async function adminListOrders(req: Request, res: Response): Promise<void> {
+  const parsed = adminOrderListQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid query" });
+    return;
+  }
+  const { page, limit } = parsed.data;
+  const filter = buildAdminOrderFilter(parsed.data);
 
   const [orders, total] = await Promise.all([
     Order.find(filter)
@@ -696,6 +714,86 @@ export async function adminListOrders(req: Request, res: Response): Promise<void
     orders,
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
+}
+
+type ExportOrder = IOrder & { user?: { name?: string; mobile?: string; email?: string } };
+type ExportItem = IOrder["items"][number] & { order: ExportOrder };
+
+const customerName = (o: ExportOrder) => o.guestName ?? o.user?.name ?? o.shippingAddress?.name;
+const customerMobile = (o: ExportOrder) => o.guestMobile ?? o.user?.mobile ?? o.shippingAddress?.mobile;
+
+// Same filters as the list view. Two sheets: one row per order for accounts,
+// one row per line item for packing / SKU analysis.
+export async function adminExportOrders(req: Request, res: Response): Promise<void> {
+  const parsed = adminOrderFilterSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid query" });
+    return;
+  }
+
+  const orders = await Order.find(buildAdminOrderFilter(parsed.data))
+    .sort({ createdAt: -1 })
+    .limit(EXPORT_ROW_LIMIT)
+    .populate({ path: "user", select: "name mobile email" })
+    .lean<ExportOrder[]>();
+
+  const workbook = new ExcelJS.Workbook();
+  addSheet<ExportOrder>(
+    workbook,
+    "Orders",
+    [
+      { header: "Order number", width: 18, value: (o) => o.orderNumber },
+      { header: "Placed", format: "date", width: 18, value: (o) => o.createdAt },
+      { header: "Status", width: 16, value: (o) => o.status },
+      { header: "Payment status", value: (o) => o.payment?.status },
+      { header: "Payment mode", value: (o) => o.payment?.paymentMode },
+      { header: "Paid at", format: "date", width: 18, value: (o) => o.payment?.paidAt },
+      { header: "ICICI txn ID", width: 20, value: (o) => o.payment?.txnID },
+      { header: "Customer", width: 22, value: customerName },
+      { header: "Mobile", width: 14, value: customerMobile },
+      { header: "Email", width: 26, value: (o) => o.guestEmail ?? o.user?.email },
+      { header: "Account", value: (o) => (o.user ? "Registered" : "Guest") },
+      { header: "Items", value: (o) => o.items.reduce((n, i) => n + i.quantity, 0) },
+      { header: "Subtotal", format: "money", value: (o) => o.subtotal },
+      { header: "Delivery", format: "money", value: (o) => o.deliveryCharge },
+      { header: "Coupon", value: (o) => o.couponCode },
+      { header: "Coupon discount", format: "money", value: (o) => o.couponDiscount },
+      { header: "Points redeemed", format: "money", value: (o) => o.rewardPointsValue },
+      { header: "Total", format: "money", value: (o) => o.total },
+      {
+        header: "Ship to",
+        width: 40,
+        value: (o) => [o.shippingAddress?.line1, o.shippingAddress?.line2].filter(Boolean).join(", "),
+      },
+      { header: "City", value: (o) => o.shippingAddress?.city },
+      { header: "State", value: (o) => o.shippingAddress?.state },
+      { header: "Pincode", value: (o) => o.shippingAddress?.pincode },
+      { header: "Delivery instructions", width: 30, value: (o) => o.deliveryInstructions },
+      { header: "Courier", value: (o) => o.courierPartner },
+      { header: "Tracking number", width: 20, value: (o) => o.trackingNumber },
+    ],
+    orders
+  );
+  addSheet<ExportItem>(
+    workbook,
+    "Items",
+    [
+      { header: "Order number", width: 18, value: (i) => i.order.orderNumber },
+      { header: "Placed", format: "date", width: 18, value: (i) => i.order.createdAt },
+      { header: "Order status", width: 16, value: (i) => i.order.status },
+      { header: "Customer", width: 22, value: (i) => customerName(i.order) },
+      { header: "Product", width: 32, value: (i) => i.productName },
+      { header: "SKU", width: 20, value: (i) => i.variantSku },
+      { header: "Colour", value: (i) => i.variantColor },
+      { header: "Size", value: (i) => i.variantSize },
+      { header: "Qty", value: (i) => i.quantity },
+      { header: "Unit price", format: "money", value: (i) => i.unitPrice },
+      { header: "Line total", format: "money", value: (i) => i.totalPrice },
+      { header: "Image", width: 50, value: (i) => i.variantImage },
+    ],
+    orders.flatMap((order) => order.items.map((item) => ({ ...item, order })))
+  );
+  await sendWorkbook(res, workbook, "orders");
 }
 
 export async function adminGetOrder(req: Request, res: Response): Promise<void> {

@@ -5,12 +5,12 @@ import TeamPhoto from "./TeamPhoto";
 
 const SEGMENTS = [
   {
-    title: "Industrial / Office",
-    body: "From large-scale operations to technical support, our industrial services are built to optimize performance and reduce downtime. With expertise and precision, we help industries operate stronger, safer, and more sustainably.",
+    title: "Vision",
+    body: "To become the most trusted and technologically advanced martial arts brand, bridging tradition with innovation and supporting the growth of the global martial arts community.",
   },
   {
-    title: "Retail",
-    body: "We provide tailored commercial solutions that keep businesses running smoothly—whether it’s facility maintenance, repairs, or specialized services. Our focus is on efficiency, reliability, and creating safe, productive spaces.",
+    title: "Mission",
+    body: "To design, manufacture, and deliver high-quality martial arts uniforms & equipment empowering coaches and students with continuous evolving through value driven innovation, technology, and disciplined execution.",
   },
 ];
 

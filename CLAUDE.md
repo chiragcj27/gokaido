@@ -134,7 +134,7 @@ PATCH /api/admin/orders/:id         → admin: tracking info + status transition
 
 **Idempotency**: `payment-return` and `payment-advice` can both fire for the same attempt (or `payment-return` can be replayed). `applyGatewayResult` no-ops once `payment.status` is already `"paid"` — confirmed by literally replaying a successful callback and checking nothing double-applied (coupon `usedCount` included).
 
-**`payment.merchantTxnNo`** (on the `Order` model) is the value sent to ICICI for the *current* attempt — regenerated on retry, since ICICI requires a unique value per `initiateSale` call. `orderNumber` is the permanent customer-facing identifier and never changes.
+**`orderNumber`** is the permanent customer-facing identifier: `{origin}-{YYMMDD IST}-{daily seq}`, e.g. `BOM-261029-0042` (`apps/api/src/utils/orderNumber.ts`; origin hard-coded to `BOM` for now, sequence from the `Counter` model, resets each IST day). **`payment.merchantTxnNo`** is the value sent to ICICI for the *current* attempt (alphanumeric, ≤20): the order number minus hyphens on the first attempt (`BOM2610290042`), then `+ P|S|R + 6 base-36 chars` for retry / status query / refund — regenerated per call since ICICI requires a unique value, but still traceable to the order in ICICI's dashboard.
 
 **Storefront side** (`apps/web/app/lib/checkout/placeOrder.ts`): the bag lives in localStorage, so "Place Order" first mirrors it into the server `Cart` (clear, then re-add each line — logged-in by token, guests by a persistent `X-Guest-Id`), then calls `POST /api/orders` and navigates to ICICI. Cart lines therefore need `productId` (set from the PDP). The local bag is only cleared on the return page (`/orders/{orderNumber}?status=success`), so a failed payment keeps it; `/checkout/failed` handles the unverifiable-return case.
 
@@ -156,10 +156,17 @@ PATCH /api/admin/orders/:id         → admin: tracking info + status transition
 
 All SMS, WhatsApp and email go through **MSG91** (replaced Twilio for OTP and Resend for email), with one `MSG91_AUTH_KEY`. With the key unset, sends are logged to the console instead (local dev).
 
-- **OTP**: `services/msg91.ts#sendOtp`. We still generate, hash and verify the OTP ourselves (`auth.controller.ts`); MSG91's `/v5/otp` only delivers the code we pass in, against a DLT template containing `##OTP##`. We never call MSG91's verify.
+- **OTP**: `services/msg91.ts#sendOtp`. We still generate, hash and verify the OTP ourselves (`auth.controller.ts`); MSG91 only delivers the code we pass in, as a Flow SMS against the `otp-verification` DLT template (`MSG91_OTP_TEMPLATE_ID`, sender `GOKSPD`), whose text uses `##var##` for the code — not `/v5/otp`, which only fills `##OTP##`. We never call MSG91's verify.
 - **Order updates**: `services/notifications.ts#notifyOrder(order, event)` is fire-and-forget (never fails the request) and is called from `order.controller.ts` whenever an order reaches `confirmed`, `shipped`, `delivered`, `cancelled` or `refunded`. That happens on the payment callback, customer cancel, or admin status change. It sends on each channel that has a template configured (`MSG91_{WHATSAPP|SMS|EMAIL}_{EVENT}` env), respects `User.notifications` opt-outs (guests get everything), and logs each attempt to `Notification` as `sent`/`failed`.
 - **Templates live in the MSG91 dashboard** (DLT for SMS, Meta approval for WhatsApp). Their variables must match `EVENT_VARIABLES` in `notifications.ts`: positional for WhatsApp (`{{1}}`…) and SMS (`##var1##`…), named for email (`{{orderNumber}}`…). WhatsApp templates are sent in `en` only for now. Hindi/Marathi/Tamil templates would each need separate Meta approval.
 - **Not built yet**: registration email (registration doesn't collect an email), invoice email (no invoices yet), abandoned-cart WhatsApp (needs a scheduler).
+
+## Admin Portal Operations
+
+- **Dashboard** (`GET /api/admin/dashboard`, `apps/api/src/controllers/adminDashboard.controller.ts`): "needs attention" counts (orders to ship = `confirmed`, refunds to complete, payments stuck `placed`/`pending` > 1h, pending reviews, new franchise enquiries), paid revenue today / 7d / 30d by `payment.paidAt` on IST day boundaries, orders by status, top sellers (30d), low-stock active variants (≤ `LOW_STOCK_THRESHOLD` = 5), recent orders. `GET /api/admin/dashboard/attention` is the cheap subset behind the sidebar badges, refetched on each navigation.
+- **Excel exports**: `GET /api/admin/{orders|franchise-enquiries|customers}/export` take the same filters as their list endpoints (minus pagination) and stream an `.xlsx` via `utils/excel.ts`. Orders export has two sheets (Orders + Items). Capped at `EXPORT_ROW_LIMIT` (10k) rows; dates are written as IST wall-clock time. Admin's `ExportButton` passes the page's current filter query string, so the download always matches what's on screen.
+- **Date filters** (`from`/`to`, `YYYY-MM-DD`) on admin orders, enquiries and customers are whole IST calendar days (`istDateRange`).
+- **Customers** (`GET /api/admin/customers`): read-only list of `role: "customer"` users with paid-order count, spend and last order, computed only for the ids on the current page.
 
 ## Reward Points
 

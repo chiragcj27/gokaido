@@ -186,7 +186,8 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
         </div>
 
         {/* City dots. Scrolls sideways when there are more cities than fit;
-            a fixed/min width keeps each label readable instead of squeezing.
+            each chip is as wide as its (single-line) label, with a minimum
+            and side padding, so long city names never run into each other.
             py on the row leaves room for the selected dot's glow, which the
             scroll container would otherwise clip. Phones add a "next" arrow. */}
         <div className="mt-10 flex items-center gap-2 border-t border-paper/20 pt-4 md:mt-16 md:pt-6">
@@ -194,12 +195,16 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
             {stores.map((store) => {
               const selected = store.id === active.id;
               return (
-                <li key={store.id} data-store-id={store.id} className="w-[4.5rem] shrink-0 md:w-auto md:min-w-[6.5rem] md:flex-1">
+                <li
+                  key={store.id}
+                  data-store-id={store.id}
+                  className="min-w-22 shrink-0 md:min-w-max md:flex-1"
+                >
                   <button
                     type="button"
                     onClick={() => setActiveId(store.id)}
                     aria-pressed={selected}
-                    className="group flex w-full flex-col items-center gap-4 text-sm"
+                    className="group flex w-full flex-col items-center gap-4 px-3 text-sm md:px-4"
                   >
                     <span
                       aria-hidden="true"
@@ -209,7 +214,11 @@ export default function StoreLocator({ stores, fallbackImage = "/stores/store-pl
                           : "border-paper/80 bg-paper group-hover:border-red"
                       }`}
                     />
-                    <span className={selected ? "font-semibold" : "opacity-90 group-hover:opacity-100"}>
+                    <span
+                      className={`whitespace-nowrap text-center ${
+                        selected ? "font-semibold" : "opacity-90 group-hover:opacity-100"
+                      }`}
+                    >
                       {store.city}
                     </span>
                   </button>

@@ -14,6 +14,7 @@ export const createCategorySchema = z.object({
   slug: slugSchema,
   description: z.string().trim().max(2000).optional(),
   image: imageSchema.optional(),
+  sortOrder: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -62,6 +63,7 @@ export const createSubcategorySchema = z.object({
   // null clears a previously-set custom guide, reverting the subcategory to
   // the storefront's default; undefined/omitted leaves it untouched.
   sizeGuide: sizeGuideSchema.nullable().optional(),
+  sortOrder: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -70,4 +72,10 @@ export const updateSubcategorySchema = createSubcategorySchema.partial();
 export const subcategoryListQuerySchema = z.object({
   category: objectIdSchema.optional(),
   status: z.enum(["active", "inactive", "all"]).optional(),
+});
+
+// Full ordered list of ids; each gets sortOrder = its 1-based position. For
+// subcategories, send one category's subcategories at a time.
+export const reorderSchema = z.object({
+  ids: z.array(objectIdSchema).min(1).max(500),
 });

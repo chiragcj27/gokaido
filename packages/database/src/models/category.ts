@@ -5,6 +5,8 @@ export interface ICategory {
   slug: string;
   description?: string;
   image?: string;
+  // Display position, 1-based ascending (ties fall back to name).
+  sortOrder: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -16,6 +18,7 @@ const categorySchema = new mongoose.Schema<ICategory>(
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     description: { type: String, trim: true },
     image: String,
+    sortOrder: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

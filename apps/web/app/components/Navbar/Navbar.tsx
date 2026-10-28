@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import SearchModal, { type SearchModalProduct } from "../SearchModal/SearchModal";
 import { useCart } from "../../lib/cartStore";
 import styles from "./Navbar.module.css";
@@ -33,11 +33,12 @@ export interface NavbarProps {
 export default function Navbar({ categories, trendingSearches, bestsellers }: NavbarProps) {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const categoryRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
-  const navRef = useRef<HTMLElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   const { itemCount, lastAdded } = useCart();
@@ -131,24 +132,35 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
     };
   }, [categoryOpen]);
 
-  // Mobile menu: close on a tap outside the panel (the toggle handles its own clicks).
+  // Mobile menu is a full-screen panel: lock page scroll behind it, close on Escape,
+  // and move focus to its close button so keyboard users land inside it.
   useEffect(() => {
     if (!mobileOpen) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (navRef.current?.contains(target) || menuToggleRef.current?.contains(target)) return;
-      setMobileOpen(false);
-    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMobileOpen(false);
     };
-    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
+      document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKeyDown);
+      menuToggleRef.current?.focus();
     };
   }, [mobileOpen]);
+
+  // Navigating (including tapping the current page's link) closes the menu.
+  useEffect(() => {
+    setMobileOpen(false);
+    setMobileCategoryOpen(false);
+  }, [pathname]);
+
+  const closeMobile = () => {
+    setMobileOpen(false);
+    setMobileCategoryOpen(false);
+  };
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
     <header ref={headerRef} className={hidden ? `${styles.header} ${styles.headerHidden}` : styles.header}>
@@ -159,8 +171,9 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
           ref={menuToggleRef}
           className={styles.menuToggle}
           aria-expanded={mobileOpen}
-          aria-label="Toggle menu"
-          onClick={() => setMobileOpen((open) => !open)}
+          aria-controls="mobile-menu"
+          aria-label="Open menu"
+          onClick={() => setMobileOpen(true)}
         >
           <span />
           <span />
@@ -172,11 +185,7 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
             <Image src="/navbar/logo.png" alt="Gokaido" width={256} height={87} className={styles.logo} priority />
           </Link>
 
-          <nav
-            ref={navRef}
-            className={mobileOpen ? `${styles.navLinks} ${styles.navLinksOpen}` : styles.navLinks}
-            aria-label="Primary"
-          >
+          <nav className={styles.navLinks} aria-label="Primary">
             <div className={styles.categoryWrap} ref={categoryRef}>
               <button
                 type="button"
@@ -209,10 +218,7 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
                       href={category.href}
                       role="menuitem"
                       className={styles.categoryItem}
-                      onClick={() => {
-                        setCategoryOpen(false);
-                        setMobileOpen(false);
-                      }}
+                      onClick={() => setCategoryOpen(false)}
                     >
                       {category.label}
                     </Link>
@@ -265,6 +271,101 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
           </Link>
         </div>
       </div>
+      <div
+        id="mobile-menu"
+        className={mobileOpen ? `${styles.drawer} ${styles.drawerOpen}` : styles.drawer}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        aria-hidden={!mobileOpen}
+        inert={!mobileOpen}
+      >
+        <div className={styles.drawerHead}>
+          <Link href="/" className={styles.logoLink} aria-label="Gokaido home" onClick={closeMobile}>
+            <Image src="/navbar/logo.png" alt="Gokaido" width={256} height={87} className={styles.drawerLogo} />
+          </Link>
+          <button
+            type="button"
+            ref={closeButtonRef}
+            className={styles.drawerClose}
+            aria-label="Close menu"
+            onClick={closeMobile}
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <nav className={styles.drawerNav} aria-label="Mobile">
+          <Link
+            href="/"
+            className={isActive("/") ? `${styles.drawerRow} ${styles.drawerRowActive}` : styles.drawerRow}
+            aria-current={isActive("/") ? "page" : undefined}
+            style={stagger(0)}
+            onClick={closeMobile}
+          >
+            <span>Home</span>
+            <DrawerChevron />
+          </Link>
+
+          <button
+            type="button"
+            className={styles.drawerRow}
+            aria-expanded={mobileCategoryOpen}
+            aria-controls="mobile-menu-categories"
+            style={stagger(1)}
+            onClick={() => setMobileCategoryOpen((open) => !open)}
+          >
+            <span>Category</span>
+            <DrawerChevron open={mobileCategoryOpen} />
+          </button>
+          <div
+            id="mobile-menu-categories"
+            className={mobileCategoryOpen ? `${styles.drawerSub} ${styles.drawerSubOpen}` : styles.drawerSub}
+          >
+            <div className={styles.drawerSubInner}>
+              {categories.map((category) => (
+                <Link key={category.key} href={category.href} className={styles.drawerSubItem} onClick={closeMobile}>
+                  {category.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {navLinks.map((link, index) => (
+            <Link
+              key={link.key}
+              href={link.href}
+              className={isActive(link.href) ? `${styles.drawerRow} ${styles.drawerRowActive}` : styles.drawerRow}
+              aria-current={isActive(link.href) ? "page" : undefined}
+              style={stagger(index + 2)}
+              onClick={closeMobile}
+            >
+              <span>{link.label}</span>
+              <DrawerChevron />
+            </Link>
+          ))}
+        </nav>
+
+        <div className={styles.drawerFoot} style={stagger(navLinks.length + 2)}>
+          <Link href="/account" className={styles.drawerFootButton} onClick={closeMobile}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+            My Account
+          </Link>
+          <Link href="/account?tab=orders" className={styles.drawerFootButton} onClick={closeMobile}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path d="M5 8h14l-1 13H6L5 8z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+              <path d="M9 10V6a3 3 0 0 1 6 0v4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+            My Orders
+          </Link>
+        </div>
+      </div>
+
       <SearchModal
         open={searchOpen}
         onClose={closeSearch}
@@ -272,5 +373,22 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
         bestsellers={bestsellers}
       />
     </header>
+  );
+}
+
+/** Entrance order for the mobile menu's staggered reveal (read as --i in the CSS). */
+const stagger = (i: number) => ({ "--i": i }) as CSSProperties;
+
+function DrawerChevron({ open = false }: { open?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      aria-hidden="true"
+      className={open ? `${styles.drawerChevron} ${styles.drawerChevronOpen}` : styles.drawerChevron}
+    >
+      <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

@@ -10,7 +10,9 @@ import VideoUpload from "../../../components/VideoUpload";
 const EMPTY: HomepageSettings = {
   heroVideoUrl: null,
   heroVideoPosterUrl: null,
+  heroMobileVideoUrl: null,
   heroBackgroundImageUrl: null,
+  heroMobileBackgroundImageUrl: null,
   heroShowcaseImages: [],
   trendingSearches: [],
   faqs: [],
@@ -64,7 +66,9 @@ export default function HomepagePage() {
       const res = await api.patch<{ settings: HomepageSettings }>("/api/homepage-settings", {
         heroVideoUrl: settings.heroVideoUrl ?? "",
         heroVideoPosterUrl: settings.heroVideoPosterUrl ?? "",
+        heroMobileVideoUrl: settings.heroMobileVideoUrl ?? "",
         heroBackgroundImageUrl: settings.heroBackgroundImageUrl ?? "",
+        heroMobileBackgroundImageUrl: settings.heroMobileBackgroundImageUrl ?? "",
         heroShowcaseImages: settings.heroShowcaseImages ?? [],
         trendingSearches: trendingText
           .split("\n")
@@ -129,6 +133,20 @@ export default function HomepagePage() {
         </label>
 
         <label>
+          Hero video (mobile, vertical)
+          <VideoUpload
+            purpose="homepage"
+            value={settings.heroMobileVideoUrl ?? ""}
+            onChange={(v) => set("heroMobileVideoUrl", v)}
+          />
+          <p className="form-hint">
+            Phones only. A 9:16 version of the hero video — the horizontal video plays in the small slot, then
+            crossfades into this one as it grows to full screen. Ideally the same footage reframed vertically
+            (~720×1280, ~1–3MB). Leave empty and phones show the hero video above, cropped to fit.
+          </p>
+        </label>
+
+        <label>
           Hero background
           <ImageUpload
             purpose="homepage"
@@ -136,6 +154,19 @@ export default function HomepagePage() {
             onChange={(v) => set("heroBackgroundImageUrl", v)}
           />
           <p className="form-hint">Full-bleed background behind the hero headline and video slot.</p>
+        </label>
+
+        <label>
+          Hero background (mobile)
+          <ImageUpload
+            purpose="homepage"
+            value={settings.heroMobileBackgroundImageUrl ?? ""}
+            onChange={(v) => set("heroMobileBackgroundImageUrl", v)}
+          />
+          <p className="form-hint">
+            Phones only. Portrait art (about 3:4), cropped to fit — keep the edges free of anything important. At
+            least ~1200px wide so it stays sharp on high-density screens.
+          </p>
         </label>
 
         <label>

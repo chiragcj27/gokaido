@@ -57,6 +57,7 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
   const [icon, setIcon] = useState(subcategory?.icon ?? "");
   const [hasSizeGuide, setHasSizeGuide] = useState(Boolean(subcategory?.sizeGuide));
   const [sizeGuide, setSizeGuide] = useState<SizeGuide>(subcategory?.sizeGuide ?? EMPTY_SIZE_GUIDE);
+  const [sortOrder, setSortOrder] = useState(subcategory ? String(subcategory.sortOrder) : "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -75,6 +76,8 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
       category: categoryValue,
       description: description || undefined,
       image: image || undefined,
+      // Blank on create appends to the end (see the create controller).
+      sortOrder: sortOrder === "" ? undefined : Number(sortOrder),
       icon: icon || undefined,
       // null clears a previously-saved custom guide on edit (see
       // updateSubcategory) — on create there's nothing to clear yet.
@@ -132,6 +135,11 @@ export default function SubcategoryForm({ subcategory, categories, onDone, onCan
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          Display order
+          <input type="number" min="0" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+          <p className="form-hint">Lower numbers appear first within the category. Leave blank to add at the end.</p>
         </label>
       </div>
 

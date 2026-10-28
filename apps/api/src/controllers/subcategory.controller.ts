@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
-import { Category, Subcategory, mongoose } from "@gokaido/database";
+import { Category, Product, Subcategory, mongoose } from "@gokaido/database";
 import {
   createSubcategorySchema,
   updateSubcategorySchema,
   subcategoryListQuerySchema,
+  reorderSchema,
 } from "../schemas/category.schema.js";
 
 function isAdmin(req: Request): boolean {
@@ -27,7 +28,7 @@ export async function listSubcategories(req: Request, res: Response): Promise<vo
   const filter: Record<string, unknown> = buildStatusFilter(parsed.data.status, isAdmin(req));
   if (parsed.data.category) filter.category = parsed.data.category;
 
-  const subcategories = await Subcategory.find(filter).populate("category", "name slug").sort({ name: 1 });
+  const subcategories = await Subcategory.find(filter).populate("category", "name slug").sort({ sortOrder: 1, name: 1 });
 
   res.json({ subcategories });
 }
@@ -67,6 +68,14 @@ export async function createSubcategory(req: Request, res: Response): Promise<vo
   // sizeGuide: null only means something on update (clears an existing
   // guide) — on create there's nothing to clear, so drop it either way.
   const { sizeGuide, ...data } = parsed.data;
+  // New subcategories go to the end of their category unless a position was given.
+  if (data.sortOrder === undefined) {
+    const last = await Subcategory.findOne({ category: data.category })
+      .sort({ sortOrder: -1 })
+      .select("sortOrder")
+      .lean<{ sortOrder?: number }>();
+    data.sortOrder = (last?.sortOrder ?? 0) + 1;
+  }
   const subcategory = await Subcategory.create(sizeGuide ? { ...data, sizeGuide } : data);
   res.status(201).json({ subcategory });
 }
@@ -125,9 +134,62 @@ export async function updateSubcategory(req: Request, res: Response): Promise<vo
   res.json({ subcategory });
 }
 
+export async function reorderSubcategories(req: Request, res: Response): Promise<void> {
+  const parsed = reorderSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid order" });
+    return;
+  }
+
+  // Positions only mean something within one category, so refuse a mixed list.
+  const categories = await Subcategory.distinct("category", { _id: { $in: parsed.data.ids } });
+  if (categories.length > 1) {
+    res.status(400).json({ error: "Reorder one category's subcategories at a time" });
+    return;
+  }
+
+  await Subcategory.bulkWrite(
+    parsed.data.ids.map((id, index) => ({
+      updateOne: { filter: { _id: id }, update: { $set: { sortOrder: index + 1 } } },
+    }))
+  );
+
+  res.json({ ok: true });
+}
+
 export async function deleteSubcategory(req: Request, res: Response): Promise<void> {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     res.status(400).json({ error: "Invalid subcategory id" });
+    return;
+  }
+
+  // Plain DELETE only deactivates (reversible); ?permanent=true removes it.
+  if (req.query.permanent === "true") {
+    const subcategory = await Subcategory.findById(req.params.id).populate<{
+      category: { slug: string } | null;
+    }>("category", "slug");
+    if (!subcategory) {
+      res.status(404).json({ error: "Subcategory not found" });
+      return;
+    }
+
+    // Products reference subcategories by slug (unique only within a
+    // category), so count by both slugs and refuse rather than orphan them.
+    const productCount = subcategory.category
+      ? await Product.countDocuments({
+          category: subcategory.category.slug,
+          subcategory: subcategory.slug,
+        })
+      : 0;
+    if (productCount > 0) {
+      res.status(409).json({
+        error: `${productCount} product(s) still use this subcategory. Move or delete them first.`,
+      });
+      return;
+    }
+
+    await subcategory.deleteOne();
+    res.json({ deleted: true });
     return;
   }
 

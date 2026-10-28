@@ -30,16 +30,21 @@ export default async function Home() {
         // assets via the Homepage settings page — see apps/web/public/hero/.
         videoUrl={settings.heroVideoUrl ?? "/hero/hero-reel.mp4"}
         posterUrl={settings.heroVideoPosterUrl ?? "/hero/hero-reel-poster.jpg"}
+        // The local vertical file is a crop of the local reel, so it's only a
+        // fallback while the reel is local too — paired with an uploaded reel
+        // it'd crossfade into different footage. No vertical cut → phones
+        // cover-crop the main reel.
+        mobileVideoUrl={settings.heroMobileVideoUrl ?? (settings.heroVideoUrl ? undefined : "/hero/hero-reel-vertical.mp4")}
         backgroundUrl={settings.heroBackgroundImageUrl ?? "/hero/hero.png"}
+        mobileBackgroundUrl={settings.heroMobileBackgroundImageUrl ?? "/hero/hero-mobile.png"}
         showcaseImages={
           settings.heroShowcaseImages.length > 0
             ? settings.heroShowcaseImages
             : ["/hero/showcase-1.png", "/hero/showcase-2.png", "/hero/showcase-3.png"]
         }
       >
-        {/* Inside the hero so on phones it sits directly under the video
-            strip and pins along with it (no gap/filler between them). z-25
-            keeps it above the hero's fixed video layer (z-20). */}
+        {/* Directly under the reel's full-screen end box. z-25 keeps it above
+            the hero's fixed video layer (z-20). */}
         <div className="relative z-[25]">
           <UnifyKits
             categories={categories.map((c) => ({ name: c.name, image: c.image ?? CATEGORY_PLACEHOLDER_IMAGE, href: c.href }))}

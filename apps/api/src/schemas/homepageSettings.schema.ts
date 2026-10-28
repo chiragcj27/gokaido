@@ -8,7 +8,9 @@ const ownUrl = z.string().url().refine(isOwnPublicUrl, "Must be an uploaded asse
 export const updateHomepageSettingsSchema = z.object({
   heroVideoUrl: z.union([ownUrl, z.literal("")]).optional(),
   heroVideoPosterUrl: z.union([ownUrl, z.literal("")]).optional(),
+  heroMobileVideoUrl: z.union([ownUrl, z.literal("")]).optional(),
   heroBackgroundImageUrl: z.union([ownUrl, z.literal("")]).optional(),
+  heroMobileBackgroundImageUrl: z.union([ownUrl, z.literal("")]).optional(),
   // One image per product tile in the hero's white card. Capped at 3 — the
   // headline only has room for that many before the card crowds the words.
   heroShowcaseImages: z.array(ownUrl).max(3).optional(),

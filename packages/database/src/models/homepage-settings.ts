@@ -12,7 +12,12 @@ export interface IHomepageFaq {
 export interface IHomepageSettings {
   heroVideoUrl?: string;
   heroVideoPosterUrl?: string;
+  // Phones only: vertical (9:16) cut the hero reel crossfades into as it
+  // grows full-screen. Unset → phones cover-crop heroVideoUrl instead.
+  heroMobileVideoUrl?: string;
   heroBackgroundImageUrl?: string;
+  // Phones only: portrait cut of the hero background.
+  heroMobileBackgroundImageUrl?: string;
   // The product tiles in the white card between "MADE" and "TO" — one image
   // per tile (square product shots), laid out side by side by the storefront.
   heroShowcaseImages?: string[];
@@ -32,7 +37,9 @@ const homepageSettingsSchema = new mongoose.Schema<IHomepageSettings>(
   {
     heroVideoUrl: { type: String, trim: true },
     heroVideoPosterUrl: { type: String, trim: true },
+    heroMobileVideoUrl: { type: String, trim: true },
     heroBackgroundImageUrl: { type: String, trim: true },
+    heroMobileBackgroundImageUrl: { type: String, trim: true },
     heroShowcaseImages: { type: [String], default: undefined },
     trendingSearches: { type: [String], default: undefined },
     faqs: {

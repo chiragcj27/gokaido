@@ -18,20 +18,22 @@ interface Row {
   points: Point[];
 }
 
-// Placeholder copy (tracked in DUMMY_DATA.md) — swap for the client's franchise pitch.
+// Why/Who copy is from the design; the What card is still our placeholder (tracked in
+// DUMMY_DATA.md) — the design's own What copy is unrelated template text.
 // Card colours sampled from the design.
 const ROWS: Row[] = [
   {
     question: "Why?",
-    title: "Why buy Gokaido",
+    title: "Gokaido",
     color: "#b78f4d",
     tilt: -3,
     points: [
-      { lead: "Trusted since 1975", rest: " — five decades of outfitting dojos and athletes" },
-      { lead: "Built for the mat", rest: " — uniforms, belts and protection made to take real training" },
-      { lead: "One complete range", rest: " — karate, boxing and taekwondo under one roof" },
-      { lead: "A name people know", rest: " — students and coaches already ask for it" },
-      { lead: "Repeat customers", rest: " — belts get earned, gear gets upgraded" },
+      { lead: "50+ years of expertise", rest: " — Five decades of manufacturing and supplying martial arts uniforms and equipment, since 1975." },
+      { lead: "A name that stands for quality", rest: " — An established Indian martial arts brand trusted by practitioners, coaches, and institutions." },
+      { lead: "More than just uniforms", rest: " — A comprehensive range of martial arts uniforms, protective equipment, and accessories under one roof." },
+      { lead: "A model that works", rest: " — 20+ locations and counting. Step into a business model that's already been put to the test." },
+      { lead: "A market with purpose", rest: " — Serve a growing ecosystem of martial arts academies, coaches, athletes, and institutions." },
+      { lead: "Built on product knowledge", rest: " — Industry experience that helps you understand what your customers need, not just what they buy." },
     ],
   },
   {
@@ -54,12 +56,12 @@ const ROWS: Row[] = [
     color: "#c83632",
     tilt: -3,
     points: [
-      { rest: "Sports & fitness stores" },
-      { rest: "Martial arts academies & dojos" },
-      { rest: "Entrepreneurs entering sports retail" },
-      { rest: "Distributors opening new cities & countries" },
-      { rest: "School & university sports suppliers" },
-      { rest: "Partners who refuse to sell average gear" },
+      { lead: "Martial arts practitioners & coaches", rest: " — Ready to turn their industry knowledge and connections into a business." },
+      { lead: "Sports goods retailers", rest: " — Looking to expand their product offering with a specialised martial arts brand." },
+      { lead: "Sports entrepreneurs", rest: " — Interested in building a focused retail business in the sports industry." },
+      { lead: "Existing business owners", rest: " — Looking to diversify into martial arts uniforms and equipment." },
+      { lead: "Local business leaders", rest: " — With a strong understanding of their market and the drive to build lasting customer relationships." },
+      { lead: "Growth-minded entrepreneurs", rest: ": People ready to represent an established Indian brand and grow with it." },
     ],
   },
 ];

@@ -125,6 +125,11 @@ export interface HeroReelGL {
   setMorph(from: RectPx, to: RectPx, progress: number, radiusPx: number): void;
   setVelocity(v: number): void;
   setVisible(visible: boolean): void;
+  /** Draw one frame. Called by Hero's own rAF loop right after setMorph —
+   *  a separate loop here ran BEFORE Hero's each frame, so it drew last
+   *  frame's rects and the video trailed the scrolled page by one frame
+   *  (visible as jitter against the slot's red outline). */
+  render(): void;
   resize(): void;
   destroy(): void;
 }
@@ -226,6 +231,7 @@ export function createHeroReelGL(canvas: HTMLCanvasElement, video: HTMLVideoElem
   let radius = 0;
   let velocity = 0;
   let visible = true;
+  let cleared = false;
   let destroyed = false;
   const startTime = performance.now();
 
@@ -237,16 +243,17 @@ export function createHeroReelGL(canvas: HTMLCanvasElement, video: HTMLVideoElem
   }
   resize();
 
-  function frame() {
+  function render() {
     if (destroyed) return;
-    requestAnimationFrame(frame);
 
+    // No decoded frame yet — skip rather than upload a black/stale texture.
+    const ready = visible && video.readyState >= video.HAVE_CURRENT_DATA && video.videoWidth > 0;
+    // Off-screen: clear once, then stop touching the GPU until it's back.
+    if (!ready && cleared) return;
     gl!.clearColor(0, 0, 0, 0);
     gl!.clear(gl!.COLOR_BUFFER_BIT);
-
-    if (!visible) return;
-    // No decoded frame yet — skip rather than upload a black/stale texture.
-    if (video.readyState < video.HAVE_CURRENT_DATA || video.videoWidth === 0) return;
+    cleared = !ready;
+    if (!ready) return;
 
     gl!.bindTexture(gl!.TEXTURE_2D, texture);
     gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, video);
@@ -264,7 +271,6 @@ export function createHeroReelGL(canvas: HTMLCanvasElement, video: HTMLVideoElem
 
     gl!.drawElements(gl!.TRIANGLES, indexCount, gl!.UNSIGNED_SHORT, 0);
   }
-  requestAnimationFrame(frame);
 
   return {
     setMorph(f, t, p, radiusPx) {
@@ -279,7 +285,13 @@ export function createHeroReelGL(canvas: HTMLCanvasElement, video: HTMLVideoElem
     setVisible(v) {
       visible = v;
     },
-    resize,
+    render,
+    resize() {
+      resize();
+      // Resizing the canvas wipes the drawing buffer.
+      cleared = false;
+      render();
+    },
     destroy() {
       destroyed = true;
       gl!.deleteTexture(texture);

@@ -7,7 +7,9 @@ import { DUMMY_TRENDING_SEARCHES } from "./fallbacks";
 export interface HomepageSettings {
   heroVideoUrl: string | null;
   heroVideoPosterUrl: string | null;
+  heroMobileVideoUrl: string | null;
   heroBackgroundImageUrl: string | null;
+  heroMobileBackgroundImageUrl: string | null;
   heroShowcaseImages: string[];
   trendingSearches: string[];
   faqs: Faq[];
@@ -19,7 +21,9 @@ export interface HomepageSettings {
 const FALLBACK: HomepageSettings = {
   heroVideoUrl: null,
   heroVideoPosterUrl: null,
+  heroMobileVideoUrl: null,
   heroBackgroundImageUrl: null,
+  heroMobileBackgroundImageUrl: null,
   heroShowcaseImages: [],
   trendingSearches: [],
   faqs: [],
@@ -46,7 +50,9 @@ export const getHomepageSettings = cache(async (): Promise<HomepageSettings> => 
     return {
       heroVideoUrl: settings?.heroVideoUrl ?? null,
       heroVideoPosterUrl: settings?.heroVideoPosterUrl ?? null,
+      heroMobileVideoUrl: settings?.heroMobileVideoUrl ?? null,
       heroBackgroundImageUrl: settings?.heroBackgroundImageUrl ?? null,
+      heroMobileBackgroundImageUrl: settings?.heroMobileBackgroundImageUrl ?? null,
       heroShowcaseImages: Array.isArray(settings?.heroShowcaseImages) ? settings.heroShowcaseImages : [],
       trendingSearches: Array.isArray(settings?.trendingSearches) ? settings.trendingSearches : [],
       faqs: Array.isArray(settings?.faqs) ? settings.faqs : [],

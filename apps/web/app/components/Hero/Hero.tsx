@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -9,12 +9,32 @@ import { createHeroReelGL, type HeroReelGL } from "./heroReelGL";
 export interface HeroProps {
   videoUrl: string;
   posterUrl?: string;
+  /** Phones only: a vertical (9:16) cut the reel crossfades into as it grows
+   *  to full screen. Without it, phones show `videoUrl` cover-cropped. */
+  mobileVideoUrl?: string;
   backgroundUrl?: string;
+  /** Phones only: portrait background art, cover-cropped to the hero box.
+   *  Without it, phones crop `backgroundUrl` instead. */
+  mobileBackgroundUrl?: string;
   /** Product tiles in the white card between "MADE" and "TO", left to right. */
   showcaseImages?: string[];
-  /** Rendered straight under the reel strip, inside the block that pins on
-   *  phones, so it stays glued to the strip while the video grows into it. */
+  /** Rendered straight under the reel's end box. */
   children?: ReactNode;
+}
+
+// Phones crossfade from the horizontal reel to the vertical one while the
+// morphing box passes through roughly square — keyed on the box's aspect
+// (width / height) rather than scroll progress, so it lands at the same
+// shape on every screen height. Near square both cuts cover-crop to a
+// sensible frame, which is what keeps the swap from reading as a jump cut.
+const FADE_FROM_ASPECT = 1.25;
+const FADE_TO_ASPECT = 0.75;
+
+// Only the reel that's mostly showing gets sound; the other stays muted so
+// the two never play audio over each other.
+function syncAudio(main: HTMLVideoElement, alt: HTMLVideoElement | null, muted: boolean, altActive: boolean) {
+  main.muted = muted || altActive;
+  if (alt) alt.muted = muted || !altActive;
 }
 
 /**
@@ -52,6 +72,12 @@ export interface HeroProps {
  *     twist — CSS clipping can't deform geometry. Honest degradation: the
  *     morph still reads correctly, it's just not as fancy.
  *
+ * Phones have their own layout: a large horizontal slot under the headline
+ * (`mobileSlotRef`) growing into a full-screen box, with the horizontal reel
+ * crossfading into `mobileVideoUrl` (vertical) on the way — see
+ * FADE_FROM_ASPECT. Both videos sit in the same clipped wrapper, so they
+ * share the one morphing rect; the vertical one just fades in on top.
+ *
  * The scroll-indicator chevron is baked into `backgroundUrl` rather than
  * being its own element, so it can't animate independently — it just gets
  * covered as the video grows. Make it a real element if that changes.
@@ -59,12 +85,45 @@ export interface HeroProps {
  * `showcaseImages` (the MADE/TO card) are static product tiles that scroll
  * normally — no morph, no GL, they're just images in the headline row.
  */
-export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImages, children }: HeroProps) {
+/**
+ * Art-directed background: a <picture> so each device downloads only its own
+ * art (the desktop image is ~1.5MB; two priority <Image>s toggled by CSS
+ * would fetch both everywhere). Next's documented pattern for this —
+ * getImageProps per source, no `priority` (it would preload both), eager +
+ * high fetch priority on the <img> instead.
+ */
+function HeroBackground({ desktopUrl, mobileUrl }: { desktopUrl?: string; mobileUrl?: string }) {
+  if (!desktopUrl && !mobileUrl) return null;
+  const common = { alt: "", fill: true, sizes: "100vw", loading: "eager", fetchPriority: "high" } as const;
+  const desktop = desktopUrl ? getImageProps({ ...common, src: desktopUrl }).props : null;
+  const mobile = mobileUrl ? getImageProps({ ...common, src: mobileUrl }).props : null;
+  // The <img> carries the phone art when there is one; the <source> then
+  // swaps in the desktop art from md up.
+  const { srcSet, ...img } = (mobile ?? desktop)!;
+  return (
+    <picture>
+      {mobile && desktop && <source media="(min-width: 768px)" srcSet={desktop.srcSet} sizes={desktop.sizes} />}
+      <img {...img} srcSet={srcSet} className="object-cover" />
+    </picture>
+  );
+}
+
+export default function Hero({
+  videoUrl,
+  posterUrl,
+  mobileVideoUrl,
+  backgroundUrl,
+  mobileBackgroundUrl,
+  showcaseImages,
+  children,
+}: HeroProps) {
   const stackRef = useRef<HTMLDivElement>(null);
   const slotRef = useRef<HTMLDivElement>(null);
+  const mobileSlotRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const videoWrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const mobileVideoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Autoplay only works muted (browser policy) — this is the initial/default
@@ -72,10 +131,19 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
   // opt in to sound; it never auto-unmutes itself.
   const [muted, setMuted] = useState(true);
   const [reelVisible, setReelVisible] = useState(false);
+  // Mirrors for the rAF loop, which outlives renders: the crossfade flips
+  // which reel carries sound, and needs the current mute choice to do it.
+  const mutedRef = useRef(true);
+  const altActiveRef = useRef(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    // The vertical reel (phones only) plays alongside the main one so it's
+    // already moving when it fades in. Both share one rect, so the main
+    // reel's visibility stands for both. Without a src (desktop) play() just
+    // rejects, which is swallowed below.
+    const videos = [video, mobileVideoRef.current].filter((v): v is HTMLVideoElement => v !== null);
     // Don't burn decode cycles while the reel is nowhere near the viewport.
     // Also drives the mute toggle's visibility — no point offering a sound
     // control for a video that isn't on screen.
@@ -84,8 +152,10 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       ([entry]) => {
         visible = entry.isIntersecting;
         setReelVisible(visible);
-        if (visible) video.play().catch(() => {});
-        else video.pause();
+        for (const v of videos) {
+          if (visible) v.play().catch(() => {});
+          else v.pause();
+        }
       },
       { threshold: 0.01 }
     );
@@ -93,21 +163,22 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
     // `src` is assigned after mount (see the morph effect), and loading a new
     // source resets the element to paused — so the observer's first play()
     // gets cancelled. Start again once it can actually play.
-    const onCanPlay = () => {
-      if (visible && video.paused) video.play().catch(() => {});
+    const onCanPlay = (e: Event) => {
+      const v = e.currentTarget as HTMLVideoElement;
+      if (visible && v.paused) v.play().catch(() => {});
     };
-    video.addEventListener("canplay", onCanPlay);
+    for (const v of videos) v.addEventListener("canplay", onCanPlay);
     // Fallback for when the browser refuses muted autoplay outright (iPhone
     // Low Power Mode, data saver): playback started inside a tap is always
     // allowed, so the first tap anywhere starts the reel if it's on screen.
     const onFirstTap = () => {
-      if (visible && video.paused) video.play().catch(() => {});
+      for (const v of videos) if (visible && v.paused) v.play().catch(() => {});
     };
     document.addEventListener("touchend", onFirstTap, { once: true, passive: true });
     document.addEventListener("click", onFirstTap, { once: true });
     return () => {
       io.disconnect();
-      video.removeEventListener("canplay", onCanPlay);
+      for (const v of videos) v.removeEventListener("canplay", onCanPlay);
       document.removeEventListener("touchend", onFirstTap);
       document.removeEventListener("click", onFirstTap);
     };
@@ -119,18 +190,21 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
   // frames off the same <video> for its texture, audio plays from here
   // regardless of which visual path is active).
   useEffect(() => {
+    mutedRef.current = muted;
     const video = videoRef.current;
-    if (video) video.muted = muted;
+    if (video) syncAudio(video, mobileVideoRef.current, muted, altActiveRef.current);
   }, [muted]);
 
   useEffect(() => {
     const stack = stackRef.current;
     const slot = slotRef.current;
+    const mobileSlot = mobileSlotRef.current;
     const card = cardRef.current;
     const videoWrap = videoWrapRef.current;
     const video = videoRef.current;
+    const mobileVideo = mobileVideoRef.current;
     const canvas = canvasRef.current;
-    if (!stack || !slot || !card || !videoWrap || !video || !canvas) return;
+    if (!stack || !slot || !mobileSlot || !card || !videoWrap || !video || !canvas) return;
 
     gsap.registerPlugin(ScrollTrigger);
 
@@ -164,6 +238,15 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       : videoUrl;
     if (video.getAttribute("src") !== src) video.src = src;
 
+    // Phones get the headline-row slot hidden and their own slot under the
+    // headline instead; whichever matches the layout is the morph's start.
+    const phone = window.matchMedia("(max-width: 767px)");
+    // The vertical reel only ever loads on phones (never on the GL path), so
+    // desktop doesn't pay for a second video it would never show. Decided once
+    // at mount, same as the GL choice above.
+    const crossfade = !usingGL && phone.matches && !!mobileVideo && !!mobileVideoUrl;
+    if (crossfade && mobileVideo!.getAttribute("src") !== mobileVideoUrl) mobileVideo!.src = mobileVideoUrl!;
+
     if (usingGL) canvas.style.visibility = "visible";
     else videoWrap.style.visibility = "visible";
 
@@ -173,7 +256,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
     function paint() {
-      const a = slot!.getBoundingClientRect();
+      const a = (phone.matches ? mobileSlot! : slot!).getBoundingClientRect();
       const b = card!.getBoundingClientRect();
       const t = morph.t;
       const radius = lerp(16, 0, t);
@@ -186,7 +269,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       const w = lerp(a.width, b.width, t);
       const h = lerp(a.height, b.height, t);
 
-            const vh = window.innerHeight;
+      const vh = window.innerHeight;
 
       // Same off-screen cull upsunday does — once the reel has scrolled past,
       // stop painting entirely rather than leaving a stale frame on a layer
@@ -203,6 +286,7 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
           t,
           radius
         );
+        glRenderer!.render();
       } else if (offScreen) {
         videoWrap!.style.visibility = "hidden";
       } else {
@@ -215,6 +299,22 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
         videoWrap!.style.width = `${w}px`;
         videoWrap!.style.height = `${h}px`;
         videoWrap!.style.borderRadius = `${radius}px`;
+
+        if (crossfade) {
+          // Smoothstep over the aspect window: eases in and out of the swap
+          // instead of a linear dissolve with visible start/stop edges.
+          const p = Math.min(1, Math.max(0, (FADE_FROM_ASPECT - w / h) / (FADE_FROM_ASPECT - FADE_TO_ASPECT)));
+          const fade = phone.matches ? p * p * (3 - 2 * p) : 0;
+          mobileVideo!.style.opacity = String(fade);
+          // Belt and braces for Safari, which may not have started a reel it
+          // considered invisible at opacity 0.
+          if (fade > 0 && mobileVideo!.paused) mobileVideo!.play().catch(() => {});
+          const altActive = fade >= 0.5;
+          if (altActive !== altActiveRef.current) {
+            altActiveRef.current = altActive;
+            syncAudio(video!, mobileVideo, mutedRef.current, altActive);
+          }
+        }
       }
     }
 
@@ -246,42 +346,30 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       // Reduced motion still gets the morph: it's driven 1:1 by the visitor's
       // own scroll, not motion that plays on its own, and switching it off
       // left phones (where iOS "Reduce Motion" is a common setting) with a
-      // stuck video and a broken layout under the pinned hero. What reduced
-      // motion drops is the GL twist (see wantsGL) and the scrub smoothing
-      // below, so nothing moves except in lockstep with the finger.
-      // Desktop does not pin: the headline scrolls away naturally while the video morphs
-      // down into the reel card. Linear ease + `scrub` smoothing is what
-      // gives the weighted, premium feel — an ease curve on top of a scrub
-      // reads as lag, not polish.
-      const tween = (extra: ScrollTrigger.Vars) =>
-        gsap.to(morph, {
-          t: 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: stack,
-            start: "top top",
-            scrub: reduceMotion ? true : 1,
-            invalidateOnRefresh: true,
-            ...extra,
-          },
-        });
-
-      const mm = gsap.matchMedia();
-      // Desktop: finish exactly when the end box's top reaches the viewport
-      // top, i.e. the moment it fills the screen. A fixed `+=innerHeight`
-      // overshot (the hero's height isn't the viewport's), so the reel looked
-      // full-screen at t≈0.9 with the last-staggered corner (bottom-left)
-      // still peeling in until you scrolled further.
-      mm.add("(min-width: 768px)", () => {
-        tween({ endTrigger: card, end: "top top" });
-      });
-      // Phones: the end box is a short strip right under the hero, so it is
-      // already on screen. Pin hero + strip (+ `children`, the next section,
-      // sitting directly under the strip) while the video grows into it,
-      // then release to normal scrolling. Without the pin the strip scrolls
-      // away as the video arrives and it never shows fully in place.
-      mm.add("(max-width: 767px)", () => {
-        tween({ pin: stack, end: () => `+=${window.innerHeight * 0.6}` });
+      // stuck video and a broken layout. What reduced motion drops is the GL
+      // twist (see wantsGL) and the scrub smoothing below, so nothing moves
+      // except in lockstep with the finger.
+      // No pinning: the headline scrolls away naturally while the video
+      // morphs down into the reel card. Linear ease + `scrub` smoothing is
+      // what gives the weighted, premium feel — an ease curve on top of a
+      // scrub reads as lag, not polish.
+      // Finishes exactly when the end box's top reaches the viewport top,
+      // i.e. the moment it fills the screen — on phones too, now that their
+      // end box is full-screen rather than a short strip. A fixed
+      // `+=innerHeight` overshot (the hero's height isn't the viewport's), so
+      // the reel looked full-screen at t≈0.9 with the last-staggered corner
+      // (bottom-left) still peeling in until you scrolled further.
+      gsap.to(morph, {
+        t: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: stack,
+          start: "top top",
+          endTrigger: card,
+          end: "top top",
+          scrub: reduceMotion ? true : 1,
+          invalidateOnRefresh: true,
+        },
       });
     }, stack);
 
@@ -298,35 +386,36 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
       glRenderer?.destroy();
       ctx.revert();
     };
-  }, [videoUrl]);
+  }, [videoUrl, mobileVideoUrl]);
 
   return (
     <>
       <div ref={stackRef} className="relative">
-        {/* Locked to the background art's own aspect (1602×908) at every size,
-            not viewport height — a 100svh box crops the art on any screen
-            whose shape differs from it. The headline is vw-sized, so it scales
+        {/* md+: locked to the background art's own aspect (1602×908), not
+            viewport height — a 100svh box crops the art on any screen whose
+            shape differs from it. Phones: a fixed portrait box (the mobile
+            design stacks the headline over a large slot), with the portrait
+            art cover-cropped to it. The headline is vw-sized, so it scales
             with the box either way. */}
-        <section className="relative flex aspect-[1602/908] w-full shrink-0 flex-col items-center justify-center overflow-hidden bg-ink text-paper">
-          {backgroundUrl && (
-            // Background art is already near-black with its own spotlights and
-            // red accents — no scrim, it would only mute the glow.
-            <Image src={backgroundUrl} alt="" fill priority sizes="100vw" className="object-cover" />
-          )}
+        <section className="relative flex aspect-[3/4] w-full md:aspect-[1602/908] shrink-0 flex-col items-center justify-center overflow-hidden bg-ink text-paper">
+          {/* Background art is already near-black with its own spotlights and
+              red accents — no scrim, it would only mute the glow. */}
+          <HeroBackground desktopUrl={backgroundUrl} mobileUrl={mobileBackgroundUrl} />
 
           {/* Shimmer is per-word rather than on the whole block, with a small
               stagger, so the highlight travels through the headline in reading
               order instead of every word lighting up at once.
               Nudged up off true centre (vw, so it stays proportional at every
-              size); the morph reads slotRef's live rect, so the video follows. */}
-          <div className="relative z-10 translate-y-[-5vw] flex w-full max-w-[90vw] flex-col items-center gap-[1vw] text-center font-heading font-bold uppercase leading-[0.9]">
-            <div className="flex w-full items-center justify-center gap-[3vw] text-[7vw]">
+              size) — further on phones, to clear the floor ring in the mobile
+              art. The morph reads the slots' live rects, so the video follows. */}
+          <div className="relative z-10 flex w-full max-w-[90vw] flex-col items-center gap-[1vw] translate-y-[-7vw] md:translate-y-[-5vw] text-center font-heading font-bold uppercase leading-[0.9]">
+            <div className="flex w-full items-center justify-center gap-[3vw] text-[11vw] md:text-[7vw]">
               <span className="shimmer-text">Made</span>
               {showcaseImages && showcaseImages.length > 0 && (
                 // White card holding square product tiles side by side. The
                 // card's own padding/gap are what read as the thin white
                 // dividers between tiles in the design.
-                <div className="flex h-[5.6vw] shrink-0 items-stretch gap-[0.4vw] rounded-[0.9vw] bg-paper p-[0.4vw]">
+                <div className="hidden h-[5.6vw] shrink-0 items-stretch gap-[0.4vw] rounded-[0.9vw] bg-paper p-[0.4vw] md:flex">
                   {showcaseImages.map((src) => (
                     <div key={src} className="relative aspect-square h-full overflow-hidden rounded-[0.6vw]">
                       <Image src={src} alt="" fill sizes="12vw" className="object-cover" />
@@ -338,10 +427,10 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
                 To
               </span>
             </div>
-            <div className="shimmer-text text-[14vw]" style={{ animationDelay: "0.24s" }}>
+            <div className="shimmer-text text-[16vw] md:text-[14vw]" style={{ animationDelay: "0.24s" }}>
               Change
             </div>
-            <div className="flex w-full items-center justify-center gap-[3vw] text-[7vw]">
+            <div className="flex w-full items-center justify-center gap-[3vw] text-[11vw] md:text-[7vw]">
               <span className="shimmer-text" style={{ animationDelay: "0.36s" }}>
                 The
               </span>
@@ -354,29 +443,29 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
               <div
                 ref={slotRef}
                 aria-hidden="true"
-                className="h-[9vw] w-[13vw] shrink-0 rounded-2xl outline-solid outline-[3px] outline-red"
+                className="hidden h-[9vw] w-[13vw] shrink-0 rounded-2xl outline-solid outline-[3px] outline-[#8D1518] md:block"
               />
               <span className="shimmer-text" style={{ animationDelay: "0.48s" }}>
                 Game
               </span>
             </div>
+            {/* Phones' start of the morph: a large horizontal slot on its own
+                row under the headline, same empty-outline idea as slotRef. */}
+            <div
+              ref={mobileSlotRef}
+              aria-hidden="true"
+              className="mt-[8vw] aspect-video w-[64vw] shrink-0 rounded-2xl outline-solid outline-[3px] outline-[#8D1518] md:hidden"
+            />
           </div>
         </section>
 
         {/* End of the morph. A REAL in-flow element — that's what lets the
             reel scroll away naturally once it's full size, instead of being
             stuck to the viewport. */}
-        <section className="relative w-full bg-ink md:h-screen">
-          {/* Phones: a full-width 16:9 strip so the reel shows uncropped.
-              md+: the whole viewport. */}
-          <div ref={cardRef} aria-hidden="true" className="relative z-10 aspect-video w-full overflow-hidden md:absolute md:inset-0 md:aspect-auto">
-            {/* Phones only: the strip sits empty under the hero until the
-                video morphs into it, so show a dimmed preview of the reel
-                rather than a dead black band. The real video paints over it. */}
-            {posterUrl && (
-              <Image src={posterUrl} alt="" fill sizes="100vw" className="object-cover opacity-30 md:hidden" />
-            )}
-          </div>
+        <section className="relative h-[100svh] w-full bg-ink md:h-screen">
+          {/* The whole viewport — on phones that's the portrait frame the
+              vertical reel fills. Plain black until the video arrives. */}
+          <div ref={cardRef} aria-hidden="true" className="absolute inset-0 z-10" />
         </section>
 
         {children}
@@ -399,6 +488,20 @@ export default function Hero({ videoUrl, posterUrl, backgroundUrl, showcaseImage
           preload="metadata"
           className="h-full w-full object-cover"
         />
+        {/* Phones' vertical reel, stacked on the main one and faded in by
+            paint() (see FADE_FROM_ASPECT). `src` is set by the morph effect,
+            only on phones; starts muted and silent until it takes over. */}
+        {mobileVideoUrl && (
+          <video
+            ref={mobileVideoRef}
+            muted
+            loop
+            playsInline
+            autoPlay
+            preload="auto"
+            className="absolute inset-0 h-full w-full object-cover opacity-0 md:hidden"
+          />
+        )}
       </div>
 
       {/* w-full/h-full are load-bearing: <canvas> is a CSS replaced element,

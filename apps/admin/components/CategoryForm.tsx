@@ -25,6 +25,7 @@ export default function CategoryForm({ category, onDone, onCancel }: Props) {
   const [slug, setSlug] = useState(category?.slug ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
   const [image, setImage] = useState(category?.image ?? "");
+  const [sortOrder, setSortOrder] = useState(category ? String(category.sortOrder) : "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -37,6 +38,8 @@ export default function CategoryForm({ category, onDone, onCancel }: Props) {
       slug: slug || slugify(name),
       description: description || undefined,
       image: image || undefined,
+      // Blank on create appends to the end (see the create controller).
+      sortOrder: sortOrder === "" ? undefined : Number(sortOrder),
     };
 
     setSaving(true);
@@ -77,6 +80,11 @@ export default function CategoryForm({ category, onDone, onCancel }: Props) {
             onChange={(e) => setSlug(e.target.value)}
             placeholder={slugify(name) || "auto-generated from name"}
           />
+        </label>
+        <label>
+          Display order
+          <input type="number" min="0" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+          <p className="form-hint">Lower numbers appear first. Leave blank to add at the end.</p>
         </label>
       </div>
 

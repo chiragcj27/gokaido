@@ -72,3 +72,6 @@ export type {
   FranchiseEnquirySource,
   FranchiseEnquiryStatus,
 } from "./models/franchise-enquiry.js";
+
+export { Counter, nextSequence } from "./models/counter.js";
+export type { ICounter } from "./models/counter.js";

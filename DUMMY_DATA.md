@@ -19,6 +19,7 @@ These are wired to the real source; the dummy only shows when the API is unreach
 | `<BeyondTheMedal>` CTA, `<AppDownload>` store buttons | Admin → Homepage links | Not set — renders `href="#"` |
 | `lib/reels.ts` — `DUMMY_REELS` | Admin → Reels | No reels |
 | Hero `/hero/*` files | Admin → Homepage hero uploads | Not uploaded |
+| Hero mobile vertical reel `/hero/hero-reel-vertical.mp4` — a low-res centre crop of `hero-reel.mp4`, for testing the phone crossfade only | Admin → Homepage → Hero video (mobile, vertical); needs a real 9:16 cut from the client | No vertical video uploaded **and** no hero video uploaded |
 | `lib/pdp/defaults.ts` — `DEFAULT_SIZE_GUIDE` | Subcategory `sizeGuide` in admin | Subcategory has none |
 
 ## Product listings
@@ -46,10 +47,9 @@ These are wired to the real source; the dummy only shows when the API is unreach
 
 | Where | What's fake | Real source |
 |---|---|---|
-| `about-us/AwardsFloat.tsx` — `AWARDS` | Placeholder awards | Client's real awards |
 | `about-us/StatsTrail.tsx` — `IMAGES` | Placeholder photos | Client's brand/story images |
-| `about-us/page.tsx` — `SEGMENTS` | Generic "Industrial / Office" / "Retail" copy unrelated to Gokaido | Copy from client |
 | `our-franchise/page.tsx` — franchise paragraph | Franchise pitch copy written by us (support offered, etc. not confirmed by client) | Copy from client |
+| `our-franchise/WhyWhatWho.tsx` — "What our partners get" card points | Our placeholder; the design's What copy is unrelated template text (sauce/bottles) | Copy from client |
 | `our-franchise/FranchiseSignup.tsx` — form intro/thanks copy; `components/EnquiryForm/EnquiryForm.tsx` — `SOURCES` | "Sign up today" intro copy and the "How did you hear about us?" options are ours | Copy/options from client (keep options in sync with `FRANCHISE_ENQUIRY_SOURCES` in the database package) |
 | `contact-us/page.tsx` — enquiry form intro/thanks copy | Written by us; the rest of the page copy is from the design | Copy from client |
 

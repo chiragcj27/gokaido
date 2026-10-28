@@ -259,6 +259,27 @@
   }
 }
 
+@media (min-width: 961px) {
+  /* Logo | centred links | icons. .left dissolves so the logo and links become
+     grid items; equal side columns keep the links centred on the bar itself. */
+  .inner {
+    display: grid;
+    grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+  }
+
+  .left {
+    display: contents;
+  }
+
+  .logoLink {
+    justify-self: start;
+  }
+
+  .actions {
+    justify-self: end;
+  }
+}
+
 .menuToggle {
   display: none;
   flex-direction: column;
@@ -300,31 +321,9 @@
     justify-self: end;
   }
 
+  /* The inline links give way to the full-screen drawer below. */
   .navLinks {
     display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    align-items: flex-start;
-    background: #0b0a09;
-    padding: 14px 22px;
-    border-top: 1px solid rgba(240, 173, 61, 0.2);
-  }
-
-  .navLinksOpen {
-    display: flex;
-  }
-
-  /* Keep the menu labels smaller than the logo. */
-  .navText {
-    height: 22px;
-  }
-
-  .chevron {
-    margin-left: -6px;
-    margin-right: 0;
   }
 
   .menuToggle {
@@ -352,5 +351,344 @@
 
   .iconButton:last-child {
     padding-right: 0;
+  }
+}
+
+/* ── Mobile full-screen menu ─────────────────────────────────────────── */
+
+.drawer {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .drawer {
+    /* Fixed inside the header: fine, since the header carries no transform while a menu is open. */
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    background: #080808;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-24px);
+    transition:
+      opacity 0.25s ease,
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s linear 0.3s;
+  }
+
+  .drawerOpen {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+      opacity 0.25s ease,
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s;
+  }
+}
+
+/* Staggered entrance: logo + close drop in, rows sweep in from the left one by one,
+   the active row's red bar wipes down, and the footer rises last. Closing skips the
+   delays so everything leaves together with the panel fade. */
+.drawerHead > *,
+.drawerRow,
+.drawerFoot {
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.drawerHead > :first-child {
+  transform: translateY(-12px) scale(0.92);
+}
+
+.drawerClose {
+  rotate: -90deg;
+  transition:
+    opacity 0.2s ease,
+    rotate 0.2s ease,
+    color 0.2s ease;
+}
+
+.drawerRow {
+  transform: translateX(-28px);
+}
+
+.drawerFoot {
+  transform: translateY(16px);
+}
+
+.drawerRowActive::before {
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.2s ease;
+}
+
+.drawerOpen .drawerHead > *,
+.drawerOpen .drawerRow,
+.drawerOpen .drawerFoot {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.4s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.drawerOpen .drawerHead > :first-child {
+  transition-delay: 0.05s;
+}
+
+.drawerOpen .drawerClose {
+  rotate: 0deg;
+  transform: translateY(-50%);
+  transition:
+    opacity 0.4s ease 0.15s,
+    rotate 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s,
+    color 0.2s ease;
+}
+
+.drawerOpen .drawerRow,
+.drawerOpen .drawerFoot {
+  transition-delay: calc(0.12s + var(--i, 0) * 0.05s);
+}
+
+.drawerOpen .drawerRowActive::before {
+  transform: none;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) calc(0.35s + var(--i, 0) * 0.05s);
+}
+
+/* Chevron nudges right on hover/press, like it's pointing the way. */
+@media (hover: hover) {
+  .drawerRow:hover .drawerChevron:not(.drawerChevronOpen) {
+    transform: translateX(4px);
+  }
+}
+
+.drawerRow:active .drawerChevron:not(.drawerChevronOpen) {
+  transform: translateX(4px);
+}
+
+/* Category sub-items fade in as the list expands. */
+.drawerSubItem {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.drawerSubOpen .drawerSubItem {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.3s ease 0.1s,
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.1s,
+    color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .drawerOpen,
+  .drawerHead > *,
+  .drawerRow,
+  .drawerFoot,
+  .drawerRowActive::before,
+  .drawerSubItem {
+    transform: none !important;
+    rotate: none !important;
+    transition: opacity 0.15s ease !important;
+  }
+
+  .drawerClose,
+  .drawerOpen .drawerClose {
+    transform: translateY(-50%) !important;
+  }
+}
+
+.drawerHead {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 56px 12px;
+  flex-shrink: 0;
+}
+
+.drawerLogo {
+  height: 46px;
+  width: auto;
+}
+
+.drawerClose {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: none;
+  color: #f0ad3d;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.drawerClose:hover,
+.drawerClose:focus-visible {
+  color: #ffd27a;
+}
+
+.drawerNav {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.drawerRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 74px;
+  padding: 0 28px 0 34px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #1c1c1c;
+  color: #f0ad3d;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.drawerRow span {
+  /* Same gold gradient as the image labels on desktop. */
+  background: linear-gradient(180deg, #ffc76b 0%, #f0ad3d 55%, #c9821f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.drawerRowActive::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: #c8102e;
+}
+
+.drawerRow:focus-visible {
+  outline: none;
+  background: rgba(240, 173, 61, 0.06);
+}
+
+.drawerChevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.drawerChevronOpen {
+  transform: rotate(90deg);
+}
+
+/* Category sub-list: grid-rows trick animates to its natural height. */
+.drawerSub {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.drawerSubOpen {
+  grid-template-rows: 1fr;
+  border-bottom: 1px solid #1c1c1c;
+}
+
+.drawerSubInner {
+  overflow: hidden;
+}
+
+.drawerSubOpen .drawerSubInner {
+  padding: 8px 0 14px;
+}
+
+.drawerSubItem {
+  display: block;
+  padding: 10px 28px 10px 50px;
+  color: #f5f5f5;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.drawerSubItem:hover,
+.drawerSubItem:focus-visible {
+  color: #f0ad3d;
+  outline: none;
+}
+
+.drawerFoot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  flex-shrink: 0;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
+  border-top: 2px solid #1c1c1c;
+}
+
+.drawerFootButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 10px;
+  background: #0f0f0f;
+  border: 1px solid #262626;
+  border-radius: 3px;
+  color: #f0ad3d;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.drawerFootButton:hover,
+.drawerFootButton:focus-visible {
+  border-color: rgba(240, 173, 61, 0.5);
+  outline: none;
+}
+
+@media (max-width: 380px) {
+  .drawerRow {
+    min-height: 64px;
+    padding: 0 22px 0 26px;
+    font-size: 18px;
+  }
+
+  .drawerFoot {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .drawerFootButton {
+    gap: 8px;
+    font-size: 13.5px;
   }
 }

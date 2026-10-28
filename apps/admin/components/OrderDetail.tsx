@@ -131,7 +131,22 @@ export default function OrderDetail({ order, onBack, onUpdated }: Props) {
                 <tbody>
                   {order.items.map((item, i) => (
                     <tr key={i}>
-                      <td>{item.productName}</td>
+                      <td>
+                        <div className="item-cell">
+                          {item.variantImage ? (
+                            <a href={item.variantImage} target="_blank" rel="noreferrer" title="Open full image">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img className="thumb thumb-lg" src={item.variantImage} alt={item.productName} />
+                            </a>
+                          ) : (
+                            <span className="thumb thumb-lg thumb-empty" />
+                          )}
+                          <div>
+                            {item.productName}
+                            <div className="cell-sub mono">{item.variantSku}</div>
+                          </div>
+                        </div>
+                      </td>
                       <td className="mono">
                         {item.variantColor} / {item.variantSize}
                       </td>

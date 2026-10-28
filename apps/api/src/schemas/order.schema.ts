@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { mobileSchema } from "./auth.schema.js";
 import { pincodeSchema } from "./address.schema.js";
+import { dateRangeQuerySchema } from "./dateRange.schema.js";
 
 const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid id");
 
@@ -45,12 +46,16 @@ export const orderStatusSchema = z.enum([
   "refunded",
 ]);
 
-export const adminOrderListQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+// Filters shared by the admin order list and its Excel export.
+export const adminOrderFilterSchema = dateRangeQuerySchema.extend({
   status: orderStatusSchema.optional(),
   paymentStatus: z.enum(["pending", "paid", "failed", "refunded", "cancelled"]).optional(),
   search: z.string().trim().min(1).optional(),
+});
+
+export const adminOrderListQuerySchema = adminOrderFilterSchema.extend({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export const adminUpdateOrderSchema = z.object({

@@ -79,7 +79,11 @@ export default function StatsTrail() {
   return (
     <section ref={rootRef} className="relative isolate mx-auto max-w-360 px-4 py-16 sm:px-15 sm:py-24 lg:px-20">
       <ul className="relative z-10 m-0 flex list-none flex-col gap-8 p-0 font-heading text-[clamp(2rem,4.4vw,4rem)] leading-none font-extrabold text-red uppercase [text-shadow:0_2px_18px_rgb(0_0_0/0.75)] sm:gap-14">
-        <li>1975 | 50+ Years</li>
+        <li>
+          1975
+          <span aria-hidden className="mx-[0.35em] inline-block h-[0.8em] w-0.5 bg-paper/40 align-[-0.05em]" />
+          <span className="sr-only"> | </span>50+ Years
+        </li>
         <li className="sm:self-end">18+ Franchisee</li>
         <li>Made in India</li>
       </ul>

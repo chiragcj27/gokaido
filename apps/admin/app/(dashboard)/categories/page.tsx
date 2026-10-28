@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../../../lib/api";
 import type { Category } from "../../../lib/types";
 import CategoryForm from "../../../components/CategoryForm";
+import PositionInput from "../../../components/PositionInput";
+import { moveItem, useDragReorder } from "../../../lib/useDragReorder";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -27,6 +29,19 @@ export default function CategoriesPage() {
     load();
   }, [load]);
 
+  async function saveOrder(next: Category[]) {
+    setCategories(next.map((c, i) => ({ ...c, sortOrder: i + 1 })));
+    setError(null);
+    try {
+      await api.put("/api/categories/order", { ids: next.map((c) => c._id) });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save order");
+      load();
+    }
+  }
+
+  const drag = useDragReorder((_group, from, to) => saveOrder(moveItem(categories, from, to)));
+
   async function handleToggleActive(category: Category) {
     if (category.isActive) {
       await api.delete(`/api/categories/${category._id}`);
@@ -34,6 +49,22 @@ export default function CategoriesPage() {
       await api.patch(`/api/categories/${category._id}`, { isActive: true });
     }
     load();
+  }
+
+  async function handleDelete(category: Category) {
+    if (
+      !window.confirm(
+        `Permanently delete "${category.name}" and all its subcategories? This can't be undone.`,
+      )
+    )
+      return;
+    setError(null);
+    try {
+      await api.delete(`/api/categories/${category._id}?permanent=true`);
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to delete category");
+    }
   }
 
   if (editing) {
@@ -59,6 +90,7 @@ export default function CategoriesPage() {
       </div>
 
       {error && <p className="form-error">{error}</p>}
+      <p className="form-hint">Drag ⠿ or type a number to change the order shown on the storefront.</p>
 
       {loading ? (
         <p>Loading…</p>
@@ -67,6 +99,7 @@ export default function CategoriesPage() {
           <table className="data-table">
             <thead>
               <tr>
+                <th>No.</th>
                 <th></th>
                 <th>Name</th>
                 <th>Slug</th>
@@ -75,8 +108,20 @@ export default function CategoriesPage() {
               </tr>
             </thead>
             <tbody>
-              {categories.map((c) => (
-                <tr key={c._id}>
+              {categories.map((c, i) => (
+                <tr key={c._id} {...drag.rowProps("all", i)}>
+                  <td>
+                    <div className="position-cell">
+                      <span className="drag-handle" title="Drag to reorder" {...drag.handleProps("all", i)}>
+                        ⠿
+                      </span>
+                      <PositionInput
+                        position={i + 1}
+                        max={categories.length}
+                        onChange={(to) => saveOrder(moveItem(categories, i, to - 1))}
+                      />
+                    </div>
+                  </td>
                   <td>{c.image && <img src={c.image} alt="" className="thumb" />}</td>
                   <td>{c.name}</td>
                   <td className="mono">{c.slug}</td>
@@ -92,12 +137,15 @@ export default function CategoriesPage() {
                     <button type="button" onClick={() => handleToggleActive(c)}>
                       {c.isActive ? "Deactivate" : "Activate"}
                     </button>
+                    <button type="button" className="btn-danger" onClick={() => handleDelete(c)}>
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
               {categories.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="empty-row">
+                  <td colSpan={6} className="empty-row">
                     No categories yet.
                   </td>
                 </tr>

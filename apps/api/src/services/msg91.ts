@@ -51,16 +51,16 @@ async function post(url: string, body: unknown): Promise<unknown> {
 }
 
 // Delivers an OTP we generated ourselves (verification stays in our DB, so we
-// never call MSG91's /otp/verify). The DLT template must contain ##OTP##.
+// never call MSG91's /otp/verify). Sent as a Flow SMS rather than via /otp,
+// because the "otp-verification" DLT template uses ##var## (which /otp won't
+// fill) — /otp only substitutes ##OTP##.
 export async function sendOtp(mobile: string, otp: string): Promise<void> {
-  const to = toMsg91Mobile(mobile);
   const templateId = process.env.MSG91_OTP_TEMPLATE_ID;
   if (!getAuthKey() || !templateId) {
-    console.log(`[MSG91] OTP for ${to}: ${otp}`);
+    console.log(`[MSG91] OTP for ${toMsg91Mobile(mobile)}: ${otp}`);
     return;
   }
-  const params = new URLSearchParams({ template_id: templateId, mobile: to, otp, otp_expiry: "10" });
-  await post(`${CONTROL_BASE}/otp?${params}`, {});
+  await sendFlowSms(mobile, templateId, { var: otp });
 }
 
 // Transactional SMS via a DLT-approved Flow template. `vars` keys must match

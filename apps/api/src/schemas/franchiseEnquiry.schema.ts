@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FRANCHISE_ENQUIRY_SOURCES, FRANCHISE_ENQUIRY_STATUSES } from "@gokaido/database";
+import { dateRangeQuerySchema } from "./dateRange.schema.js";
 
 export const createFranchiseEnquirySchema = z.object({
   name: z.string({ error: "Name is required" }).trim().min(1, "Name is required").max(120),
@@ -20,9 +21,13 @@ export const createFranchiseEnquirySchema = z.object({
   message: z.string().trim().max(2000).optional(),
 });
 
-export const adminFranchiseEnquiryListQuerySchema = z.object({
+// Filters shared by the admin enquiry list and its Excel export.
+export const adminFranchiseEnquiryFilterSchema = dateRangeQuerySchema.extend({
   status: z.enum([...FRANCHISE_ENQUIRY_STATUSES, "all"]).optional(),
   search: z.string().trim().max(100).optional(),
+});
+
+export const adminFranchiseEnquiryListQuerySchema = adminFranchiseEnquiryFilterSchema.extend({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });

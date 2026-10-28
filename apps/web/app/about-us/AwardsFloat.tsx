@@ -3,16 +3,39 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 
-// Placeholder awards — replace with Gokaido's real awards/recognitions when the client provides them.
 const AWARDS = [
-  { title: "Award Title 2024", note: "Category or nomination — short description of the recognition" },
-  { title: "Award Title 2025", note: "Category or nomination — short description" },
-  { title: "Award Title 2023", note: "Category or nomination — short description" },
-  { title: "Award Title Longer Name 2025", note: "Finalist in the category — short description of the recognition" },
-  { title: "Award Title 2023", note: "Category or nomination — short description" },
-  { title: "Award Title 2025", note: "Category or nomination — short description" },
-  { title: "Award Title 2023", note: "Nominee in the category — short description" },
-  { title: "Award Title Longer Name 2024", note: "Category or nomination — short description" },
+  {
+    title: "Quality Without Compromise",
+    note: "We focus on the materials, construction, comfort, and durability that martial artists need from their gear.",
+  },
+  {
+    title: "Discipline in Everything",
+    note: "Inspired by martial arts itself, we value consistency, dedication, and attention to detail.",
+  },
+  {
+    title: "Trust That Lasts",
+    note: "We believe strong relationships with coaches, athletes, retailers, and distributors are built over time.",
+  },
+  {
+    title: "Community First",
+    note: "We recognise the role of coaches, academies, and sporting communities in shaping the next generation of martial artists.",
+  },
+  {
+    title: "Built for Progress",
+    note: "We continue to evolve our products, partnerships, and reach as the world of martial arts grows.",
+  },
+  {
+    title: "Sourcing the Right Materials",
+    note: "We work with material suppliers to meet the requirements of comfort, durability, and performance.",
+  },
+  {
+    title: "Manufacturing & Craftsmanship",
+    note: "Experience and careful workmanship help bring each product from concept to finished gear.",
+  },
+  {
+    title: "Attention to Detail",
+    note: "We focus on construction, fit, and finishing to deliver products designed for martial arts use.",
+  },
 ];
 
 // Fixed scatter positions (% of the section); the cards trade these slots between them on each beat.
@@ -87,7 +110,7 @@ export default function AwardsFloat() {
       ref={rootRef}
       className="relative mx-auto grid max-w-360 grid-cols-2 gap-x-6 gap-y-10 overflow-hidden px-4 py-16 sm:block sm:aspect-2000/1192 sm:p-0"
     >
-      <h2 className="sr-only">Awards</h2>
+      <h2 className="sr-only">Our Values</h2>
       {AWARDS.map((a, i) => (
         <div key={i} data-award className="group sm:absolute sm:w-[14%]">
           <h3 className="m-0 font-sans text-xl leading-tight font-normal text-paper/55 transition-colors duration-500 group-hover:text-paper sm:text-[clamp(1.25rem,2.1vw,2rem)]">
