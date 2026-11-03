@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./Footer.module.css";
-import TaglineReveal from "./TaglineReveal";
+import LogoReveal from "./LogoReveal";
 
 const aboutUsLinks = [
   { label: "Our Legacy", href: "/our-legacy" },
@@ -42,15 +42,7 @@ export default function Footer() {
 
       <div className={styles.content}>
         <div className={styles.hero}>
-          <Image
-            src="/footer/logo.png"
-            alt="Gokaido"
-            width={1788}
-            height={395}
-            className={styles.logo}
-            priority
-          />
-          <TaglineReveal />
+          <LogoReveal />
         </div>
 
         <div className={styles.columns}>
@@ -127,15 +119,14 @@ export default function Footer() {
                     address/number as its own tappable row. */}
                 <div className={styles.contactDetails}>
                   <strong>Email</strong>
-                  <span className={styles.sep}> - </span>
                   <a href="mailto:gikaido@gmail.com">gikaido@gmail.com</a>
                   <span className={styles.sep}> / </span>
                   <a href="mailto:gokaidoorders@gmail.com">gokaidoorders@gmail.com</a>
                 </div>
                 <div className={styles.contactDetails}>
-                  <strong>Mobile No.:</strong>{" "}
+                  <strong>Mobile No.</strong>
                   <a href="tel:+912223859074">+91-22-23859074</a>
-                  <br className={styles.sep} />
+                  <span className={styles.sep}> / </span>
                   <a href="tel:+919820585200">+91-9820585200</a>
                 </div>
               </div>

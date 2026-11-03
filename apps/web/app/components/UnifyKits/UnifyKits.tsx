@@ -16,6 +16,8 @@ export interface KitCategory {
 export interface UnifyKitsProps {
   categories: KitCategory[];
   backgroundUrl?: string;
+  /** Portrait background used below `md` instead of `backgroundUrl`. */
+  mobileBackgroundUrl?: string;
 }
 
 /**
@@ -77,7 +79,7 @@ function sample(values: number[], at: number) {
  * Cards are positioned by writing transforms directly each scroll tick
  * rather than via React state — five elements, no re-renders.
  */
-export default function UnifyKits({ categories, backgroundUrl }: UnifyKitsProps) {
+export default function UnifyKits({ categories, backgroundUrl, mobileBackgroundUrl }: UnifyKitsProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
@@ -262,11 +264,20 @@ export default function UnifyKits({ categories, backgroundUrl }: UnifyKitsProps)
     // centred vertically (desktop keeps the full-screen absolute layout).
     <section ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-ink text-paper max-md:flex max-md:h-[75svh] max-md:touch-pan-y max-md:select-none max-md:flex-col max-md:justify-center max-md:gap-[8vw]">
       {backgroundUrl && (
-        <Image src={backgroundUrl} alt="" fill sizes="100vw" className="object-cover" />
+        <Image
+          src={backgroundUrl}
+          alt=""
+          fill
+          sizes="100vw"
+          className={mobileBackgroundUrl ? "object-cover max-md:hidden" : "object-cover"}
+        />
+      )}
+      {mobileBackgroundUrl && (
+        <Image src={mobileBackgroundUrl} alt="" fill sizes="100vw" className="object-cover md:hidden" />
       )}
 
       <h2 className="absolute inset-x-0 top-[8%] z-10 text-center font-heading text-[6vw] font-semibold uppercase leading-none tracking-tight max-md:relative max-md:top-auto md:text-[4.6vw]">
-        Unify Your Kits
+        The World of Gokaido
       </h2>
 
       {/* Ring stage. Cards are absolutely centred here and moved purely by

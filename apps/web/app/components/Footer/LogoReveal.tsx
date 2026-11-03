@@ -4,25 +4,28 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import styles from "./Footer.module.css";
 
-/** Spotlight radius as a fraction of the tagline's rendered width. */
-const RADIUS_RATIO = 0.085;
+/** Spotlight radius as a fraction of the logo's rendered width (≈1.4× the tagline's height). */
+const RADIUS_RATIO = 0.06;
 /** Per-frame easing toward the pointer / target radius (0–1, higher = snappier). */
 const EASE = 0.18;
 
 /**
- * "MADE TO CHANGE THE GAME" tagline. On hover, a soft circle around the cursor swaps the
- * solid tagline for the shattered version; everything outside the circle stays solid.
+ * Gokaido logo with its "MADE TO CHANGE THE GAME" tagline. On hover, a soft circle around
+ * the cursor swaps in the shattered-tagline version; everything outside the circle stays
+ * solid. Both PNGs share one pixel frame (the logo is identical in each), so only the
+ * tagline visibly changes. Only hovering the tagline band (the `taglineHotspot` box)
+ * triggers the reveal; hovering the logo letters does nothing.
  * Both layers are CSS-masked with the same radial gradient (one inverted), driven by
  * CSS variables that a rAF loop eases toward the pointer so the reveal trails smoothly.
  */
-export default function TaglineReveal() {
+export default function LogoReveal() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const hoverRef = useRef<HTMLDivElement>(null);
+  const hotspotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
-    const hover = hoverRef.current;
-    if (!root || !hover) return;
+    const hotspot = hotspotRef.current;
+    if (!root || !hotspot) return;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const ease = reduceMotion ? 1 : EASE;
@@ -33,13 +36,8 @@ export default function TaglineReveal() {
     let frame = 0;
 
     const apply = () => {
-      // The hover layer is offset from the root, so give it its own coordinates.
-      const hx = current.x - hover.offsetLeft;
-      const hy = current.y - hover.offsetTop;
       root.style.setProperty("--tx", `${current.x}px`);
       root.style.setProperty("--ty", `${current.y}px`);
-      root.style.setProperty("--hx", `${hx}px`);
-      root.style.setProperty("--hy", `${hy}px`);
       root.style.setProperty("--r", `${current.r}px`);
     };
 
@@ -83,37 +81,41 @@ export default function TaglineReveal() {
       start();
     };
 
-    root.addEventListener("pointerenter", onEnter);
-    root.addEventListener("pointermove", onMove);
-    root.addEventListener("pointerleave", onLeave);
+    // Listen on the tagline hotspot only, but keep coordinates relative to the root,
+    // which is the box both masks are drawn in.
+    hotspot.addEventListener("pointerenter", onEnter);
+    hotspot.addEventListener("pointermove", onMove);
+    hotspot.addEventListener("pointerleave", onLeave);
     return () => {
-      root.removeEventListener("pointerenter", onEnter);
-      root.removeEventListener("pointermove", onMove);
-      root.removeEventListener("pointerleave", onLeave);
+      hotspot.removeEventListener("pointerenter", onEnter);
+      hotspot.removeEventListener("pointermove", onMove);
+      hotspot.removeEventListener("pointerleave", onLeave);
       cancelAnimationFrame(frame);
     };
   }, []);
 
   return (
-    <div ref={rootRef} className={styles.tagline}>
-      <h2 className={styles.srOnly}>Made to change the game</h2>
+    <div ref={rootRef} className={styles.logoReveal}>
+      <h2 className={styles.srOnly}>Gokaido — Made to change the game</h2>
       <Image
-        src="/footer/main%20tagline.png"
+        src="/footer/logo-tagline.png"
         alt=""
-        width={1022}
-        height={62}
+        width={2718}
+        height={857}
         sizes="(max-width: 1100px) 100vw, 1020px"
-        className={styles.taglineMain}
+        className={styles.logoMain}
+        priority
       />
-      <div ref={hoverRef} className={styles.taglineHover} aria-hidden="true">
-        <Image
-          src="/footer/hover%20tagline.png"
-          alt=""
-          width={1020}
-          height={121}
-          sizes="(max-width: 1100px) 100vw, 1020px"
-        />
-      </div>
+      <Image
+        src="/footer/logo-tagline-hover.png"
+        alt=""
+        aria-hidden="true"
+        width={2718}
+        height={857}
+        sizes="(max-width: 1100px) 100vw, 1020px"
+        className={styles.logoHover}
+      />
+      <div ref={hotspotRef} className={styles.taglineHotspot} aria-hidden="true" />
     </div>
   );
 }

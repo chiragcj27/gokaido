@@ -15,6 +15,7 @@
 
 import { ApiRequestError, apiRequest } from "../auth/authStore";
 import type { CartItem } from "../cartStore";
+import type { Address } from "../../components/Account/AddressesTab";
 import type { CustomerInfo } from "../../components/Checkout/CustomerInfoStep";
 
 const GUEST_ID_KEY = "gokaido:guest-id";
@@ -62,9 +63,9 @@ export function normalizeMobile(raw: string): string {
 }
 
 /** Client-side mirror of the API's address rules, so obvious mistakes don't cost a round trip. */
-export function validateCustomerInfo(info: CustomerInfo): string | null {
+export function validateCustomerInfo(info: CustomerInfo, { requireEmail = true } = {}): string | null {
   if (!/^[6-9]\d{9}$/.test(normalizeMobile(info.phone))) return "Enter a valid 10-digit Indian mobile number.";
-  if (!/^\S+@\S+\.\S+$/.test(info.email.trim())) return "Enter a valid email address.";
+  if (requireEmail && !/^\S+@\S+\.\S+$/.test(info.email.trim())) return "Enter a valid email address.";
   if (!/^[1-9]\d{5}$/.test(info.pincode.trim())) return "Enter a valid 6-digit pincode.";
   return null;
 }
@@ -89,30 +90,60 @@ async function syncServerCart(request: Request, items: CartItem[]) {
   }
 }
 
+function toShippingAddress(customer: CustomerInfo) {
+  return {
+    name: customer.fullName.trim(),
+    mobile: normalizeMobile(customer.phone),
+    line1: customer.address.trim(),
+    city: customer.city.trim(),
+    state: customer.state.trim(),
+    pincode: customer.pincode.trim(),
+  };
+}
+
+/**
+ * Logged-in customers ship to a saved address by id (`addressId`), or to a
+ * newly typed one — saved to their account first when `saveAddress` is set,
+ * so it's offered directly next time. Guests always send the address inline.
+ */
 export async function placeOrderAndPay({
   request,
   isGuest,
   items,
   customer,
+  addressId,
+  saveAddress = false,
+  onAddressSaved,
 }: {
   request: Request;
   isGuest: boolean;
   items: CartItem[];
   customer: CustomerInfo;
+  addressId?: string;
+  saveAddress?: boolean;
+  /** Called with the new saved address, so a retry after a later failure reuses it instead of saving a duplicate. */
+  onAddressSaved?: (address: Address) => void;
 }): Promise<void> {
+  if (!isGuest && !addressId && saveAddress) {
+    try {
+      const { address } = await request<{ address: Address }>("/addresses", {
+        method: "POST",
+        body: JSON.stringify(toShippingAddress(customer)),
+      });
+      addressId = address._id;
+      onAddressSaved?.(address);
+    } catch (err) {
+      if (err instanceof ApiRequestError) throw new Error(`Couldn't save your address: ${err.message}`);
+      throw err;
+    }
+  }
+
   await syncServerCart(request, items);
 
   const { order, redirectURI, tranCtx } = await request<CreateOrderResponse>("/orders", {
     method: "POST",
     body: JSON.stringify({
-      shippingAddress: {
-        name: customer.fullName.trim(),
-        mobile: normalizeMobile(customer.phone),
-        line1: customer.address.trim(),
-        city: customer.city.trim(),
-        state: customer.state.trim(),
-        pincode: customer.pincode.trim(),
-      },
+      ...(addressId ? { addressId } : { shippingAddress: toShippingAddress(customer) }),
       ...(isGuest && { guestName: customer.fullName.trim(), guestEmail: customer.email.trim() }),
     }),
   });

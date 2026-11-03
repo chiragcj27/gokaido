@@ -18,8 +18,7 @@ interface Row {
   points: Point[];
 }
 
-// Why/Who copy is from the design; the What card is still our placeholder (tracked in
-// DUMMY_DATA.md) — the design's own What copy is unrelated template text.
+// Why/What/Who copy is from the client.
 // Card colours sampled from the design.
 const ROWS: Row[] = [
   {
@@ -42,12 +41,12 @@ const ROWS: Row[] = [
     color: "#224399",
     tilt: 3,
     points: [
-      { lead: "Franchise pricing", rest: " — room to win on every sale" },
-      { lead: "Store setup support", rest: " — layout, branding and signage done with you" },
-      { lead: "Easy ordering", rest: " — restocking without jumping through hoops" },
-      { lead: "Fast dispatch", rest: " — stock on your shelves before the next grading" },
-      { lead: "Marketing support", rest: " — launch campaigns and local promotions" },
-      { lead: "Product training", rest: ": your team will know a gi from a dobok" },
+      { lead: "An Established Product Range", rest: " — Martial arts uniforms and equipment under one brand." },
+      { lead: "Wholesale Supply", rest: " — Access to Gokaido products for your local market." },
+      { lead: "Brand Identity", rest: " — Standardised branding and store display guidelines." },
+      { lead: "Marketing Support", rest: " — Promotional visibility through Gokaido’s available marketing channels." },
+      { lead: "Territory-Based Business", rest: " — Operate within an agreed territory, with defined market coverage." },
+      { lead: "A Business Framework", rest: " — An established system to guide your Gokaido franchise journey." },
     ],
   },
   {

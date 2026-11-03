@@ -48,8 +48,8 @@ These are wired to the real source; the dummy only shows when the API is unreach
 | Where | What's fake | Real source |
 |---|---|---|
 | `about-us/StatsTrail.tsx` — `IMAGES` | Placeholder photos | Client's brand/story images |
+| `public/about/founder-note-front.jpg` (`about-us/FounderNote.tsx`) | Card front cropped from a design screenshot, with "TAP TO OPEN" baked in | Full-res export from the design team |
 | `our-franchise/page.tsx` — franchise paragraph | Franchise pitch copy written by us (support offered, etc. not confirmed by client) | Copy from client |
-| `our-franchise/WhyWhatWho.tsx` — "What our partners get" card points | Our placeholder; the design's What copy is unrelated template text (sauce/bottles) | Copy from client |
 | `our-franchise/FranchiseSignup.tsx` — form intro/thanks copy; `components/EnquiryForm/EnquiryForm.tsx` — `SOURCES` | "Sign up today" intro copy and the "How did you hear about us?" options are ours | Copy/options from client (keep options in sync with `FRANCHISE_ENQUIRY_SOURCES` in the database package) |
 | `contact-us/page.tsx` — enquiry form intro/thanks copy | Written by us; the rest of the page copy is from the design | Copy from client |
 

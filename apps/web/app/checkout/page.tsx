@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import CheckoutStepper, { type CheckoutStep } from "../components/Checkout/CheckoutStepper";
 import CheckoutSummary from "../components/Checkout/CheckoutSummary";
+import type { Address } from "../components/Account/AddressesTab";
 import CustomerInfoStep, {
   EMPTY_CUSTOMER_INFO,
+  customerInfoFromAddress,
   isCustomerInfoComplete,
+  type AddressChoice,
   type CustomerInfo,
 } from "../components/Checkout/CustomerInfoStep";
 import OrderReviewStep from "../components/Checkout/OrderReviewStep";
@@ -32,6 +35,11 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(EMPTY_CUSTOMER_INFO);
+  // Logged-in only: null while loading. Guests have no saved addresses.
+  const [savedAddresses, setSavedAddresses] = useState<Address[] | null>(null);
+  const [addressChoice, setAddressChoice] = useState<AddressChoice>("new");
+  const [saveAddress, setSaveAddress] = useState(true);
+  const isLoggedIn = authStatus === "authenticated";
 
   // Prefill contact details for a logged-in customer (name/mobile can't change after registration anyway).
   useEffect(() => {
@@ -43,6 +51,38 @@ export default function CheckoutPage() {
       email: prev.email || user.email || "",
     }));
   }, [user]);
+
+  // Load saved addresses and preselect the default (the API sorts it first), so a returning
+  // customer can go straight to review without retyping anything.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let cancelled = false;
+    authFetch<{ addresses: Address[] }>("/addresses")
+      .then(({ addresses }) => {
+        if (cancelled) return;
+        setSavedAddresses(addresses);
+        if (addresses[0]) chooseAddress(addresses[0]._id, addresses);
+      })
+      .catch(() => {
+        if (!cancelled) setSavedAddresses([]); // fall back to typing an address in
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, authFetch]);
+
+  const chooseAddress = (choice: AddressChoice, addresses = savedAddresses ?? []) => {
+    setError(null);
+    setAddressChoice(choice);
+    const saved = addresses.find((a) => a._id === choice);
+    setCustomerInfo(
+      saved
+        ? customerInfoFromAddress(saved, user?.email ?? "")
+        : { ...EMPTY_CUSTOMER_INFO, fullName: user?.name ?? "", phone: user?.mobile ?? "", email: user?.email ?? "" },
+    );
+  };
+
+  const usingSavedAddress = isLoggedIn && addressChoice !== "new";
 
   const itemCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
@@ -62,6 +102,12 @@ export default function CheckoutPage() {
         isGuest,
         items,
         customer: customerInfo,
+        addressId: usingSavedAddress ? addressChoice : undefined,
+        saveAddress: !isGuest && saveAddress,
+        onAddressSaved: (address) => {
+          setSavedAddresses((prev) => [...(prev ?? []), address]);
+          setAddressChoice(address._id);
+        },
       });
       // Browser is now navigating to ICICI — leave the button disabled.
     } catch (err) {
@@ -71,8 +117,8 @@ export default function CheckoutPage() {
   };
 
   const handleContinue = () => {
-    if (step === "customer") {
-      const invalid = validateCustomerInfo(customerInfo);
+    if (step === "customer" && !usingSavedAddress) {
+      const invalid = validateCustomerInfo(customerInfo, { requireEmail: !isLoggedIn });
       if (invalid) {
         setError(invalid);
         return;
@@ -115,7 +161,10 @@ export default function CheckoutPage() {
         ? "Redirecting to Payment…"
         : "Place Order & Pay";
   const ctaDisabled =
-    submitting || authStatus === "loading" || (step === "customer" && !isCustomerInfoComplete(customerInfo));
+    submitting ||
+    authStatus === "loading" ||
+    (isLoggedIn && savedAddresses === null) ||
+    (step === "customer" && !usingSavedAddress && !isCustomerInfoComplete(customerInfo, { requireEmail: !isLoggedIn }));
 
   return (
     <main className="mx-auto flex max-w-360 flex-col gap-8 px-4 pt-8 pb-24 sm:px-6 lg:px-8">
@@ -158,7 +207,17 @@ export default function CheckoutPage() {
       )}
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_360px]">
-        {step === "customer" && <CustomerInfoStep value={customerInfo} onChange={setCustomerInfo} />}
+        {step === "customer" && (
+          <CustomerInfoStep
+            value={customerInfo}
+            onChange={setCustomerInfo}
+            savedAddresses={isLoggedIn ? savedAddresses : undefined}
+            addressChoice={addressChoice}
+            onAddressChoice={(choice) => chooseAddress(choice)}
+            saveAddress={saveAddress}
+            onSaveAddressChange={setSaveAddress}
+          />
+        )}
         {step === "review" && (
           <OrderReviewStep customerInfo={customerInfo} onEditCustomer={() => goToStep("customer")} />
         )}

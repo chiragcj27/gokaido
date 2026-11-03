@@ -1,5 +1,7 @@
 import WordFadeText from "../components/WordFadeText/WordFadeText";
 import AwardsFloat from "./AwardsFloat";
+import FounderNote from "./FounderNote";
+import JourneyTimeline from "./JourneyTimeline";
 import StatsTrail from "./StatsTrail";
 import TeamPhoto from "./TeamPhoto";
 
@@ -51,12 +53,14 @@ export default function AboutUsPage() {
           <div className="relative isolate w-full px-6 pt-2 pb-12 sm:px-14">
             <div className="absolute inset-0 -z-10 bg-linear-to-b from-transparent via-red/35 to-red/85 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100" />
             <h3 className="m-0 font-heading text-3xl font-light text-paper sm:text-4xl">{s.title}</h3>
-            <p className="m-0 mt-8 text-left font-sans text-base leading-snug text-paper/70">{s.body}</p>
+            <p className="m-0 mt-8 text-center font-sans text-base leading-snug text-paper/70">{s.body}</p>
           </div>
         </article>
       ))}
     </section>
     <AwardsFloat />
+    <JourneyTimeline />
+    <FounderNote />
     </>
   );
 }

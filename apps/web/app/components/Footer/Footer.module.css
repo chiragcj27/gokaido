@@ -75,34 +75,26 @@
   max-width: 1020px;
 }
 
-.logo {
-  height: auto;
-  width: min(100%, 683px);
-}
-
 /*
- * Tagline: solid PNG with the shattered PNG revealed in a soft circle around the cursor
- * (see TaglineReveal.tsx). The root box matches main tagline.png (1022×62); the hover
- * PNG (1020×121) has shards bleeding above/below, so it's scaled and offset so its
- * letters sit exactly on the main PNG's letters (measured from the images' pixels).
+ * Logo + tagline: solid PNG with the shattered-tagline PNG revealed in a soft circle around
+ * the cursor (see LogoReveal.tsx). Both PNGs are 2718×857 with the logo on identical
+ * pixels, so the hover layer simply sits on top at the same size — no offset needed.
  */
-.tagline {
+.logoReveal {
   --r: 0px;
   position: relative;
-  width: 100%;
-  aspect-ratio: 1022 / 62;
-  margin: 8px 0;
-  cursor: default;
+  width: min(100%, 1020px);
+  aspect-ratio: 2718 / 857;
 }
 
-.taglineMain,
-.taglineHover img {
+.logoMain,
+.logoHover {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.taglineMain {
+.logoMain {
   -webkit-mask-image: radial-gradient(
     circle at var(--tx, -999px) var(--ty, -999px),
     transparent calc(var(--r) * 0.55),
@@ -115,22 +107,31 @@
   );
 }
 
-.taglineHover {
+.logoHover {
   position: absolute;
-  left: 0.094%;
-  top: -62.7%;
-  width: 100.4%;
+  inset: 0;
   pointer-events: none;
   -webkit-mask-image: radial-gradient(
-    circle at var(--hx, -999px) var(--hy, -999px),
+    circle at var(--tx, -999px) var(--ty, -999px),
     #000 calc(var(--r) * 0.55),
     transparent var(--r)
   );
   mask-image: radial-gradient(
-    circle at var(--hx, -999px) var(--hy, -999px),
+    circle at var(--tx, -999px) var(--ty, -999px),
     #000 calc(var(--r) * 0.55),
     transparent var(--r)
   );
+}
+
+/* The tagline band of the 2718×857 frame (x 578–2139, y ≈590–830, where the two PNGs
+   differ), padded slightly. Only this box triggers the reveal. */
+.taglineHotspot {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  top: 67%;
+  bottom: 2%;
+  cursor: default;
 }
 
 .srOnly {
@@ -259,6 +260,7 @@
 }
 
 .contactDetails strong {
+  display: block;
   font-weight: 700;
 }
 

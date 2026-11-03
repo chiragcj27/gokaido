@@ -393,11 +393,12 @@ export default function Hero({
       <div ref={stackRef} className="relative">
         {/* md+: locked to the background art's own aspect (1602×908), not
             viewport height — a 100svh box crops the art on any screen whose
-            shape differs from it. Phones: a fixed portrait box (the mobile
-            design stacks the headline over a large slot), with the portrait
-            art cover-cropped to it. The headline is vw-sized, so it scales
-            with the box either way. */}
-        <section className="relative flex aspect-[3/4] w-full md:aspect-[1602/908] shrink-0 flex-col items-center justify-center overflow-hidden bg-ink text-paper">
+            shape differs from it. Phones: locked to the portrait art's aspect
+            (428×771, /hero/hero-mobile-stage.png) the same way — the mobile
+            design stacks the headline over a large slot. An admin-uploaded
+            phone image of another shape is cover-cropped to it. The headline
+            is vw-sized, so it scales with the box either way. */}
+        <section className="relative flex aspect-[428/771] w-full md:aspect-[1602/908] shrink-0 flex-col items-center justify-center overflow-hidden bg-ink text-paper">
           {/* Background art is already near-black with its own spotlights and
               red accents — no scrim, it would only mute the glow. */}
           <HeroBackground desktopUrl={backgroundUrl} mobileUrl={mobileBackgroundUrl} />

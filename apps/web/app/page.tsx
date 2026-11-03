@@ -36,7 +36,7 @@ export default async function Home() {
         // cover-crop the main reel.
         mobileVideoUrl={settings.heroMobileVideoUrl ?? (settings.heroVideoUrl ? undefined : "/hero/hero-reel-vertical.mp4")}
         backgroundUrl={settings.heroBackgroundImageUrl ?? "/hero/hero.png"}
-        mobileBackgroundUrl={settings.heroMobileBackgroundImageUrl ?? "/hero/hero-mobile.png"}
+        mobileBackgroundUrl={settings.heroMobileBackgroundImageUrl ?? "/hero/hero-mobile-stage.png"}
         showcaseImages={
           settings.heroShowcaseImages.length > 0
             ? settings.heroShowcaseImages
@@ -49,6 +49,7 @@ export default async function Home() {
           <UnifyKits
             categories={categories.map((c) => ({ name: c.name, image: c.image ?? CATEGORY_PLACEHOLDER_IMAGE, href: c.href }))}
             backgroundUrl="/home/unify_your_kits_bg.png"
+            mobileBackgroundUrl="/home/unify_your_kits_bg_mobile.png"
           />
         </div>
       </Hero>

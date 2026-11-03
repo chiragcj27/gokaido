@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import SearchModal, { type SearchModalProduct } from "../SearchModal/SearchModal";
+import { useAuth } from "../../lib/auth/authStore";
 import { useCart } from "../../lib/cartStore";
 import styles from "./Navbar.module.css";
 
@@ -41,6 +42,8 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
   const headerRef = useRef<HTMLElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
+  const { status: authStatus } = useAuth();
   const { itemCount, lastAdded } = useCart();
   const cartIconRef = useRef<HTMLSpanElement>(null);
   // Sticky, but slides away while scrolling down and returns on any scroll up.
@@ -156,6 +159,18 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
     setMobileCategoryOpen(false);
   }, [pathname]);
 
+  // Guests going to /account to log in carry the page they're on as `?next=`, so
+  // AccountPageClient can send them straight back once signed in. Read from
+  // window.location at click time (not useSearchParams) so it includes the
+  // current query, e.g. a PDP's ?size=, without making the layout dynamic.
+  const goToAccount = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (authStatus === "authenticated" || pathname.startsWith("/account")) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    const here = `${window.location.pathname}${window.location.search}`;
+    router.push(`/account?next=${encodeURIComponent(here)}`);
+  };
+
   const closeMobile = () => {
     setMobileOpen(false);
     setMobileCategoryOpen(false);
@@ -251,7 +266,7 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
           >
             <Image src="/navbar/icon-search.png" alt="" width={37} height={56} className={styles.iconImg} />
           </button>
-          <Link href="/account" className={styles.iconButton} aria-label="Account">
+          <Link href="/account" className={styles.iconButton} aria-label="Account" onClick={goToAccount}>
             <Image src="/navbar/icon-account.png" alt="" width={37} height={56} className={styles.iconImg} />
           </Link>
           <Link
@@ -349,7 +364,14 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
         </nav>
 
         <div className={styles.drawerFoot} style={stagger(navLinks.length + 2)}>
-          <Link href="/account" className={styles.drawerFootButton} onClick={closeMobile}>
+          <Link
+            href="/account"
+            className={styles.drawerFootButton}
+            onClick={(event) => {
+              closeMobile();
+              goToAccount(event);
+            }}
+          >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="1.6" />
               <path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7" fill="none" stroke="currentColor" strokeWidth="1.6" />

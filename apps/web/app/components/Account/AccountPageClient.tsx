@@ -3,8 +3,11 @@
 // /account — opened from the navbar's person icon. Shows Login / Sign Up for
 // guests and My Account (sidebar + tabs) once signed in. The active tab lives
 // in `?tab=` so it survives reloads and can be deep-linked (e.g. ?tab=orders).
+// A guest who arrives with `?next=` (set by the navbar's account icon) is sent
+// back to that page as soon as they log in or sign up.
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { useAuth } from "../../lib/auth/authStore";
 import { OrdersTab, OverviewTab, SettingsTab, WishlistTab } from "./AccountTabs";
 import AddressesTab from "./AddressesTab";
@@ -79,8 +82,26 @@ function MyAccount() {
   );
 }
 
+/** Only same-site paths — `//evil.com` or an absolute URL would make this an open redirect. */
+function safeReturnPath(next: string | null): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return null;
+  if (next.startsWith("/account")) return null;
+  return next;
+}
+
 export default function AccountPageClient() {
   const { status } = useAuth();
+  const router = useRouter();
+  const params = useSearchParams();
+  const returnTo = safeReturnPath(params.get("next"));
+
+  // Redirect only on the guest → authenticated transition (i.e. they just logged in here),
+  // not when an already signed-in customer opens a stale ?next= link.
+  const prevStatus = useRef(status);
+  useEffect(() => {
+    if (prevStatus.current === "guest" && status === "authenticated" && returnTo) router.replace(returnTo);
+    prevStatus.current = status;
+  }, [status, returnTo, router]);
 
   return (
     <main className="mx-auto flex max-w-360 flex-col gap-6 px-4 pt-8 pb-24 sm:px-6 lg:px-8">
@@ -91,6 +112,8 @@ export default function AccountPageClient() {
           <PageHeading title="Login / Sign Up" subtitle="Sign in to your account or create a new GOKAIDO account." />
           <LoginSignup />
         </>
+      ) : status === "authenticated" && returnTo && prevStatus.current === "guest" ? (
+        <p className="m-0 py-24 text-center font-sans text-sm text-paper/40">Signed in — taking you back…</p>
       ) : (
         <MyAccount />
       )}
