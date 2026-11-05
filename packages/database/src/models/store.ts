@@ -1,6 +1,7 @@
 import { mongoose } from "../client.js";
 
-// A physical Gokaido store shown in the homepage "Visit Our Store" section.
+// A physical Gokaido store, shown in the homepage "Visit Our Store" section
+// and the /our-franchise store list.
 // One document per store; `city` is the label on the selector below the
 // photo, so two stores in the same city (e.g. two in Goa) are fine.
 export interface IStore {
@@ -13,6 +14,8 @@ export interface IStore {
   // Explicit Google Maps link. When absent the storefront falls back to a
   // maps search on `address`.
   directionsUrl?: string;
+  // Adds the "HEAD OFFICE" tag beside the city on /our-franchise.
+  isHeadOffice: boolean;
   // Ascending — controls the order of the city selector.
   sortOrder: number;
   isActive: boolean;
@@ -29,6 +32,7 @@ const storeSchema = new mongoose.Schema<IStore>(
     phone: { type: String, trim: true },
     image: { type: String, trim: true },
     directionsUrl: { type: String, trim: true },
+    isHeadOffice: { type: Boolean, default: false },
     sortOrder: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
   },

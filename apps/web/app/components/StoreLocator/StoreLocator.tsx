@@ -2,19 +2,12 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import type { Store } from "../../lib/stores";
+import { directionsHref, type Store } from "../../lib/stores";
 
 export interface StoreLocatorProps {
   stores: Store[];
   /** Shown when a store has no photo of its own. */
   fallbackImage?: string;
-}
-
-function directionsHref(store: Store) {
-  return (
-    store.directionsUrl ??
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.name} ${store.address}`)}`
-  );
 }
 
 function telHref(phone: string) {

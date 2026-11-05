@@ -47,7 +47,7 @@ export default function FounderNote() {
     <section className="relative isolate flex flex-col items-center overflow-hidden px-4 py-14 lg:aspect-1600/760 lg:px-0 lg:pt-[6%] lg:pb-0">
       <Image src="/about/ty_bg.png" alt="" fill sizes="100vw" className="-z-10 object-cover" />
 
-      <h2 className="m-0 text-center font-sans text-[clamp(1.25rem,2vw,2rem)] leading-tight font-medium text-red uppercase">
+      <h2 className="m-0 text-center font-sans text-[clamp(1.5rem,2.25vw,2.25rem)] leading-tight font-bold text-red uppercase">
         Note from the Founder
       </h2>
 

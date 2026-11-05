@@ -216,7 +216,12 @@ export default function ProductInfo({
       </div>
 
       <div className="contents lg:flex lg:flex-col lg:gap-4">
-        <div className="order-4 flex gap-3 lg:order-0">
+        {/* Mobile: pinned to the bottom of the viewport so Add to Bag is always in reach.
+            z-40 keeps it under the modals (z-50). globals.css pads <body> (via data-mobile-atb-bar)
+            so the footer's last row isn't hidden behind it. */}
+        <div
+          data-mobile-atb-bar
+          className="order-4 flex gap-3 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-40 max-lg:border-t max-lg:border-white/15 max-lg:bg-ink max-lg:px-4 max-lg:pt-3 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:order-0">
           <div className="flex h-10 w-23 shrink-0 items-center justify-between rounded-md border border-paper px-1 font-sans text-paper lg:hidden">
             <button
               type="button"

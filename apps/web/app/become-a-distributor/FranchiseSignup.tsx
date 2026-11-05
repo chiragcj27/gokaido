@@ -41,7 +41,7 @@ export default function FranchiseSignup() {
           {/* Placeholder copy (tracked in DUMMY_DATA.md). */}
           <EnquiryForm
             intro="Fill out the form below and we’ll get you started on bringing Gokaido to your city."
-            thanks="We’ve got your details. Our franchise team will be in touch soon."
+            thanks="We’ve got your details. Our team will be in touch soon."
           />
         </div>
       </div>

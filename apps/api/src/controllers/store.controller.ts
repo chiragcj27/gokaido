@@ -4,12 +4,12 @@ import { createStoreSchema, updateStoreSchema } from "../schemas/store.schema.js
 
 const OPTIONAL_FIELDS = ["hours", "phone", "image", "directionsUrl"] as const;
 
-// Public — storefront homepage reads this unauthenticated. Only active stores,
+// Public — storefront homepage and /our-franchise read this unauthenticated. Only active stores,
 // only the fields the section renders.
 export async function listPublicStores(_req: Request, res: Response): Promise<void> {
   const stores = await Store.find({ isActive: true })
     .sort({ sortOrder: 1, createdAt: 1 })
-    .select("city name address hours phone image directionsUrl")
+    .select("city name address hours phone image directionsUrl isHeadOffice")
     .lean();
   res.json({ stores });
 }

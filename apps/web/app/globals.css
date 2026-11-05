@@ -42,6 +42,15 @@ body {
   overflow-x: clip;
 }
 
+/* Product page, mobile: the Add to Bag bar is fixed to the bottom of the viewport, so reserve
+   its height (12px top pad + 40px row + bottom pad/safe area) at the end of the page; otherwise
+   the last row of the footer would sit permanently behind it. */
+@media (max-width: 1023.98px) {
+  body:has([data-mobile-atb-bar]) {
+    padding-bottom: calc(52px + max(0.75rem, env(safe-area-inset-bottom)));
+  }
+}
+
 /* Windows laptops usually run at 125-150% display scaling, so the same layout gets
    fewer CSS pixels than on a Mac and everything (rem-based) looks oversized.
    Scale the root size fluidly on desktop widths so it matches the Mac look. */
@@ -181,6 +190,27 @@ body {
   .animate-pane-fade,
   .animate-pane-slide-in,
   .animate-collection-card-in {
+    animation: none;
+  }
+}
+
+/* /our-franchise store photo strip: the track holds two identical copies, so
+   sliding it by -50% lands exactly where it started and loops seamlessly. */
+@keyframes store-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-store-marquee {
+  animation: store-marquee 60s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-store-marquee {
     animation: none;
   }
 }

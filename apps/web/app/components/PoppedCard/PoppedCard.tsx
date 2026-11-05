@@ -171,7 +171,9 @@ export default function PoppedCard({
                   event.preventDefault();
                   onAddToCart();
                 }}
-                className="mt-3 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-white/50 bg-transparent px-2 py-2 font-heading text-[11px] @[260px]:mt-4 @[260px]:gap-2 @[260px]:px-4 @[260px]:py-3 @[260px]:text-[13px] font-semibold tracking-[0.02em] text-paper uppercase transition-colors duration-200 hover:bg-paper hover:text-ink"
+                // Full card width: the negative margins cancel the body's horizontal padding so the
+                // button runs edge to edge; square corners per design.
+                className="-mx-2.5 mt-3 flex w-[calc(100%+1.25rem)] cursor-pointer items-center justify-center gap-1.5 rounded-none border border-white/50 bg-transparent px-2 py-2 font-heading text-[11px] @[260px]:-mx-4.5 @[260px]:mt-4 @[260px]:w-[calc(100%+2.25rem)] @[260px]:gap-2 @[260px]:px-4 @[260px]:py-3 @[260px]:text-[13px] font-semibold tracking-[0.02em] text-paper transition-colors duration-200 hover:bg-paper hover:text-ink"
               >
                 <span aria-hidden="true" className="text-base leading-none">
                   +

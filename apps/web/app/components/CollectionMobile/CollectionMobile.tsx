@@ -82,9 +82,10 @@ function MobileProductCard({ product }: { product: CollectionProduct }) {
               event.preventDefault();
               console.log(`Added ${product.title} to cart`);
             }}
-            className="w-full cursor-pointer rounded-sm border border-paper/80 bg-transparent py-1.5 font-sans text-[10px] font-semibold text-paper transition-colors duration-200 hover:bg-paper hover:text-ink"
+            // -mx-1 cancels the body's px-1 so the button spans the card edge to edge; square corners.
+            className="-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-center justify-center gap-1 rounded-none border border-paper/80 bg-transparent py-1.5 font-sans text-[10px] font-semibold text-paper transition-colors duration-200 hover:bg-paper hover:text-ink"
           >
-            Add to bag
+            <span aria-hidden="true">+</span> Add to Cart
           </button>
         </div>
       </div>

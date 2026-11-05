@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ProductColorOption } from "../../lib/dummyProduct";
 
 const HERO_INTRO_STORAGE_PREFIX = "gokaido:hero-intro:";
@@ -11,6 +11,8 @@ export interface ProductGalleryProps {
   colors: ProductColorOption[];
   activeColorSlug: string;
   onColorChange: (colorSlug: string) => void;
+  /** Rendered over the top-left of the photo (the breadcrumb). */
+  overlay?: ReactNode;
 }
 
 export default function ProductGallery({
@@ -18,6 +20,7 @@ export default function ProductGallery({
   colors,
   activeColorSlug,
   onColorChange,
+  overlay,
 }: ProductGalleryProps) {
   const activeColor = colors.find((color) => color.slug === activeColorSlug) ?? colors[0];
   const [activeIndex, setActiveIndex] = useState(0);
@@ -49,7 +52,7 @@ export default function ProductGallery({
 
   return (
     <>
-      <MobileCarousel key={activeColor.slug} productName={productName} color={activeColor} />
+      <MobileCarousel key={activeColor.slug} productName={productName} color={activeColor} overlay={overlay} />
       <div className="relative hidden aspect-1602/693 w-full overflow-hidden bg-panel lg:block">
         {/* Gallery photos are ordinary full-bleed shots (not transparent cut-outs), so each pane
             fills with object-cover: the first image spans the whole frame, and once split into
@@ -68,7 +71,7 @@ export default function ProductGallery({
                 alt={`${productName} — ${activeColor.name}`}
                 fill
                 priority={isFirstImage}
-                sizes="(min-width: 1440px) 1344px, 100vw"
+                sizes="100vw"
                 className="object-cover object-center"
                 unoptimized={leftImage.endsWith(".svg")}
               />
@@ -87,7 +90,7 @@ export default function ProductGallery({
                   src={rightImage}
                   alt={`${productName} — ${activeColor.name}`}
                   fill
-                  sizes="(min-width: 1440px) 672px, 50vw"
+                  sizes="50vw"
                   className="object-cover object-center"
                   unoptimized={rightImage.endsWith(".svg")}
                 />
@@ -102,6 +105,8 @@ export default function ProductGallery({
             transition: "opacity 600ms cubic-bezier(0.65, 0, 0.35, 1)",
           }}
         />
+
+        {overlay && <PhotoOverlay>{overlay}</PhotoOverlay>}
 
         <div className="absolute right-6 bottom-6 flex flex-col items-end gap-3">
           <div className="flex items-center gap-2.5 rounded-lg bg-ink/70 px-3 py-1.5 backdrop-blur-sm">
@@ -173,7 +178,15 @@ export default function ProductGallery({
 
 // Below `lg` the design swaps the split-pane gallery for a full-bleed swipe carousel with dots;
 // the colour picker moves into ProductInfo. Keyed by colour so switching colour resets to slide 1.
-function MobileCarousel({ productName, color }: { productName: string; color: ProductColorOption }) {
+function MobileCarousel({
+  productName,
+  color,
+  overlay,
+}: {
+  productName: string;
+  color: ProductColorOption;
+  overlay?: ReactNode;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [slide, setSlide] = useState(0);
 
@@ -189,7 +202,7 @@ function MobileCarousel({ productName, color }: { productName: string; color: Pr
   };
 
   return (
-    <div className="relative -mx-4 bg-panel md:-mx-8 lg:hidden">
+    <div className="relative bg-panel lg:hidden">
       <div
         ref={trackRef}
         onScroll={handleScroll}
@@ -209,6 +222,7 @@ function MobileCarousel({ productName, color }: { productName: string; color: Pr
           </div>
         ))}
       </div>
+      {overlay && <PhotoOverlay>{overlay}</PhotoOverlay>}
       {color.images.length > 1 && (
         <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
           {color.images.map((image, index) => (
@@ -225,6 +239,16 @@ function MobileCarousel({ productName, color }: { productName: string; color: Pr
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Top strip over the photo: a soft dark gradient keeps light text readable on bright shots, and the
+// inset matches the page gutter so the breadcrumb lines up with the content below.
+function PhotoOverlay({ children }: { children: ReactNode }) {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-linear-to-b from-ink/60 to-transparent px-4 pt-4 pb-10 [text-shadow:0_1px_2px_rgb(0_0_0/0.5)] md:px-8 lg:px-12 lg:pt-6">
+      <div className="pointer-events-auto w-fit max-w-full">{children}</div>
     </div>
   );
 }

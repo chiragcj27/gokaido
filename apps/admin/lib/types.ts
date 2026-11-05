@@ -233,6 +233,7 @@ export interface Store {
   phone?: string;
   image?: string;
   directionsUrl?: string;
+  isHeadOffice?: boolean;
   sortOrder: number;
   isActive: boolean;
 }

@@ -21,6 +21,7 @@ export default function StoreForm({ store, onDone, onCancel }: Props) {
   const [image, setImage] = useState(store?.image ?? "");
   const [directionsUrl, setDirectionsUrl] = useState(store?.directionsUrl ?? "");
   const [sortOrder, setSortOrder] = useState(store ? String(store.sortOrder) : "0");
+  const [isHeadOffice, setIsHeadOffice] = useState(store?.isHeadOffice ?? false);
   const [isActive, setIsActive] = useState(store?.isActive ?? true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -39,6 +40,7 @@ export default function StoreForm({ store, onDone, onCancel }: Props) {
       phone,
       image,
       directionsUrl,
+      isHeadOffice,
       sortOrder: Number(sortOrder) || 0,
       isActive,
     };
@@ -92,7 +94,7 @@ export default function StoreForm({ store, onDone, onCancel }: Props) {
           <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 …" maxLength={30} />
         </label>
         <label>
-          Directions link (optional)
+          Google Maps link (optional)
           <input
             type="url"
             value={directionsUrl}
@@ -104,7 +106,13 @@ export default function StoreForm({ store, onDone, onCancel }: Props) {
         <label>
           Display order
           <input type="number" min="0" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
-          <p className="form-hint">Lower numbers appear first in the city selector.</p>
+          <p className="form-hint">Lower numbers appear first — in the homepage city selector and the Our Franchise store list.</p>
+        </label>
+        <label>
+          <span>
+            <input type="checkbox" checked={isHeadOffice} onChange={(e) => setIsHeadOffice(e.target.checked)} /> Head office
+          </span>
+          <p className="form-hint">Shows a “Head office” tag next to the city in the Our Franchise store list.</p>
         </label>
         <label>
           <span>

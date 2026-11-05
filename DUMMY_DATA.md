@@ -15,6 +15,8 @@ These are wired to the real source; the dummy only shows when the API is unreach
 | `/collections` | Redirects to the first category with products | Sample Karate page (`collections/page.tsx`) while no category has products |
 | `/search` | `GET /api/products?search=&sort=relevance` | Catalogue is empty or API down (`lib/search/dummySearch.ts`) — a real no-match on a populated catalogue shows "no results" |
 | Search modal trending chips + typewriter placeholder | Admin → Homepage → Trending searches | None saved (`DUMMY_TRENDING_SEARCHES`) |
+| `/our-franchise` store list (`our-franchise/StoreList.tsx`) | `getStores()` → `GET /api/stores` (Admin → Stores: city, address, phone, Google Maps link, "Head office" flag, order) | No active stores, or API down — `DUMMY_STORES` is the design's 15 stores, each with the same placeholder phone `9820222848` and a Maps *search* in place of a real link. |
+| `/our-franchise` photo strip (`our-franchise/StoreGallery.tsx`) | Each active store's photo (Admin → Stores → Store photo) | No store has a photo — repeats the design's one store-interior shot (`public/our-franchise/store-interior.png`) |
 | FAQs on every PDP, `/best-sellers`, `/search` | Admin → Homepage → Store FAQs | None saved (`DEFAULT_FAQS` in `lib/pdp/defaults.ts`) |
 | `<BeyondTheMedal>` CTA, `<AppDownload>` store buttons | Admin → Homepage links | Not set — renders `href="#"` |
 | `lib/reels.ts` — `DUMMY_REELS` | Admin → Reels | No reels |
@@ -49,9 +51,16 @@ These are wired to the real source; the dummy only shows when the API is unreach
 |---|---|---|
 | `about-us/StatsTrail.tsx` — `IMAGES` | Placeholder photos | Client's brand/story images |
 | `public/about/founder-note-front.jpg` (`about-us/FounderNote.tsx`) | Card front cropped from a design screenshot, with "TAP TO OPEN" baked in | Full-res export from the design team |
-| `our-franchise/page.tsx` — franchise paragraph | Franchise pitch copy written by us (support offered, etc. not confirmed by client) | Copy from client |
-| `our-franchise/FranchiseSignup.tsx` — form intro/thanks copy; `components/EnquiryForm/EnquiryForm.tsx` — `SOURCES` | "Sign up today" intro copy and the "How did you hear about us?" options are ours | Copy/options from client (keep options in sync with `FRANCHISE_ENQUIRY_SOURCES` in the database package) |
+| `become-a-distributor/FranchiseSignup.tsx` — form intro/thanks copy; `components/EnquiryForm/EnquiryForm.tsx` — `SOURCES` | "Sign up today" intro copy and the "How did you hear about us?" options are ours | Copy/options from client (keep options in sync with `FRANCHISE_ENQUIRY_SOURCES` in the database package) |
 | `contact-us/page.tsx` — enquiry form intro/thanks copy | Written by us; the rest of the page copy is from the design | Copy from client |
+| `contact-us/page.tsx` — `COLLABORATE_HREF` | "Let's Collaborate" opens a mailto to gikaido@gmail.com; the design doesn't say where it goes | Client to confirm (form, WhatsApp, email) |
+
+## Our Franchise
+
+| Where | What's fake | Real source |
+|---|---|---|
+| `our-franchise/WorldMap.tsx` — `STATS`, `DOTS`/`PINS` | "4 Countries / 50+ Years / 10,000+ Dojos / 20+ Stores" and the pin positions are drawn into the design, not computed from the store list | Confirm the figures with the client; pins would need lat/long per store to be dynamic |
+| Design store list — Baroda | The design gives Baroda the same address as Surat (copied into the fallback as-is; the live DB has the same) | Real Baroda address from client, entered in Admin → Stores |
 
 ## Stubbed behaviour (not data, but fake)
 

@@ -9,6 +9,7 @@ export interface Store {
   phone: string | null;
   image: string | null;
   directionsUrl: string | null;
+  isHeadOffice: boolean;
 }
 
 interface ApiStore {
@@ -20,6 +21,15 @@ interface ApiStore {
   phone?: string;
   image?: string;
   directionsUrl?: string;
+  isHeadOffice?: boolean;
+}
+
+/** The admin's Google Maps link, or a Maps search on the store's name + address when none is set. */
+export function directionsHref(store: Pick<Store, "name" | "address" | "directionsUrl">): string {
+  return (
+    store.directionsUrl ??
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.name} ${store.address}`)}`
+  );
 }
 
 // 5 min cache, tagged "stores" — same TTL/no-purge-route situation as
@@ -38,6 +48,7 @@ export async function getStores(): Promise<Store[]> {
       phone: s.phone ?? null,
       image: s.image ?? null,
       directionsUrl: s.directionsUrl ?? null,
+      isHeadOffice: s.isHeadOffice ?? false,
     }));
   } catch {
     return [];

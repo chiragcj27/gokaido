@@ -15,6 +15,7 @@ export const createStoreSchema = z.object({
   phone: optionalText(30),
   image: z.union([ownUrl, z.literal("")]).optional(),
   directionsUrl: z.union([z.string().trim().url().max(500), z.literal("")]).optional(),
+  isHeadOffice: z.boolean().optional(),
   sortOrder: z.coerce.number().int().min(0).max(9999).optional(),
   isActive: z.boolean().optional(),
 });

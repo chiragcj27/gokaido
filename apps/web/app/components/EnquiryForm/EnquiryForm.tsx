@@ -30,7 +30,7 @@ interface Props {
 /**
  * Franchise / pricelist enquiry form. Posts to the API's public
  * POST /api/franchise-enquiries (stored as FranchiseEnquiry documents).
- * Used by /our-franchise ("Sign up today") and /contact-us.
+ * Used by /become-a-distributor ("Sign up today") and /contact-us.
  */
 export default function EnquiryForm({ intro, thanks }: Props) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });

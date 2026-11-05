@@ -131,75 +131,76 @@ export default function ProductPageClient({
       })),
   };
 
+  const breadcrumb = (
+    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 font-sans text-sm text-paper/80 max-lg:gap-3">
+      {product.breadcrumb.map((crumb, index) => (
+        <span key={crumb.label} className="flex items-center gap-2">
+          {index > 0 && (
+            <span aria-hidden="true">
+              <span className="max-lg:hidden">›</span>
+              <span className="lg:hidden">&gt;</span>
+            </span>
+          )}
+          {crumb.href ? (
+            <Link href={crumb.href} className="hover:text-paper">
+              {crumb.label}
+            </Link>
+          ) : (
+            <span className="text-paper">{crumb.label}</span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+
   return (
-    <main className="mx-auto flex max-w-360 flex-col gap-16 px-4 pt-6 pb-16 md:px-8 lg:gap-24 lg:px-12 lg:pt-8 lg:pb-24">
+    <main className="flex flex-col pb-16 lg:pb-24">
       {/* eslint-disable-next-line react/no-danger */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <div className="flex flex-col gap-4">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-2 font-sans text-sm text-paper/50 max-lg:mb-4 max-lg:gap-3 max-lg:text-paper/80"
-        >
-          {product.breadcrumb.map((crumb, index) => (
-            <span key={crumb.label} className="flex items-center gap-2">
-              {index > 0 && (
-                <span aria-hidden="true">
-                  <span className="max-lg:hidden">›</span>
-                  <span className="lg:hidden">&gt;</span>
-                </span>
-              )}
-              {crumb.href ? (
-                <Link href={crumb.href} className="hover:text-paper">
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span className="text-paper/80">{crumb.label}</span>
-              )}
-            </span>
-          ))}
-        </nav>
+      {/* Gallery sits outside the max-width container so the photo runs edge to edge, with the
+          breadcrumb overlaid on it. */}
+      <ProductGallery
+        productName={product.name}
+        colors={product.colors}
+        activeColorSlug={currentColorSlug}
+        onColorChange={handleColorChange}
+        overlay={breadcrumb}
+      />
 
-        <section className="grid grid-cols-1 gap-8 lg:gap-12">
-          <ProductGallery
-            productName={product.name}
-            colors={product.colors}
-            activeColorSlug={currentColorSlug}
-            onColorChange={handleColorChange}
-          />
-          <ProductInfo
-            name={product.name}
-            description={product.description}
-            price={activeVariant?.price ?? product.variants[0].price}
-            mrp={activeVariant?.mrp ?? product.variants[0].mrp}
-            rating={{ average: product.reviewSummary.average, count: product.reviewSummary.totalCount }}
-            colors={product.colors}
-            activeColorSlug={currentColorSlug}
-            onColorChange={handleColorChange}
-            sizes={product.sizes}
-            activeSize={size}
-            onSizeChange={handleSizeChange}
-            accordion={product.accordion}
-            sizeGuide={sizeGuide}
-            availableSizes={availableSizes}
-            onAddToBag={handleAddToBag}
-          />
-        </section>
-      </div>
-
-      {(product.protectionStats.length > 0 ||
-        product.protectionDescription ||
-        product.protectionComparison !== null) && (
-        <SizeGuide
-          description={product.protectionDescription}
-          stats={product.protectionStats}
-          comparison={product.protectionComparison}
+      <div className="mx-auto flex w-full max-w-360 flex-col gap-16 px-4 pt-8 md:px-8 lg:gap-24 lg:px-12 lg:pt-12">
+        <ProductInfo
+          name={product.name}
+          description={product.description}
+          price={activeVariant?.price ?? product.variants[0].price}
+          mrp={activeVariant?.mrp ?? product.variants[0].mrp}
+          rating={{ average: product.reviewSummary.average, count: product.reviewSummary.totalCount }}
+          colors={product.colors}
+          activeColorSlug={currentColorSlug}
+          onColorChange={handleColorChange}
+          sizes={product.sizes}
+          activeSize={size}
+          onSizeChange={handleSizeChange}
+          accordion={product.accordion}
+          sizeGuide={sizeGuide}
+          availableSizes={availableSizes}
+          onAddToBag={handleAddToBag}
         />
-      )}
-      {product.buildYourKit.length > 0 && <BuildYourKit items={product.buildYourKit} />}
-      <CustomerReviews summary={product.reviewSummary} reviews={product.reviews} />
-      {product.relatedProducts.length > 0 && <RelatedProducts products={product.relatedProducts} />}
-      {product.faqs.length > 0 && <ProductFAQ faqs={product.faqs} darkOnMobile />}
+
+        {(product.protectionStats.length > 0 ||
+          product.protectionDescription ||
+          product.protectionComparison !== null) && (
+          <SizeGuide
+            description={product.protectionDescription}
+            stats={product.protectionStats}
+            comparison={product.protectionComparison}
+          />
+        )}
+        {product.buildYourKit.length > 0 && <BuildYourKit items={product.buildYourKit} />}
+        <CustomerReviews summary={product.reviewSummary} reviews={product.reviews} />
+        {product.relatedProducts.length > 0 && <RelatedProducts products={product.relatedProducts} />}
+        {product.faqs.length > 0 && <ProductFAQ faqs={product.faqs} darkOnMobile />}
+      </div>
     </main>
   );
 }
