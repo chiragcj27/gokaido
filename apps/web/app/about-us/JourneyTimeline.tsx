@@ -10,9 +10,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 type Crop = { width: number; height: number; left: number; top: number };
 type Photo = { src: string; alt: string; w: number; h: number; rounded?: boolean; crop?: Crop };
 
-// Each milestone's belt segment is a narrow strip centred in a 159×282 transparent image;
-// stacked row on row they read as one belt going white → black.
-const MILESTONES: { year: string; title: string; body: string; belt: string; beltBottom?: boolean; photos: Photo[] }[] = [
+// Each milestone's belt segment is a narrow strip centred in a transparent image (159×282 art,
+// drawn 207px wide to thicken the strip); stacked row on row they read as one belt going white → black.
+const MILESTONES: { year: string; title: string; body: string; belt: string; photos: Photo[] }[] = [
   {
     year: "1975",
     title: "Humble Beginnings",
@@ -77,7 +77,6 @@ const MILESTONES: { year: string; title: string; body: string; belt: string; bel
     title: "Flagship Showroom",
     body: "Re-established flagship showroom in Mumbai. Improved product display & walk-in experience.",
     belt: "/about/timeline/belt-2022.png",
-    beltBottom: true,
     photos: [{ src: "/about/timeline/photo-2022.png", alt: "Gokaido flagship showroom in Mumbai", w: 327, h: 289, rounded: true }],
   },
   {
@@ -181,23 +180,18 @@ export default function JourneyTimeline() {
             <li
               key={m.year}
               data-milestone
-              className="grid grid-cols-[24px_minmax(0,1fr)] gap-x-5 gap-y-5 lg:h-[278px] lg:grid-cols-[minmax(0,1fr)_159px_minmax(0,1fr)] lg:items-center lg:gap-x-16 lg:gap-y-0 xl:gap-x-28 2xl:gap-x-[195px]"
+              className="grid grid-cols-[30px_minmax(0,1fr)] gap-x-5 gap-y-5 lg:h-[278px] lg:grid-cols-[minmax(0,1fr)_159px_minmax(0,1fr)] lg:items-center lg:gap-x-16 lg:gap-y-0 xl:gap-x-28 2xl:gap-x-[195px]"
             >
               <div
                 aria-hidden
                 data-belt
                 className="relative row-span-2 self-stretch lg:col-start-2 lg:row-span-1 lg:row-start-1 lg:h-[282px] lg:self-center"
               >
-                {/* Mobile rows are taller than the 282px art, so the strip is stretched lengthwise at
-                    its design width rather than cover-scaled (which would fatten it row by row). */}
-                <div className="absolute inset-y-0 left-1/2 w-[159px] -translate-x-1/2 lg:inset-x-0 lg:w-auto lg:translate-x-0">
-                  <Image
-                    src={m.belt}
-                    alt=""
-                    fill
-                    sizes="159px"
-                    className={`object-fill lg:object-cover ${m.beltBottom ? "lg:object-bottom" : ""}`}
-                  />
+                {/* Stretched to a fixed box rather than cover-scaled, so the strip stays the same
+                    thickness on every row (mobile rows are taller than the 282px art). The image is
+                    wider than this column, but only its transparent margin falls outside. */}
+                <div className="absolute inset-y-0 left-1/2 w-[207px] -translate-x-1/2">
+                  <Image src={m.belt} alt="" fill sizes="207px" className="object-fill" />
                 </div>
               </div>
 

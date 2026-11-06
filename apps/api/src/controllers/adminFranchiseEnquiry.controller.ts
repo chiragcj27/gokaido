@@ -31,7 +31,7 @@ function buildFilter({
   if (status && status !== "all") filter.status = status;
   if (search) {
     const re = new RegExp(escapeRegex(search), "i");
-    filter.$or = [{ name: re }, { email: re }, { phone: re }, { city: re }, { businessName: re }];
+    filter.$or = [{ name: re }, { email: re }, { phone: re }, { city: re }, { country: re }, { businessName: re }];
   }
   const createdAt = istDateRange(from, to);
   if (createdAt) filter.createdAt = createdAt;
@@ -115,7 +115,8 @@ export async function exportFranchiseEnquiries(req: Request, res: Response): Pro
       { header: "Name", width: 22, value: (e) => e.name },
       { header: "Email", width: 28, value: (e) => e.email },
       { header: "Phone", width: 16, value: (e) => e.phone },
-      { header: "City / country", width: 20, value: (e) => e.city },
+      { header: "City", width: 20, value: (e) => e.city },
+      { header: "Country", width: 18, value: (e) => e.country },
       { header: "Business", width: 24, value: (e) => e.businessName },
       { header: "Heard via", width: 16, value: (e) => (e.source ? (SOURCE_LABELS[e.source] ?? e.source) : "") },
       { header: "Message", width: 50, value: (e) => e.message },

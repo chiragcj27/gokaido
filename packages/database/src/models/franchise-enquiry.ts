@@ -21,7 +21,8 @@ export interface IFranchiseEnquiry {
   email: string;
   // Free-form, may be international — the form invites partners from any city or country.
   phone: string;
-  city: string; // "City / Country" as typed
+  city: string; // Older enquiries hold a free-form "City / Country" here
+  country?: string; // Required by the API; absent on older enquiries
   businessName: string;
   source?: FranchiseEnquirySource;
   message?: string;
@@ -38,6 +39,7 @@ const franchiseEnquirySchema = new mongoose.Schema<IFranchiseEnquiry>(
     email: { type: String, required: true, trim: true, lowercase: true },
     phone: { type: String, required: true, trim: true },
     city: { type: String, required: true, trim: true },
+    country: { type: String, trim: true },
     businessName: { type: String, required: true, trim: true },
     source: { type: String, enum: FRANCHISE_ENQUIRY_SOURCES },
     message: { type: String, trim: true },

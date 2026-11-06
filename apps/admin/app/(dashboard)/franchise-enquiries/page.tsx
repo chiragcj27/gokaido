@@ -123,7 +123,7 @@ export default function FranchiseEnquiriesPage() {
           </select>
         </label>
         <label className="filter-grow">
-          Search (name, email, phone, city or business)
+          Search (name, email, phone, city, country or business)
           <input value={search} onChange={(e) => setSearch(e.target.value)} />
         </label>
       </div>
@@ -163,7 +163,7 @@ export default function FranchiseEnquiriesPage() {
                     </div>
                   )}
                 </td>
-                <td>{e.city || "—"}</td>
+                <td>{[e.city, e.country].filter(Boolean).join(", ") || "—"}</td>
                 <td>{e.businessName}</td>
                 <td>{e.source ? (SOURCE_LABELS[e.source] ?? e.source) : "—"}</td>
                 <td style={{ whiteSpace: "pre-wrap", maxWidth: 360 }}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import CountryCityFields from "./CountryCityFields";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -87,15 +88,7 @@ export default function EnquiryForm({ intro, thanks }: Props) {
         aria-label="Phone"
         className={FIELD}
       />
-      <input
-        name="city"
-        required
-        maxLength={120}
-        autoComplete="address-level2"
-        placeholder="City / Country"
-        aria-label="City or country"
-        className={FIELD}
-      />
+      <CountryCityFields fieldClassName={FIELD} />
       <input
         name="businessName"
         required

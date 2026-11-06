@@ -258,6 +258,7 @@ export interface FranchiseEnquiry {
   email: string;
   phone: string;
   city: string;
+  country?: string;
   businessName: string;
   source?: string;
   message?: string;

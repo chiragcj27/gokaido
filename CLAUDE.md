@@ -251,4 +251,4 @@ Admin (`apps/admin`) needs:
 - `Notification` — user, channel, type, status, sentAt
 - `CampaignBlast` — segment, channel, message, scheduledAt, status
 - `BlogPost` — title, slug, content, language, metaTitle, metaDescription
-- `FranchiseEnquiry` — name, email, phone, city (free-form "City / Country"), businessName, source, message, status (new/contacted/closed), adminNotes. Public `POST /api/franchise-enquiries` (storefront `/become-a-distributor` form, rate-limited 5/hour per IP); admin list/update at `/api/admin/franchise-enquiries`, shown in admin under "Franchise enquiries"
+- `FranchiseEnquiry` — name, email, phone, country, city (searchable dropdowns from GeoNames data, `apps/web/scripts/build-geo-data.mjs`; city also accepts typed text for unlisted towns; older enquiries have no country and a free-form "City / Country" in city), businessName, source, message, status (new/contacted/closed), adminNotes. Public `POST /api/franchise-enquiries` (storefront `/become-a-distributor` form, rate-limited 5/hour per IP); admin list/update at `/api/admin/franchise-enquiries`, shown in admin under "Franchise enquiries"

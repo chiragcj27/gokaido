@@ -44,7 +44,7 @@ export default function FounderNote() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="relative isolate flex flex-col items-center overflow-hidden px-4 py-14 lg:aspect-1600/760 lg:px-0 lg:pt-[6%] lg:pb-0">
+    <section className="relative isolate flex flex-col items-center overflow-hidden px-4 py-14 lg:px-0 lg:pt-[6%] lg:pb-[3%] xl:aspect-1600/760">
       <Image src="/about/ty_bg.png" alt="" fill sizes="100vw" className="-z-10 object-cover" />
 
       <h2 className="m-0 text-center font-sans text-[clamp(1.5rem,2.25vw,2.25rem)] leading-tight font-bold text-red uppercase">
@@ -56,7 +56,7 @@ export default function FounderNote() {
         onClick={() => setOpen((o) => !o)}
         aria-pressed={open}
         aria-label={open ? "Close the founder's note" : "Open the founder's note"}
-        className="@container mt-8 w-full max-w-xl cursor-pointer border-0 bg-transparent p-0 text-left perspective-[2000px] lg:mt-[3.2%] lg:w-[51%] lg:max-w-none"
+        className="@container mt-8 w-full max-w-xl cursor-pointer border-0 bg-transparent p-0 text-left perspective-[2000px] lg:mt-[3.2%] lg:w-[60%] lg:max-w-none"
       >
         {/* Both faces share one grid cell, so the card is as tall as the aspect ratio or the
             letter needs, whichever is more. */}
@@ -75,20 +75,20 @@ export default function FounderNote() {
                 src="/about/founder-note-front.jpg"
                 alt=""
                 fill
-                sizes="(min-width: 1024px) 51vw, (min-width: 640px) 576px, 200vw"
+                sizes="(min-width: 1024px) 60vw, (min-width: 640px) 576px, 200vw"
                 className="object-cover"
               />
             </div>
           </div>
           <div
             aria-hidden
-            className="relative flex rotate-y-180 flex-col justify-center px-[8%] py-[10%] text-center font-sans text-[clamp(12px,1.35cqw,22px)] leading-[1.75] font-medium text-paper backface-hidden [grid-area:1/1] sm:px-[17%] sm:py-[6%] sm:leading-[1.9] lg:leading-[2.1]"
+            className="relative flex rotate-y-180 flex-col justify-center px-[8%] py-[10%] text-center font-sans text-[clamp(14px,1.75cqw,24px)] leading-[1.75] font-medium text-paper backface-hidden [grid-area:1/1] sm:px-[14%] sm:py-[4%]"
           >
             <Image
               src="/about/founder-note-letter-bg.jpg"
               alt=""
               fill
-              sizes="(min-width: 1024px) 51vw, 576px"
+              sizes="(min-width: 1024px) 60vw, 576px"
               className="-z-10 object-cover"
             />
             <Letter />

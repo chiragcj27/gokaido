@@ -14,7 +14,9 @@ export const createFranchiseEnquirySchema = z.object({
       const digits = v.replace(/\D/g, "").length;
       return digits >= 7 && digits <= 15;
     }, "Enter a valid phone number"),
-  city: z.string({ error: "City / country is required" }).trim().min(1, "City / country is required").max(120),
+  country: z.string({ error: "Country is required" }).trim().min(1, "Country is required").max(120),
+  // Not checked against the storefront's list: towns that aren't listed can be typed in.
+  city: z.string({ error: "City is required" }).trim().min(1, "City is required").max(120),
   businessName: z.string({ error: "Business name is required" }).trim().min(1, "Business name is required").max(160),
   // "" = the dropdown was left on its placeholder.
   source: z.union([z.enum(FRANCHISE_ENQUIRY_SOURCES), z.literal("")], { error: "Invalid option" }).optional(),

@@ -1,0 +1,4 @@
+City and country names in this directory are derived from GeoNames
+(https://www.geonames.org), licensed under CC BY 4.0
+(https://creativecommons.org/licenses/by/4.0/). Filtered and reformatted by
+apps/web/scripts/build-geo-data.mjs.
