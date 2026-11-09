@@ -42,6 +42,12 @@ body {
   overflow-x: clip;
 }
 
+/* Full-viewport banners lock to the screen when scrolled near. Proximity, not mandatory, so
+   the rest of the page scrolls freely. Only applies on pages that have such a section. */
+html:has([data-snap-section]) {
+  scroll-snap-type: y proximity;
+}
+
 /* Product page, mobile: the Add to Bag bar is fixed to the bottom of the viewport, so reserve
    its height (12px top pad + 40px row + bottom pad/safe area) at the end of the page; otherwise
    the last row of the footer would sit permanently behind it. */

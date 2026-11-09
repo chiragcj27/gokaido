@@ -260,9 +260,12 @@ export default function UnifyKits({ categories, backgroundUrl, mobileBackgroundU
   }, [categories.length]);
 
   return (
-        // Phones: 3/4 of the screen, heading and ring stacked as one group and
-    // centred vertically (desktop keeps the full-screen absolute layout).
-    <section ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-ink text-paper max-md:flex max-md:h-[75svh] max-md:touch-pan-y max-md:select-none max-md:flex-col max-md:justify-center max-md:gap-[8vw]">
+    // Full screen at every width. h-screen (100vh) is the phone's large
+    // viewport, so it still fills once the URL bar has collapsed on the way
+    // down the page; 100svh would leave a strip of the next section showing.
+    // Phones: heading and ring stacked as one group and centred vertically
+    // (desktop keeps the absolute layout).
+    <section ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-ink text-paper max-md:flex max-md:touch-pan-y max-md:select-none max-md:flex-col max-md:justify-center max-md:gap-[8vw]">
       {backgroundUrl && (
         <Image
           src={backgroundUrl}

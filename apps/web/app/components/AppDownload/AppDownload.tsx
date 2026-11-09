@@ -5,10 +5,15 @@ export interface AppDownloadProps {
   appStoreUrl: string;
 }
 
-// Native size of /app-download-bg.png — the aspect ratio keeps the overlaid copy and
-// badges pinned to the same spot beside the phones at every width.
+// Native size of /app-download-bg.png, now used only for the mobile crop below.
 const IMG_W = 3200;
 const IMG_H = 1816;
+
+// /app-download-mascot.png is the desktop art (mascot, phones, belt, rock), trimmed
+// to its content on black. The belt runs off its right edge, so it sits flush right
+// and that edge is faded once the capped container stops reaching the viewport edge.
+const DESKTOP_ART_W = 1200;
+const DESKTOP_ART_H = 515;
 
 // /gokaido-wordmark.png is the GOKAIDO wordmark from the footer logo (2718×600).
 const WORDMARK_W = 2718;
@@ -34,11 +39,10 @@ function StoreBadges({ playStoreUrl, appStoreUrl, className }: AppDownloadProps 
   );
 }
 
-// The banner art is one flat PNG (phones, belt, rock); its left half is plain
-// black, and the copy + store badges are laid out over it. Sizes are in cqw so
-// everything scales with the image. Below `md` the image is too small for
-// readable overlaid copy, so the copy sits above a cropped close-up of the
-// phones, with the badges underneath.
+// On desktop the copy + store badges sit on the left with the banner art to their
+// right. Sizes are in cqw so everything scales together. Below `md` there's no room
+// for both side by side, so the copy sits above a cropped close-up of the phones,
+// with the badges underneath.
 // Store URLs come in as props — placeholders until the real links are supplied.
 export default function AppDownload({ playStoreUrl, appStoreUrl }: AppDownloadProps) {
   const copy = (
@@ -70,14 +74,15 @@ export default function AppDownload({ playStoreUrl, appStoreUrl }: AppDownloadPr
     <section className="relative w-full bg-black">
       <div
         className="relative mx-auto hidden w-full max-w-[1600px] md:block"
-        style={{ aspectRatio: `${IMG_W} / ${IMG_H}`, containerType: "inline-size" }}
+        style={{ aspectRatio: "100 / 46", containerType: "inline-size" }}
       >
         <Image
-          src="/app-download-bg.png"
-          alt="The Gokaido app on three phones"
-          fill
-          sizes="(min-width: 1600px) 1600px, 100vw"
-          className="object-contain"
+          src="/app-download-mascot.png"
+          alt="The Gokaido mascot beside the Gokaido app on three phones"
+          width={DESKTOP_ART_W}
+          height={DESKTOP_ART_H}
+          sizes="(min-width: 1600px) 960px, 60vw"
+          className="absolute top-1/2 right-0 h-auto w-[60cqw] -translate-y-1/2 min-[1600px]:mask-[linear-gradient(to_right,#000_96%,transparent)]"
         />
 
         <div className="absolute top-1/2 left-[5%] -translate-y-1/2">

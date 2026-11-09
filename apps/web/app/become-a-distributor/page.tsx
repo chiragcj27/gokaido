@@ -25,7 +25,7 @@ export default async function BecomeADistributorPage() {
       </section>
 
       <section className="mt-[20%] px-4 sm:px-15 lg:px-20">
-        <RevealText className="m-0 mx-auto max-w-290 font-heading text-xl leading-snug font-normal text-paper/50 sm:text-3xl lg:text-5xl [&_em]:text-red [&_em]:not-italic">
+        <RevealText className="m-0 mx-auto max-w-290 text-center font-heading text-xl leading-snug font-normal text-paper/50 sm:text-3xl lg:text-5xl [&_em]:text-red [&_em]:not-italic">
           To become the <em>most trusted</em> and <em>technologically advanced</em> martial arts brand, bridging{" "}
           <em>tradition</em> with <em>innovation</em> and supporting the growth of the global martial arts community.
         </RevealText>

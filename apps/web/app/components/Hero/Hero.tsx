@@ -39,7 +39,7 @@ function syncAudio(main: HTMLVideoElement, alt: HTMLVideoElement | null, muted: 
 
 /**
  * Hero: "MADE TO CHANGE THE [video] GAME", where the video starts in a small
- * rounded slot mid-headline and morphs into a full-bleed reel as you scroll.
+ * square-cornered slot mid-headline and morphs into a full-bleed reel as you scroll.
  * Modeled on upsunday.co's hero — structurally, not just visually.
  *
  * THE KEY IDEA (this is what an earlier version of this component got wrong):
@@ -78,9 +78,9 @@ function syncAudio(main: HTMLVideoElement, alt: HTMLVideoElement | null, muted: 
  * FADE_FROM_ASPECT. Both videos sit in the same clipped wrapper, so they
  * share the one morphing rect; the vertical one just fades in on top.
  *
- * The scroll-indicator chevron is baked into `backgroundUrl` rather than
- * being its own element, so it can't animate independently — it just gets
- * covered as the video grows. Make it a real element if that changes.
+ * On md+ the scroll-indicator chevron is baked into `backgroundUrl` rather
+ * than being its own element, so it can't animate independently — it just
+ * gets covered as the video grows. Phones draw their own under the slot.
  *
  * `showcaseImages` (the MADE/TO card) are static product tiles that scroll
  * normally — no morph, no GL, they're just images in the headline row.
@@ -259,7 +259,6 @@ export default function Hero({
       const a = (phone.matches ? mobileSlot! : slot!).getBoundingClientRect();
       const b = card!.getBoundingClientRect();
       const t = morph.t;
-      const radius = lerp(16, 0, t);
 
       // Straight lerp of the two rects. On the GL path this is only used for
       // culling — the shader does its own PER-VERTEX interpolation, which is
@@ -284,7 +283,7 @@ export default function Hero({
           { x: a.left, y: a.top, width: a.width, height: a.height },
           { x: b.left, y: b.top, width: b.width, height: b.height },
           t,
-          radius
+          0 // square corners throughout the morph
         );
         glRenderer!.render();
       } else if (offScreen) {
@@ -298,7 +297,6 @@ export default function Hero({
         videoWrap!.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         videoWrap!.style.width = `${w}px`;
         videoWrap!.style.height = `${h}px`;
-        videoWrap!.style.borderRadius = `${radius}px`;
 
         if (crossfade) {
           // Smoothstep over the aspect window: eases in and out of the swap
@@ -439,12 +437,12 @@ export default function Hero({
                   is painted over it by the fixed layer below. The red box is
                   part of the headline, not the video: it stays put when the
                   video morphs away. Outline (drawn outside the box) so the
-                  video, painted exactly over the box, doesn't cover it;
-                  radius matches the video's 16px start radius. */}
+                  video, painted exactly over the box, doesn't cover it.
+                  Square corners, same as the video. */}
               <div
                 ref={slotRef}
                 aria-hidden="true"
-                className="hidden h-[9vw] w-[13vw] shrink-0 rounded-2xl outline-solid outline-[3px] outline-[#8D1518] md:block"
+                className="hidden h-[9vw] w-[13vw] shrink-0 outline-solid outline-[3px] outline-[#8D1518] md:block"
               />
               <span className="shimmer-text" style={{ animationDelay: "0.48s" }}>
                 Game
@@ -455,8 +453,28 @@ export default function Hero({
             <div
               ref={mobileSlotRef}
               aria-hidden="true"
-              className="mt-[8vw] aspect-video w-[64vw] shrink-0 rounded-2xl outline-solid outline-[3px] outline-[#8D1518] md:hidden"
+              className="mt-[8vw] aspect-video w-[64vw] shrink-0 outline-solid outline-[3px] outline-[#8D1518] md:hidden"
             />
+            {/* Phones' scroll cue, just under the slot. Absolute so it doesn't
+                join the centred column and push the headline and slot up; the
+                video covers it as it grows. */}
+            <svg
+              viewBox="0 0 40 31"
+              aria-hidden="true"
+              className="absolute left-1/2 top-full mt-[6.5vw] w-[7.5vw] -translate-x-1/2 md:hidden"
+            >
+              <defs>
+                <linearGradient id="hero-scroll-arrows" x1="0" y1="0" x2="40" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="#F01C28" />
+                  <stop offset="0.5" stopColor="#8F0000" />
+                  <stop offset="1" stopColor="#F01C28" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M0.5 0.5 20 17 39.5 0.5 20 22ZM7.5 16 20 26 32.5 16 20 31Z"
+                fill="url(#hero-scroll-arrows)"
+              />
+            </svg>
           </div>
         </section>
 

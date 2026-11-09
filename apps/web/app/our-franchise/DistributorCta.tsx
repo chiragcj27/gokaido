@@ -9,17 +9,27 @@ export default function DistributorCta() {
   return (
     <section
       aria-labelledby="distributor-cta-title"
-      className="relative mt-[clamp(5rem,13vw,12.5rem)] flex min-h-[22rem] items-center justify-center overflow-hidden px-4 py-12 sm:aspect-1536/630 sm:min-h-0"
+      data-snap-section
+      className="relative mt-[clamp(5rem,13vw,12.5rem)] flex min-h-svh snap-start items-center justify-center overflow-hidden px-4 py-12"
     >
       <Image
         src="/our-franchise/cta-bg.png"
         alt=""
         fill
-        sizes="(min-width: 1536px) 1536px, 100vw"
-        className="object-cover"
+        // The photo covers a full-viewport section, so on anything narrower than
+        // its own ratio (1808/870 ≈ 2.08) its width follows the viewport height.
+        sizes="max(100vw, 208vh)"
+        className="object-cover object-left lg:object-center"
       />
       <div aria-hidden className="absolute inset-0 bg-black/20" />
-      {/* Sunburst centred 32% down the banner, as in the design. */}
+      {/* Mobile crop puts white gi behind the text; this band keeps it legible
+          while leaving the headgear above and the gi logo below clear. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-1/2 h-1/2 -translate-y-1/2 bg-linear-to-b from-transparent via-black/75 to-transparent lg:hidden"
+      />
+      {/* Sunburst centred 32% down the banner, as in the design; on mobile it
+          sits behind the vertically centred heading. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- static decorative SVG */}
       <img
         src="/our-franchise/cta-rays.svg"
@@ -27,7 +37,7 @@ export default function DistributorCta() {
         aria-hidden
         width={576}
         height={576}
-        className="pointer-events-none absolute top-[32%] left-1/2 w-[37.5%] max-w-none -translate-x-1/2 -translate-y-1/2 rotate-[133.09deg]"
+        className="pointer-events-none absolute top-1/2 left-1/2 w-[90%] max-w-none lg:top-[32%] lg:w-[37.5%] -translate-x-1/2 -translate-y-1/2 rotate-[133.09deg]"
       />
 
       <div className="relative flex flex-col items-center gap-[clamp(1.5rem,4.5vw,4.3rem)] pt-[3%]">

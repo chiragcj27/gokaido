@@ -19,12 +19,16 @@ export default async function OurFranchisePage() {
   const stores = fetched.length > 0 ? fetched : DUMMY_STORES;
 
   return (
-    <main className="mx-auto max-w-384 overflow-hidden bg-[#100b06] pt-8">
-      <WorldMap />
-      <StoreGallery stores={stores} />
-      <StoreList stores={stores} />
+    // overflow-clip, not hidden: a scroll container here would capture the
+    // banner's scroll-snap and stop it snapping to the viewport.
+    <main className="overflow-clip pt-8">
+      <div className="mx-auto max-w-384">
+        <WorldMap />
+        <StoreGallery stores={stores} />
+        <StoreList stores={stores} />
+      </div>
+      {/* Outside the width cap: this banner fills the whole viewport. */}
       <DistributorCta />
-      <div className="h-[clamp(2.5rem,5.4vw,5.2rem)]" />
     </main>
   );
 }

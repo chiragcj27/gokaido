@@ -134,6 +134,10 @@
   cursor: default;
 }
 
+.mobileOnly {
+  display: none;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
@@ -384,14 +388,19 @@
 }
 
 /*
- * Phones. The desktop layout stacked into one long column (~1400px of
- * mostly-empty rows over a busy mat photo), so here:
- *   - About Us / Available In sit side by side
- *   - Contact becomes a dark glass panel so text stays readable on the photo,
- *     re-ordered address → email/phone → social → app badges
- *   - email/phone become full-width tappable rows instead of tiny inline links
+ * Phones: About Us / Available In and Contact are outlined cards over the mat photo.
+ * Contact reads address -> email -> phone -> social -> app badges, with each value
+ * group in a frosted box.
  */
 @media (max-width: 560px) {
+  .mobileOnly {
+    display: inline;
+  }
+
+  .desktopOnly {
+    display: none;
+  }
+
   .tint {
     background: rgba(0, 0, 0, 0.55);
   }
@@ -406,23 +415,38 @@
   }
 
   .columns {
-    gap: 32px 16px;
+    gap: 24px 16px;
+  }
+
+  .column,
+  .contactColumn {
+    gap: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
   }
 
   .column {
     grid-column: span 6;
-    gap: 16px;
+    gap: 14px;
+    padding: 21px 16px 20px;
   }
 
-  .heading {
+  .contactColumn {
+    padding: 20px 16px 25px;
+  }
+
+  .heading,
+  .appBadgesHeading {
+    font-family: var(--font-montserrat), system-ui, sans-serif;
     font-size: 15px;
-    letter-spacing: 0.08em;
-    color: #fff;
     font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
   }
 
   .list {
-    gap: 12px;
+    gap: 11px;
   }
 
   .list a,
@@ -431,14 +455,8 @@
     font-weight: 400;
   }
 
-  .contactColumn {
-    gap: 16px;
-    padding: 20px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
-    background: rgba(0, 0, 0, 0.6);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+  .contactBody {
+    gap: 13px;
   }
 
   /* Flatten main/aside so their children can be re-ordered as one list. */
@@ -455,49 +473,21 @@
     font-size: 16px;
   }
 
-  .addressLines {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
+  .addressLines,
+  .contactValues {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    font-size: 15px;
+    line-height: 24px;
+    color: #fff;
   }
 
   .contactAside {
     order: 2;
-    gap: 12px;
-  }
-
-  .social {
-    order: 3;
-    gap: 10px;
-  }
-
-  .appBadgesBlock {
-    order: 4;
-    gap: 8px;
-  }
-
-  .socialLink {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-  }
-
-  .socialLink img {
-    width: 18px;
-    height: 18px;
-  }
-
-  .appBadges {
-    gap: 8px;
-  }
-
-  .appBadges a {
-    flex: 1;
-    width: auto;
-    max-width: none;
-  }
-
-  .sep {
-    display: none;
+    gap: 13px;
   }
 
   .contactDetails {
@@ -512,22 +502,65 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.8);
   }
 
   .contactDetails a {
-    display: block;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.06);
     text-decoration: none;
+  }
+
+  .emailValues a {
+    display: block;
     overflow-wrap: anywhere;
+  }
+
+  .phoneValues a {
+    white-space: nowrap;
+  }
+
+  .phoneValues .mobileOnly {
+    margin: 0 4px;
+  }
+
+  .social {
+    order: 3;
+    gap: 10px;
+    margin-top: 7px;
+  }
+
+  .socialLink {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .socialLink img {
+    width: 18px;
+    height: 18px;
+    /* The SVGs are red; this makes the red white and YouTube's white play glyph black. */
+    filter: invert(1) grayscale(1) brightness(10);
+  }
+
+  .appBadgesBlock {
+    order: 4;
+    gap: 7px;
+    margin-top: 8px;
+  }
+
+  .appBadges {
+    gap: 8px;
+  }
+
+  .appBadges a {
+    flex: 1;
+    width: auto;
+    max-width: none;
   }
 
   .bottomBar {
     flex-direction: column;
-    gap: 12px;
-    margin-top: 40px;
+    gap: 13px;
+    margin-top: 8px;
     padding: 20px 16px 28px;
     justify-content: center;
     text-align: center;

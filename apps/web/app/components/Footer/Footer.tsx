@@ -69,7 +69,9 @@ export default function Footer() {
           </div>
 
           <div className={styles.contactColumn} data-name="Contact">
-            <h3 className={styles.heading}>Contact</h3>
+            <h3 className={styles.heading}>
+              Contact<span className={styles.mobileOnly}> Us</span>
+            </h3>
 
             <div className={styles.contactBody}>
               <div className={styles.contactMain}>
@@ -81,7 +83,8 @@ export default function Footer() {
                     J.S.S. Road, Near Majestic Shopping Centre,
                     <br />
                     Mumbai - 400 004
-                    <br />
+                    <span className={styles.mobileOnly}>, </span>
+                    <br className={styles.desktopOnly} />
                     India
                   </div>
                 </address>
@@ -115,19 +118,24 @@ export default function Footer() {
               </div>
 
               <div className={styles.contactAside} data-name="Contact Details">
-                {/* Separators are wrapped so phones can drop them and stack each
-                    address/number as its own tappable row. */}
+                {/* Phones show each value group as one boxed row: emails stacked, numbers
+                    side by side with a "|" instead of the desktop "/". */}
                 <div className={styles.contactDetails}>
                   <strong>Email</strong>
-                  <a href="mailto:gikaido@gmail.com">gikaido@gmail.com</a>
-                  <span className={styles.sep}> / </span>
-                  <a href="mailto:gokaidoorders@gmail.com">gokaidoorders@gmail.com</a>
+                  <div className={`${styles.contactValues} ${styles.emailValues}`}>
+                    <a href="mailto:gikaido@gmail.com">gikaido@gmail.com</a>
+                    <span className={styles.desktopOnly}> / </span>
+                    <a href="mailto:gokaidoorders@gmail.com">gokaidoorders@gmail.com</a>
+                  </div>
                 </div>
                 <div className={styles.contactDetails}>
                   <strong>Mobile No.</strong>
-                  <a href="tel:+912223859074">+91-22-23859074</a>
-                  <span className={styles.sep}> / </span>
-                  <a href="tel:+919820585200">+91-9820585200</a>
+                  <div className={`${styles.contactValues} ${styles.phoneValues}`}>
+                    <a href="tel:+912223859074">+91-22-23859074</a>
+                    <span className={styles.desktopOnly}> / </span>
+                    <span className={styles.mobileOnly}> | </span>
+                    <a href="tel:+919820585200">+91-9820585200</a>
+                  </div>
                 </div>
               </div>
             </div>
