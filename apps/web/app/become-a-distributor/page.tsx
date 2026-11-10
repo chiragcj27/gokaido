@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import ReelShowcase from "../components/ReelShowcase/ReelShowcase";
 import RevealText from "../components/RevealText/RevealText";
-import { DUMMY_REELS, getReels } from "../lib/reels";
 import FranchiseSignup from "./FranchiseSignup";
 import PhotoCollage from "./PhotoCollage";
 import WhyWhatWho from "./WhyWhatWho";
@@ -10,9 +8,7 @@ export const metadata: Metadata = {
   title: "Become a Distributor",
 };
 
-export default async function BecomeADistributorPage() {
-  const reels = await getReels();
-
+export default function BecomeADistributorPage() {
   return (
     <>
     <main className="overflow-hidden pt-16 pb-24 sm:pt-20">
@@ -32,7 +28,6 @@ export default async function BecomeADistributorPage() {
       </section>
     </main>
     <WhyWhatWho />
-    <ReelShowcase reels={reels.length > 0 ? reels : DUMMY_REELS} />
     <FranchiseSignup />
     </>
   );

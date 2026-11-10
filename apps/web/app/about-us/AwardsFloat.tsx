@@ -106,13 +106,12 @@ export default function AwardsFloat() {
   }, []);
 
   return (
-    <section
-      ref={rootRef}
-      className="relative mx-auto grid max-w-360 grid-cols-2 gap-x-6 gap-y-10 overflow-hidden px-4 py-16 sm:block sm:aspect-2000/1192 sm:p-0"
-    >
+    <section ref={rootRef} className="mx-auto w-full max-w-360 px-4 sm:px-15 lg:px-20">
       <h2 className="sr-only">Our Values</h2>
+      {/* Cards are positioned against this inner box, so the scatter sits inside the page gutters and stays centred. */}
+      <div className="relative grid grid-cols-2 gap-x-6 gap-y-10 overflow-hidden py-16 sm:block sm:aspect-2000/1192 sm:py-0">
       {AWARDS.map((a, i) => (
-        <div key={i} data-award className="group sm:absolute sm:w-[14%]">
+        <div key={i} data-award className="group text-center sm:absolute sm:w-[14%]">
           <h3 className="m-0 font-sans text-xl leading-tight font-normal text-paper/55 transition-colors duration-500 group-hover:text-paper sm:text-[clamp(1.25rem,2.1vw,2rem)]">
             {a.title}
           </h3>
@@ -121,6 +120,7 @@ export default function AwardsFloat() {
           </p>
         </div>
       ))}
+      </div>
     </section>
   );
 }

@@ -77,8 +77,8 @@ export default function StatsTrail() {
   }, []);
 
   return (
-    <section ref={rootRef} className="relative isolate mx-auto max-w-360 px-4 py-16 sm:px-15 sm:py-24 lg:px-20">
-      <ul className="relative z-10 m-0 flex list-none flex-col gap-8 p-0 font-heading text-[clamp(2rem,4.4vw,4rem)] leading-none font-extrabold text-red uppercase [text-shadow:0_2px_18px_rgb(0_0_0/0.75)] sm:gap-14">
+    <section ref={rootRef} className="relative isolate mx-auto flex min-h-[70svh] max-w-360 flex-col px-4 py-16 sm:min-h-[clamp(30rem,53vw,47.75rem)] sm:px-15 sm:py-24 lg:px-20">
+      <ul className="relative z-10 m-0 flex flex-1 list-none flex-col justify-between gap-8 p-0 font-heading text-[clamp(2rem,4.4vw,4rem)] leading-none font-extrabold text-red uppercase [text-shadow:0_2px_18px_rgb(0_0_0/0.75)] sm:gap-14">
         <li>
           1975
           <span aria-hidden className="mx-[0.35em] inline-block h-[0.8em] w-0.5 bg-paper/40 align-[-0.05em]" />

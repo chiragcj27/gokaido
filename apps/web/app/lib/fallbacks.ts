@@ -90,3 +90,61 @@ export const DUMMY_STORES: Store[] = (
   directionsUrl: null,
   isHeadOffice: s.isHeadOffice ?? false,
 }));
+
+/**
+ * Placeholder blog posts for `/blogs` while no post is published (or the API is down).
+ * Images reuse existing site photography; copy is filler, not client content.
+ */
+const DUMMY_BLOG_IMAGES = [
+  "/hero/hero.png",
+  "/our-franchise/store-interior.png",
+  "/about/founders.jpg",
+  "/about/founder-note-front.jpg",
+  "/franchise/boardroom.png",
+  "/franchise/storefront.png",
+  "/franchise/office.png",
+];
+
+const DUMMY_BLOG_TITLES = [
+  "Made to Change the Game: Inside Gokaido's New Competition Karate Gi",
+  "How to Choose the Right Karate Gi for Training and Tournaments",
+  "From Mumbai to Mauritius: Gokaido Opens Its Newest Franchise Store",
+  "Five Decades on the Mat: The Story Behind Gokaido Since 1975",
+  "Boxing Gloves 101: Picking the Right Weight for Your Training",
+  "Taekwondo Protective Gear: What Every Beginner Needs",
+  "Caring for Your Gi: Washing, Drying and Storage Tips",
+  "Meet the Athletes: Gokaido-Sponsored Champions of 2026",
+  "Behind the Stitch: How a Gokaido Belt Is Made",
+  "Sizing Guide: Finding the Perfect Fit for Kids' Uniforms",
+  "Hand Wraps vs. Inner Gloves: Which Should You Use?",
+  "Gokaido at the National Karate Championship 2026",
+  "Building Your First Dojo Kit on a Budget",
+];
+
+const DUMMY_BLOG_BODY = [
+  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+  "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+  "Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.",
+].join("\n\n");
+
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+export const DUMMY_BLOG_POSTS = DUMMY_BLOG_TITLES.map((title, i) => {
+  const published = new Date(Date.UTC(2026, 8, 17 - i * 3, 6));
+  return {
+    slug: slugify(title),
+    title,
+    excerpt: null,
+    image: DUMMY_BLOG_IMAGES[i % DUMMY_BLOG_IMAGES.length],
+    author: "Team Gokaido",
+    tags: [],
+    publishedAt: published.toISOString(),
+    content: DUMMY_BLOG_BODY,
+    metaTitle: null,
+    metaDescription: null,
+  };
+});

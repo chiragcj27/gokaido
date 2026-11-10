@@ -263,9 +263,11 @@ export default function UnifyKits({ categories, backgroundUrl, mobileBackgroundU
     // Full screen at every width. h-screen (100vh) is the phone's large
     // viewport, so it still fills once the URL bar has collapsed on the way
     // down the page; 100svh would leave a strip of the next section showing.
-    // Phones: heading and ring stacked as one group and centred vertically
-    // (desktop keeps the absolute layout).
-    <section ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-ink text-paper max-md:flex max-md:touch-pan-y max-md:select-none max-md:flex-col max-md:justify-center max-md:gap-[8vw]">
+    // Phones: a column of [heading area, ring, spacer]. The two flex-1 areas
+    // split the leftover height equally, so the ring sits at the vertical
+    // centre and the heading sits centred in the space above it (desktop
+    // keeps the absolute layout).
+    <section ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-ink text-paper max-md:flex max-md:touch-pan-y max-md:select-none max-md:flex-col">
       {backgroundUrl && (
         <Image
           src={backgroundUrl}
@@ -279,9 +281,14 @@ export default function UnifyKits({ categories, backgroundUrl, mobileBackgroundU
         <Image src={mobileBackgroundUrl} alt="" fill sizes="100vw" className="object-cover md:hidden" />
       )}
 
-      <h2 className="absolute inset-x-0 top-[8%] z-10 text-center font-heading text-[6vw] font-semibold uppercase leading-none tracking-tight max-md:relative max-md:top-auto md:text-[4.6vw]">
-        The World of Gokaido
-      </h2>
+      {/* `md:contents` drops this wrapper on desktop so the h2 stays absolute
+          against the section; on phones it's the area above the ring. */}
+      <div className="md:contents max-md:flex max-md:flex-1 max-md:items-center max-md:justify-center">
+        <h2 className="absolute inset-x-0 top-[8%] z-10 text-center font-heading font-semibold uppercase leading-none tracking-tight max-md:relative max-md:top-auto max-md:text-[32px] max-md:font-bold max-md:leading-[1.3] max-md:[text-shadow:0_0_4px_rgba(0,0,0,0.9),0_2px_18px_rgba(0,0,0,0.95)] md:text-[4.6vw]">
+          {/* Two lines on phones: "The World" / "of Gokaido". */}
+          The World<br className="md:hidden" /> of Gokaido
+        </h2>
+      </div>
 
       {/* Ring stage. Cards are absolutely centred here and moved purely by
           the transform written in render(); initial styles below only cover
@@ -323,6 +330,9 @@ export default function UnifyKits({ categories, backgroundUrl, mobileBackgroundU
           </Link>
         ))}
       </div>
+
+      {/* Phones: matches the heading area's height so the ring stays centred. */}
+      <div aria-hidden className="max-md:flex-1 md:hidden" />
     </section>
   );
 }
