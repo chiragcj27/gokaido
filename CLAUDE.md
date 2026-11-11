@@ -152,6 +152,16 @@ PATCH /api/admin/orders/:id         → admin: tracking info + status transition
 - **Storefront** (`/search`): shows the API's inferred filters as "Showing: Red · Under ₹500" with a "Search without filters" link (`?ai=0` → API `interpret=false`), and a "closest products" notice when `search.relaxed`.
 - **Embeddings stay fresh** automatically: product create/update/bulk upload re-embed (awaited, never fails the save; skipped when the text hash is unchanged). `pnpm --filter @gokaido/api search:backfill` catches up anything missed — run it after changing the embedding model.
 
+## Blog
+
+Storefront `/blogs` (listing laid out per the design: featured + 3 highlights + "Latest" rows, 19 per page) and `/blogs/{slug}`, linked from the footer. Data from `GET /api/blog-posts` / `/:slug` (published and `publishedAt <= now` only, `?lang=` picks the language with English fallback), cached 5 min (tag `blog-posts`), dummy fallback per `DUMMY_DATA.md`.
+
+Admin → **Blog** (`apps/admin/app/(dashboard)/blog`, `components/BlogPostForm.tsx`): per-language tabs (EN required, HI/MR/TA optional and fall back to EN), slug, cover image, SEO meta, tags, sport, draft / publish / schedule (future `publishedAt`). Admin API: `GET /api/blog-posts/admin[/:id]`, `POST /api/blog-posts`, `PATCH|DELETE /api/blog-posts/:id`.
+
+**Body is HTML**, edited in `components/BlogEditor/` (Tiptap 3): visual mode (headings, font family/size/weight/line-height, colours, alignment, lists, quotes, links, S3 image upload with resize + left/centre/right/full alignment, YouTube, tables) and an **HTML mode** (raw source + sandboxed live preview) for free-form layouts with inline styles. Posts containing markup the visual editor can't hold (divs/sections/figures) open in HTML mode, since switching them to visual would drop it. Fonts are referenced as `var(--font-montserrat)` / `var(--font-roboto)` because next/font hashes family names; admin loads both fonts under the same variables.
+
+**The API sanitizes every body on save** (`apps/api/src/utils/sanitizeBlogHtml.ts`, `sanitize-html`): no scripts/`<style>`/event handlers/`javascript:`, inline CSS restricted to a property allowlist without `url()` or `position`, iframes only from YouTube/Vimeo. The storefront renders the stored HTML as-is inside `.blog-content`, so that sanitizer is the XSS boundary — widen it deliberately. `.blog-content` styles exist twice and must stay in sync: `apps/web/app/globals.css` and `apps/admin/components/BlogEditor/blogContentCss.ts`.
+
 ## Notifications (MSG91)
 
 All SMS, WhatsApp and email go through **MSG91** (replaced Twilio for OTP and Resend for email), with one `MSG91_AUTH_KEY`. With the key unset, sends are logged to the console instead (local dev).

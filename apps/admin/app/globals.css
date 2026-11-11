@@ -834,3 +834,243 @@ a.stat-card.stat-link:hover {
   align-items: center;
   gap: 0.75rem;
 }
+
+/* Blog post editor */
+.blog-form {
+  max-width: 1100px;
+}
+.field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.lang-tabs,
+.rte-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+.lang-tabs button.is-active,
+.rte-tabs button.is-active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface);
+}
+.rte {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.5rem;
+}
+.rte-modebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.rte-modebar .rte-tabs {
+  margin-bottom: 0.5rem;
+}
+.rte-modebar .rte-tabs button {
+  padding: 0.3rem 0.8rem;
+}
+.rte-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.rte-group {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.rte-context {
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--accent);
+}
+.rte-context-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-right: 0.25rem;
+}
+.rte-btn {
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.45rem;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.rte-btn.is-active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface);
+}
+select.rte-select {
+  width: auto;
+  height: 2rem;
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+}
+select.rte-select-sm {
+  max-width: 4.5rem;
+}
+.rte-color {
+  position: relative;
+}
+.rte-color-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+}
+.rte-swatches {
+  display: flex;
+  gap: 0.3rem;
+}
+.rte-swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.rte-color-custom {
+  flex-direction: row;
+  align-items: center;
+}
+.rte-color-custom input[type="color"] {
+  width: 2.5rem;
+  height: 1.75rem;
+  padding: 0;
+}
+/* The canvas mirrors the storefront article (dark page, 48rem column) — see blogContentCss.ts. */
+.rte-stage {
+  background: #050505;
+  border-radius: var(--radius);
+  padding: 2rem 1rem;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+.rte-stage .rte-canvas {
+  max-width: 48rem;
+  min-height: 24rem;
+  margin: 0 auto;
+  outline: none;
+}
+.rte-stage .rte-canvas::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+.rte-canvas p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: rgb(245 245 245 / 0.35);
+  pointer-events: none;
+}
+.rte-canvas img.ProseMirror-selectednode,
+.rte-canvas [data-resize-container].ProseMirror-selectednode {
+  outline: 2px solid #f0ad3d;
+}
+/* Resizable images: the spacing that .blog-content gives <img> moves to the outer container, so
+   the image fills its wrapper exactly and the corner handles sit on the image's real corners. */
+.rte-canvas [data-resize-container] {
+  margin: 1.5em 0;
+}
+.rte-canvas [data-resize-wrapper] {
+  max-width: 100%;
+  line-height: 0;
+}
+.rte-canvas [data-resize-wrapper] > img {
+  display: block;
+  margin: 0 !important;
+  float: none !important;
+  max-width: 100% !important;
+  cursor: pointer;
+}
+.rte-canvas [data-resize-handle] {
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  margin: -7px;
+  background: #f0ad3d;
+  border: 2px solid #050505;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.rte-canvas [data-resize-container]:hover [data-resize-handle],
+.rte-canvas [data-resize-container].ProseMirror-selectednode [data-resize-handle],
+.rte-canvas [data-resize-container][data-resize-state="true"] [data-resize-handle] {
+  opacity: 1;
+}
+.rte-canvas [data-resize-handle="top-left"],
+.rte-canvas [data-resize-handle="bottom-right"] {
+  cursor: nwse-resize;
+}
+.rte-canvas [data-resize-handle="top-right"],
+.rte-canvas [data-resize-handle="bottom-left"] {
+  cursor: nesw-resize;
+}
+.rte-canvas [data-resize-container][data-resize-state="true"] img {
+  outline: 2px dashed #f0ad3d;
+}
+.rte-canvas .selectedCell {
+  background: rgb(240 173 61 / 0.15);
+}
+.rte-html {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.rte-html-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.rte-source {
+  flex: 1;
+  min-height: 32rem;
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre;
+  tab-size: 2;
+}
+.rte-preview {
+  width: 100%;
+  min-height: 36rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #050505;
+}
+/* Resizable images sit in a flex container in the editor; mirror their saved alignment on it. */
+.rte-canvas [data-resize-container]:has(img[style*="margin-left: auto"]) {
+  justify-content: center;
+}
+.rte-canvas [data-resize-container]:has(img[style*="float: right"]) {
+  justify-content: flex-end;
+}
+.rte-canvas [data-resize-container]:has(img[style*="width: 100%"]) [data-resize-wrapper] {
+  width: 100%;
+}

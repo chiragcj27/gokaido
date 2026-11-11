@@ -55,9 +55,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     mainEntityOfPage: absolute(`/blogs/${post.slug}`),
   };
 
-  // Content is stored as plain text; blank lines separate paragraphs.
-  const paragraphs = post.content.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
-
   return (
     <main className="pb-16 pt-6 lg:pt-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
@@ -82,13 +79,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
         )}
 
-        <div className="mx-auto mt-8 max-w-3xl space-y-5 px-4 text-base leading-relaxed text-paper/90 sm:px-8 lg:mt-12 lg:text-lg">
-          {paragraphs.map((p, i) => (
-            <p key={i} className="whitespace-pre-line">
-              {p}
-            </p>
-          ))}
-        </div>
+        {/* HTML authored in the admin editor; the API sanitizes it on save (utils/sanitizeBlogHtml.ts). */}
+        <div
+          className="blog-content mx-auto mt-8 max-w-3xl px-4 sm:px-8 lg:mt-12"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
 
         {post.tags.length > 0 && (
           <ul className="mx-auto mt-10 flex max-w-3xl flex-wrap gap-2 px-4 sm:px-8">

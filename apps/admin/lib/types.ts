@@ -291,3 +291,26 @@ export interface AttentionCounts {
   pendingReviews: number;
   newEnquiries: number;
 }
+
+export type BlogLanguage = "en" | "hi" | "mr" | "ta";
+export type Localized = Partial<Record<BlogLanguage, string>>;
+
+export interface BlogPostListItem {
+  _id: string;
+  title: Localized;
+  slug: string;
+  featuredImage?: string;
+  author: string;
+  tags: string[];
+  isPublished: boolean;
+  publishedAt?: string;
+  updatedAt: string;
+}
+
+export interface BlogPost extends BlogPostListItem {
+  content: Localized;
+  excerpt?: Localized;
+  metaTitle?: Localized;
+  metaDescription?: Localized;
+  sport?: string;
+}

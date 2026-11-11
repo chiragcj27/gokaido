@@ -22,7 +22,7 @@ These are wired to the real source; the dummy only shows when the API is unreach
 | `lib/reels.ts` — `DUMMY_REELS` | Admin → Reels | No reels |
 | Hero `/hero/*` files | Admin → Homepage hero uploads | Not uploaded |
 | Hero mobile vertical reel `/hero/hero-reel-vertical.mp4` — a low-res centre crop of `hero-reel.mp4`, for testing the phone crossfade only | Admin → Homepage → Hero video (mobile, vertical); needs a real 9:16 cut from the client | No vertical video uploaded **and** no hero video uploaded |
-| `/blogs` list + `/blogs/{slug}` (`blogs/page.tsx`, `blogs/[slug]/page.tsx`) | `getBlogPosts()` / `getBlogPost()` → `GET /api/blog-posts`, `GET /api/blog-posts/:slug` (published `BlogPost`s). **No admin blog editor yet** — posts can only be added directly in Mongo until it's built | No published post, or API down — `DUMMY_BLOG_POSTS`: 13 filler titles, lorem body, existing site photos reused. Dummy slugs 404 once any real post exists |
+| `/blogs` list + `/blogs/{slug}` (`blogs/page.tsx`, `blogs/[slug]/page.tsx`) | Admin → Blog (`GET /api/blog-posts`, `GET /api/blog-posts/:slug` — published posts only) | No published post, or API down — `DUMMY_BLOG_POSTS`: 13 filler titles, lorem HTML body, existing site photos reused. Dummy slugs 404 once any real post exists |
 | `lib/pdp/defaults.ts` — `DEFAULT_SIZE_GUIDE` | Subcategory `sizeGuide` in admin | Subcategory has none |
 
 ## Product listings

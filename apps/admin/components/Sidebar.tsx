@@ -40,6 +40,7 @@ const NAV_GROUPS: { title?: string; items: NavItem[] }[] = [
       { href: "/homepage", label: "Homepage" },
       { href: "/reels", label: "Reels" },
       { href: "/stores", label: "Stores" },
+      { href: "/blog", label: "Blog" },
       { href: "/assets", label: "Asset store" },
     ],
   },

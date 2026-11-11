@@ -121,11 +121,14 @@ const DUMMY_BLOG_TITLES = [
   "Building Your First Dojo Kit on a Budget",
 ];
 
-const DUMMY_BLOG_BODY = [
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-  "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-  "Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.",
-].join("\n\n");
+const DUMMY_BLOG_BODY = `
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h2>Lorem ipsum dolor</h2>
+<p>Duis aute irure dolor in <strong>reprehenderit in voluptate</strong> velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+<ul><li>Curabitur pretium tincidunt lacus</li><li>Nulla gravida orci a odio</li><li>Nullam varius, turpis et commodo pharetra</li></ul>
+<blockquote><p>Integer in mauris eu nibh euismod gravida.</p></blockquote>
+<p>Est eros bibendum elit, nec luctus magna felis sollicitudin mauris.</p>
+`.trim();
 
 const slugify = (s: string) =>
   s
