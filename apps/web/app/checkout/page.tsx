@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import CheckoutStepper, { type CheckoutStep } from "../components/Checkout/CheckoutStepper";
 import CheckoutSummary from "../components/Checkout/CheckoutSummary";
@@ -40,6 +41,13 @@ export default function CheckoutPage() {
   const [addressChoice, setAddressChoice] = useState<AddressChoice>("new");
   const [saveAddress, setSaveAddress] = useState(true);
   const isLoggedIn = authStatus === "authenticated";
+  const router = useRouter();
+
+  // Checkout requires an account. Guests (direct link, "Try again" from /checkout/failed, …)
+  // are sent to Login / Sign Up and come back here once signed in via `?next=`.
+  useEffect(() => {
+    if (authStatus === "guest") router.replace(`/account?next=${encodeURIComponent("/checkout")}`);
+  }, [authStatus, router]);
 
   // Prefill contact details for a logged-in customer (name/mobile can't change after registration anyway).
   useEffect(() => {
@@ -136,6 +144,16 @@ export default function CheckoutPage() {
     if (currentIndex > 0) goToStep(STEP_ORDER[currentIndex - 1]);
   };
 
+  if (authStatus !== "authenticated") {
+    return (
+      <main className="mx-auto flex max-w-360 flex-col px-4 pt-8 pb-24 sm:px-6 lg:px-8">
+        <p className="m-0 py-24 text-center font-sans text-sm text-paper/40">
+          {authStatus === "guest" ? "Please log in or sign up to check out — redirecting…" : "Loading…"}
+        </p>
+      </main>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <main className="mx-auto flex max-w-360 flex-col gap-16 px-4 pt-8 pb-24 sm:px-6 lg:px-8">
@@ -162,8 +180,7 @@ export default function CheckoutPage() {
         : "Place Order & Pay";
   const ctaDisabled =
     submitting ||
-    authStatus === "loading" ||
-    (isLoggedIn && savedAddresses === null) ||
+    savedAddresses === null ||
     (step === "customer" && !usingSavedAddress && !isCustomerInfoComplete(customerInfo, { requireEmail: !isLoggedIn }));
 
   return (
@@ -211,9 +228,8 @@ export default function CheckoutPage() {
           <CustomerInfoStep
             value={customerInfo}
             onChange={setCustomerInfo}
-            // Only a confirmed guest gets the guest form; while the session is still being restored
-            // this stays null ("loading") so a returning customer doesn't see the guest form flash first.
-            savedAddresses={authStatus === "guest" ? undefined : savedAddresses}
+            // null while saved addresses are loading (guests never reach this — see the guard above).
+            savedAddresses={savedAddresses}
             addressChoice={addressChoice}
             onAddressChoice={(choice) => chooseAddress(choice)}
             saveAddress={saveAddress}

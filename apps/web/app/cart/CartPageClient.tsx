@@ -6,11 +6,13 @@ import { useMemo } from "react";
 import CartItem from "../components/CartItem/CartItem";
 import OrderSummary from "../components/OrderSummary/OrderSummary";
 import RelatedProducts from "../components/RelatedProducts/RelatedProducts";
+import { useAuth } from "../lib/auth/authStore";
 import { useCart } from "../lib/cartStore";
 import type { RelatedProduct } from "../lib/pdp/types";
 
 export default function CartPageClient({ recommended }: { recommended: RelatedProduct[] }) {
   const { items, updateQuantity, removeItem } = useCart();
+  const { status: authStatus } = useAuth();
   const router = useRouter();
 
   const itemCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
@@ -29,8 +31,12 @@ export default function CartPageClient({ recommended }: { recommended: RelatedPr
     console.log(`Applying discount code ${code}`);
   };
 
+  // Checkout requires an account: guests go to Login / Sign Up first and are sent
+  // back to /checkout once signed in (AccountPageClient honours `?next=`). The
+  // bag lives in localStorage, so it survives the detour untouched.
   const handleCheckout = () => {
-    router.push("/checkout");
+    // While the session is still being restored ("loading"), go to /checkout and let its own guard decide.
+    router.push(authStatus === "guest" ? `/account?next=${encodeURIComponent("/checkout")}` : "/checkout");
   };
 
   return (

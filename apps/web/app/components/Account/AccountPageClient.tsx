@@ -109,7 +109,14 @@ export default function AccountPageClient() {
         <p className="m-0 py-24 text-center font-sans text-sm text-paper/40">Loading…</p>
       ) : status === "guest" ? (
         <>
-          <PageHeading title="Login / Sign Up" subtitle="Sign in to your account or create a new GOKAIDO account." />
+          <PageHeading
+            title="Login / Sign Up"
+            subtitle={
+              returnTo?.startsWith("/checkout")
+                ? "Log in or create a GOKAIDO account to continue to checkout. Your bag is saved."
+                : "Sign in to your account or create a new GOKAIDO account."
+            }
+          />
           <LoginSignup />
         </>
       ) : status === "authenticated" && returnTo && prevStatus.current === "guest" ? (
