@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { ApiRequestError, useAuth, type AuthUser } from "../../lib/auth/authStore";
 import type { Address } from "./AddressesTab";
-import { ErrorText, Field, Panel, PanelTitle, initials, inputClass, outlineButtonClass, splitName } from "./ui";
+import { AddressLines, ErrorText, Field, Panel, PanelTitle, initials, inputClass, panelLinkClass, splitName } from "./ui";
+
+// Figma "Profile": outlined 230px-wide action button.
+const profileButtonClass =
+  "h-12 rounded-md border border-[#2e2e2e] bg-[#0c0c0c] px-6 font-sans text-sm font-semibold text-paper uppercase transition-colors hover:border-white/40 disabled:opacity-50 sm:h-14 sm:min-w-57.5 sm:text-[0.95rem]";
 
 export default function ProfileTab({ onEditAddresses }: { onEditAddresses: () => void }) {
   const { user, setUser, authFetch, logout } = useAuth();
@@ -44,15 +48,15 @@ export default function ProfileTab({ onEditAddresses }: { onEditAddresses: () =>
     <div className="flex flex-col gap-4">
       <Panel>
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             <PanelTitle>Profile</PanelTitle>
-            <div className="flex items-center gap-4">
-              <span className="flex size-14 items-center justify-center rounded-full border border-white/20 font-heading text-sm font-bold text-paper">
+            <div className="flex items-center gap-6 sm:gap-12">
+              <span className="flex size-20 shrink-0 items-center justify-center rounded-full border border-[#2e2e2e] bg-[#0c0c0c] font-sans text-xl font-bold text-paper sm:size-30 sm:text-[1.7rem]">
                 {initials(user.name)}
               </span>
-              <div className="flex flex-col">
-                <span className="font-heading text-sm font-bold text-paper">{user.name}</span>
-                <span className="font-sans text-xs text-paper/50">{user.email || `+91 ${user.mobile}`}</span>
+              <div className="flex min-w-0 flex-col gap-2">
+                <span className="font-heading text-base font-bold text-paper sm:text-xl">{user.name}</span>
+                <span className="font-sans text-sm break-all text-[#b3b3b3] sm:text-lg">{user.email || `+91 ${user.mobile}`}</span>
               </div>
             </div>
           </div>
@@ -65,16 +69,16 @@ export default function ProfileTab({ onEditAddresses }: { onEditAddresses: () =>
                   setEmail(user.email ?? "");
                   setError(null);
                 }}
-                className={outlineButtonClass}
+                className={profileButtonClass}
               >
                 Cancel
               </button>
-              <button type="button" onClick={save} disabled={saving} className={`${outlineButtonClass} border-red bg-red hover:border-red`}>
+              <button type="button" onClick={save} disabled={saving} className={`${profileButtonClass} border-[#c10e12] bg-[#c10e12] hover:border-[#c10e12]`}>
                 {saving ? "Saving…" : "Save"}
               </button>
             </div>
           ) : (
-            <button type="button" onClick={() => setEditing(true)} className={outlineButtonClass}>
+            <button type="button" onClick={() => setEditing(true)} className={profileButtonClass}>
               Edit Profile
             </button>
           )}
@@ -83,7 +87,7 @@ export default function ProfileTab({ onEditAddresses }: { onEditAddresses: () =>
 
       <Panel className="flex flex-col gap-4">
         <PanelTitle>Personal Information</PanelTitle>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-11 gap-y-4 sm:grid-cols-2">
           <Field label="First Name" htmlFor="pf-first">
             <input id="pf-first" value={first} disabled className={inputClass} />
           </Field>
@@ -105,44 +109,34 @@ export default function ProfileTab({ onEditAddresses }: { onEditAddresses: () =>
             <input id="pf-phone" value={`+91 ${user.mobile ?? ""}`} disabled className={inputClass} />
           </Field>
         </div>
-        {editing && <p className="m-0 font-sans text-[0.65rem] text-paper/40">Name and phone number can&apos;t be changed after registration.</p>}
+        {editing && <p className="m-0 font-sans text-xs text-paper/40">Name and phone number can&apos;t be changed after registration.</p>}
         <ErrorText>{error}</ErrorText>
       </Panel>
 
-      <Panel className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
+      <Panel className="flex flex-col gap-4">
+        <div className="flex items-start justify-between">
           <PanelTitle>Default Address</PanelTitle>
-          <button type="button" onClick={onEditAddresses} className="font-heading text-[0.65rem] font-bold tracking-[0.06em] text-red uppercase hover:opacity-80">
+          <button type="button" onClick={onEditAddresses} className={panelLinkClass}>
             {defaultAddress === null ? "Add" : "Edit"}
           </button>
         </div>
         {defaultAddress === undefined ? (
-          <p className="m-0 font-sans text-xs text-paper/40">Loading…</p>
+          <p className="m-0 font-sans text-sm text-paper/40">Loading…</p>
         ) : defaultAddress === null ? (
-          <p className="m-0 font-sans text-xs text-paper/50">No saved address yet.</p>
+          <p className="m-0 font-sans text-sm text-[#c2c2c2]">No saved address yet.</p>
         ) : (
-          <address className="font-sans text-xs leading-relaxed text-paper/70 not-italic">
-            {defaultAddress.name}
-            <br />
-            {defaultAddress.line1}
-            {defaultAddress.line2 && `, ${defaultAddress.line2}`}
-            <br />
-            {defaultAddress.city}, {defaultAddress.state} - {defaultAddress.pincode}
-            <br />
-            India
-            <br />
-            +91 {defaultAddress.mobile}
-          </address>
+          <AddressLines address={defaultAddress} />
         )}
       </Panel>
 
-      <Panel>
+      {/* Figma shows "Change Password"; accounts are OTP-only, so this row signs out instead. */}
+      <Panel className="!border-[#242424] !bg-[#070707] sm:!px-10.5">
         <button type="button" onClick={logout} className="flex w-full items-center justify-between text-left">
-          <span className="flex flex-col gap-1">
+          <span className="flex flex-col gap-4">
             <PanelTitle>Security</PanelTitle>
-            <span className="font-sans text-xs text-paper/50">Log out of this device</span>
+            <span className="font-sans text-sm text-[#c2c2c2] sm:text-lg">Log out of this device</span>
           </span>
-          <span aria-hidden="true" className="text-paper">
+          <span aria-hidden="true" className="px-5 font-sans text-[2rem] text-paper">
             &gt;
           </span>
         </button>

@@ -21,7 +21,7 @@ const errorMessage = (err: unknown) =>
 function MobileInput({ id, value, onChange, disabled }: { id: string; value: string; onChange: (v: string) => void; disabled?: boolean }) {
   return (
     <div className="flex">
-      <span className="flex h-10 items-center rounded-l-md border border-r-0 border-white/15 bg-black px-3 font-sans text-sm text-paper/60">
+      <span className="flex h-12 items-center rounded-l-md border border-r-0 border-[#2e2e2e] bg-[#0c0c0c] px-3.5 font-sans text-sm text-paper/60">
         +91
       </span>
       <input

@@ -37,7 +37,7 @@ export async function getWishlist(req: Request, res: Response): Promise<void> {
     .select("wishlist")
     .populate({
       path: "wishlist",
-      select: "name slug images variants isActive avgRating reviewCount",
+      select: "name slug images cardImage category subcategory variants isActive avgRating reviewCount",
     })
     .lean()) as { wishlist?: unknown[] } | null;
 

@@ -39,7 +39,7 @@ function compareSizes(a: string, b: string): number {
   return a.localeCompare(b, undefined, { numeric: true });
 }
 
-function colorLookup(colors: ApiColor[]) {
+export function colorLookup(colors: ApiColor[]) {
   const byName = new Map(colors.map((c) => [c.name.trim().toLowerCase(), c]));
   return (name: string) => {
     const known = byName.get(name.trim().toLowerCase());

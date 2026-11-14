@@ -1,8 +1,37 @@
 "use client";
 
+// My Addresses — Figma "Address 1" (saved cards), "Address 2" (empty) and "Address 3" (form).
+
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { ApiRequestError, useAuth } from "../../lib/auth/authStore";
-import { ErrorText, Field, Panel, PanelTitle, inputClass, outlineButtonClass, primaryButtonClass } from "./ui";
+import { AddressLines, ErrorText, Panel, PanelTitle, panelLinkClass, redButtonClass } from "./ui";
+
+// Figma "Address 3" form: small bold labels over flat grey fields.
+const formLabelClass = "font-sans text-xs font-semibold text-paper";
+const formInputClass =
+  "h-10 w-full rounded-none border-0 bg-[#333] px-2.5 font-sans text-sm text-paper placeholder:text-paper/50 focus:outline focus:outline-1 focus:outline-white/40";
+
+function FormField({ label, htmlFor, required, children }: { label: string; htmlFor: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={htmlFor} className={formLabelClass}>
+        {label}
+        {required && " *"}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className={redButtonClass}>
+      <Image src="/account/plus.svg" alt="" width={16} height={16} className="mr-2" />
+      {label}
+    </button>
+  );
+}
 
 export interface Address {
   _id: string;
@@ -67,54 +96,50 @@ function AddressForm({
   };
 
   return (
-    <Panel>
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        <PanelTitle>{initial ? "Edit Address" : "New Address"}</PanelTitle>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Label" htmlFor="ad-label">
-            <input id="ad-label" placeholder="Home / Work" value={draft.label} onChange={set("label")} className={inputClass} />
-          </Field>
-          <Field label="Full Name" htmlFor="ad-name">
-            <input id="ad-name" required value={draft.name} onChange={set("name")} className={inputClass} />
-          </Field>
-          <Field label="Mobile Number" htmlFor="ad-mobile">
-            <input id="ad-mobile" required type="tel" inputMode="numeric" maxLength={10} value={draft.mobile} onChange={set("mobile")} className={inputClass} />
-          </Field>
-          <Field label="Pincode" htmlFor="ad-pin">
-            <input id="ad-pin" required inputMode="numeric" maxLength={6} value={draft.pincode} onChange={set("pincode")} className={inputClass} />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label="Address Line 1" htmlFor="ad-line1">
-              <input id="ad-line1" required placeholder="House / flat, building, street" value={draft.line1} onChange={set("line1")} className={inputClass} />
-            </Field>
-          </div>
-          <div className="sm:col-span-2">
-            <Field label="Address Line 2 (optional)" htmlFor="ad-line2">
-              <input id="ad-line2" placeholder="Area, landmark" value={draft.line2 ?? ""} onChange={set("line2")} className={inputClass} />
-            </Field>
-          </div>
-          <Field label="City" htmlFor="ad-city">
-            <input id="ad-city" required value={draft.city} onChange={set("city")} className={inputClass} />
-          </Field>
-          <Field label="State" htmlFor="ad-state">
-            <input id="ad-state" required value={draft.state} onChange={set("state")} className={inputClass} />
-          </Field>
-        </div>
-        <label className="flex items-center gap-2 font-sans text-xs text-paper/70">
-          <input type="checkbox" checked={draft.isDefault} onChange={set("isDefault")} className="accent-red" />
-          Make this my default address
-        </label>
-        <ErrorText>{error}</ErrorText>
-        <div className="flex gap-3">
-          <button type="button" onClick={onCancel} className={outlineButtonClass}>
-            Cancel
-          </button>
-          <button type="submit" disabled={saving} className={`${primaryButtonClass} w-auto px-6`}>
-            {saving ? "Saving…" : "Save Address"}
-          </button>
-        </div>
-      </form>
-    </Panel>
+    <form onSubmit={submit} className="flex w-full max-w-[52rem] flex-col gap-6 pt-6">
+      <span className="sr-only">{initial ? "Edit address" : "New address"}</span>
+      <div className="flex flex-col gap-2 border-b border-[#3a3a3a] pb-2">
+        <span className={formLabelClass}>Country / Region *</span>
+        <span className="font-sans text-sm text-paper/80">India</span>
+      </div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <FormField label="Full name" htmlFor="ad-name" required>
+          <input id="ad-name" required autoComplete="name" placeholder="Full name" value={draft.name} onChange={set("name")} className={formInputClass} />
+        </FormField>
+        <FormField label="Mobile number" htmlFor="ad-mobile" required>
+          <input id="ad-mobile" required type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} placeholder="10-digit mobile" value={draft.mobile} onChange={set("mobile")} className={formInputClass} />
+        </FormField>
+      </div>
+      <FormField label="Street address" htmlFor="ad-line1" required>
+        <input id="ad-line1" required autoComplete="address-line1" placeholder="Street address" value={draft.line1} onChange={set("line1")} className={formInputClass} />
+        <input id="ad-line2" aria-label="Apartment, landmark (optional)" autoComplete="address-line2" placeholder="Apartment, area, landmark (optional)" value={draft.line2 ?? ""} onChange={set("line2")} className={`${formInputClass} mt-2`} />
+      </FormField>
+      <FormField label="City" htmlFor="ad-city" required>
+        <input id="ad-city" required autoComplete="address-level2" placeholder="City" value={draft.city} onChange={set("city")} className={formInputClass} />
+      </FormField>
+      <FormField label="State" htmlFor="ad-state" required>
+        <input id="ad-state" required autoComplete="address-level1" placeholder="State" value={draft.state} onChange={set("state")} className={formInputClass} />
+      </FormField>
+      <FormField label="Pincode" htmlFor="ad-pin" required>
+        <input id="ad-pin" required inputMode="numeric" autoComplete="postal-code" maxLength={6} placeholder="Pincode" value={draft.pincode} onChange={set("pincode")} className={formInputClass} />
+      </FormField>
+      <FormField label="Label" htmlFor="ad-label">
+        <input id="ad-label" placeholder="Home / Work" value={draft.label} onChange={set("label")} className={formInputClass} />
+      </FormField>
+      <label className="flex items-center gap-2 font-sans text-sm text-paper/80">
+        <input type="checkbox" checked={draft.isDefault} onChange={set("isDefault")} className="accent-[#c10e12]" />
+        Make this my default address
+      </label>
+      <ErrorText>{error}</ErrorText>
+      <div className="flex items-center gap-4">
+        <button type="submit" disabled={saving} className={`${redButtonClass} px-5 !text-sm`}>
+          {saving ? "Saving…" : "Save address"}
+        </button>
+        <button type="button" onClick={onCancel} className="font-sans text-sm text-paper/70 hover:text-paper">
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -151,71 +176,69 @@ export default function AddressesTab() {
     }
   };
 
-  if (editing) {
-    return (
-      <AddressForm
-        initial={editing === "new" ? null : editing}
-        onCancel={() => setEditing(null)}
-        onSaved={() => {
-          setEditing(null);
-          load();
-        }}
-      />
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-4">
-      <Panel className="flex items-center justify-between gap-4">
-        <PanelTitle>Saved Addresses</PanelTitle>
-        <button type="button" onClick={() => setEditing("new")} className={outlineButtonClass}>
-          + Add Address
-        </button>
-      </Panel>
+    <div className="flex flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-4 sm:h-16">
+        <div className="flex flex-col gap-2">
+          <h2 className="m-0 font-heading text-xl leading-8 font-normal text-paper sm:text-2xl">My Addresses</h2>
+          <p className="m-0 font-heading text-sm leading-6 text-[#ddd] sm:text-base">Manage your shipping addresses</p>
+        </div>
+        {!editing && <AddButton label="Add New Address" onClick={() => setEditing("new")} />}
+      </div>
+
       <ErrorText>{error}</ErrorText>
-      {addresses === null ? (
-        !error && <p className="m-0 font-sans text-xs text-paper/40">Loading…</p>
+
+      {editing ? (
+        <AddressForm
+          initial={editing === "new" ? null : editing}
+          onCancel={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            load();
+          }}
+        />
+      ) : addresses === null ? (
+        !error && <p className="m-0 pt-6 font-sans text-sm text-paper/40">Loading…</p>
       ) : addresses.length === 0 ? (
-        <Panel>
-          <p className="m-0 font-sans text-sm text-paper/50">You haven&apos;t saved any addresses yet.</p>
-        </Panel>
+        <>
+          <div className="mt-6 flex flex-col items-center bg-[#171717] px-6 py-12 text-center">
+            <Image src="/account/empty-address.svg" alt="" width={64} height={64} />
+            <h3 className="m-0 pt-4 font-heading text-xl leading-7 font-normal text-[#ddd]">No addresses found</h3>
+            <p className="m-0 pt-2 pb-6 font-heading text-base leading-6 text-[#e6e6e6]">Add your first shipping address to get started.</p>
+            <AddButton label="Add Address" onClick={() => setEditing("new")} />
+          </div>
+          <div className="mt-6 border border-[#f21b1b] bg-[#262626] p-6">
+            <h3 className="m-0 font-heading text-base leading-6 font-normal text-paper">Shipping Information</h3>
+            <p className="m-0 pt-2 font-heading text-sm leading-5 text-[#ddd]">
+              Please double-check shipping address, as this cannot be modified once your order is placed.
+            </p>
+          </div>
+        </>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {addresses.map((a) => (
-            <Panel key={a._id} className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <span className="font-heading text-xs font-bold text-paper uppercase">{a.label}</span>
-                {a.isDefault && (
-                  <span className="rounded-sm bg-red/20 px-1.5 py-0.5 font-heading text-[0.55rem] font-bold tracking-[0.06em] text-red uppercase">
-                    Default
-                  </span>
-                )}
-              </div>
-              <address className="font-sans text-xs leading-relaxed text-paper/70 not-italic">
-                {a.name}
-                <br />
-                {a.line1}
-                {a.line2 && `, ${a.line2}`}
-                <br />
-                {a.city}, {a.state} - {a.pincode}
-                <br />
-                +91 {a.mobile}
-              </address>
-              <div className="mt-auto flex gap-4 font-heading text-[0.65rem] font-bold tracking-[0.06em] uppercase">
-                <button type="button" onClick={() => setEditing(a)} className="text-paper hover:text-gold">
-                  Edit
-                </button>
-                <button type="button" onClick={() => remove(a._id)} className="text-paper/60 hover:text-red">
-                  Delete
-                </button>
-                {!a.isDefault && (
-                  <button type="button" onClick={() => makeDefault(a._id)} className="text-paper/60 hover:text-gold">
-                    Set as default
+        <div className="mt-6 flex flex-col gap-6">
+          {[...addresses]
+            .sort((x, y) => Number(y.isDefault) - Number(x.isDefault))
+            .map((a) => (
+              <Panel key={a._id} className="flex items-start justify-between gap-6">
+                <div className="flex min-w-0 flex-col gap-4">
+                  <PanelTitle>{a.isDefault ? "Default Shipping Address" : `${a.label || "Other"} Address`}</PanelTitle>
+                  <AddressLines address={a} />
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-3">
+                  <button type="button" onClick={() => setEditing(a)} className={panelLinkClass}>
+                    Edit
                   </button>
-                )}
-              </div>
-            </Panel>
-          ))}
+                  {!a.isDefault && (
+                    <button type="button" onClick={() => makeDefault(a._id)} className="font-heading text-xs font-bold text-paper/60 uppercase hover:text-paper">
+                      Set default
+                    </button>
+                  )}
+                  <button type="button" onClick={() => remove(a._id)} className="font-heading text-xs font-bold text-paper/60 uppercase hover:text-[#eb141a]">
+                    Delete
+                  </button>
+                </div>
+              </Panel>
+            ))}
         </div>
       )}
     </div>

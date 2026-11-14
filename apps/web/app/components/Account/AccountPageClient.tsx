@@ -9,69 +9,87 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useAuth } from "../../lib/auth/authStore";
-import { OrdersTab, OverviewTab, SettingsTab, WishlistTab } from "./AccountTabs";
+import { OverviewTab, SettingsTab } from "./AccountTabs";
+import OrderDetail from "./OrderDetail";
+import OrdersTab from "./OrdersTab";
+import WishlistTab from "./WishlistTab";
 import AddressesTab from "./AddressesTab";
 import LoginSignup from "./LoginSignup";
 import ProfileTab from "./ProfileTab";
 
 const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "orders", label: "Orders" },
-  { id: "wishlist", label: "Wishlist" },
-  { id: "addresses", label: "Addresses" },
-  { id: "profile", label: "Profile" },
-  { id: "settings", label: "Settings" },
+  { id: "overview", label: "Overview", heading: "My Account" },
+  { id: "orders", label: "Orders", heading: "My Orders" },
+  { id: "wishlist", label: "Wishlist", heading: "My Wishlist" },
+  { id: "addresses", label: "Addresses", heading: "My Addresses" },
+  { id: "profile", label: "Profile", heading: "My Profile" },
+  // Not in the Figma sidebar, but language + notification preferences are a Phase 1 requirement.
+  { id: "settings", label: "Settings", heading: "Settings" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
 function PageHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="font-heading text-xs font-bold tracking-[0.08em] text-red uppercase">Account</span>
-      <h1 className="m-0 font-heading text-3xl font-extrabold text-paper uppercase sm:text-4xl">{title}</h1>
-      <p className="m-0 font-sans text-sm text-paper/50">{subtitle}</p>
+    <div className="flex flex-col gap-2">
+      <span className="font-heading text-xs font-bold tracking-[0.08em] text-red uppercase sm:text-sm">Account</span>
+      <h1 className="m-0 font-heading text-4xl leading-none font-bold text-paper uppercase sm:text-5xl 2xl:text-[4rem]">{title}</h1>
+      <p className="m-0 font-heading text-sm text-paper/80 sm:text-lg 2xl:text-xl">{subtitle}</p>
     </div>
   );
 }
+
+// Figma sidebar: #070707 rail with #0f0f0f buttons, a red border marking the active one.
+const navItemClass =
+  "w-full rounded border bg-[#0f0f0f] px-5 py-3 text-center font-sans text-sm whitespace-nowrap text-paper transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:text-base lg:py-4 2xl:py-4.5 2xl:text-lg";
 
 function MyAccount() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const { logout } = useAuth();
   const requested = params.get("tab");
   const tab: TabId = TABS.some((t) => t.id === requested) ? (requested as TabId) : "profile";
+  const orderId = tab === "orders" ? params.get("order") : null;
+  const heading = TABS.find((t) => t.id === tab)!.heading;
 
   const go = (id: TabId) => router.replace(`${pathname}?tab=${id}`, { scroll: false });
+  const openOrder = (id: string | null) =>
+    router.push(id ? `${pathname}?tab=orders&order=${id}` : `${pathname}?tab=orders`, { scroll: false });
 
   return (
     <>
-      <PageHeading title="My Account" subtitle="Manage your profile, orders and preferences." />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[12rem_1fr]">
-        <nav aria-label="Account sections" className="rounded-lg border border-white/10 bg-panel p-2 lg:self-stretch">
-          <ul className="m-0 flex list-none gap-2 overflow-x-auto p-0 lg:flex-col">
+      <PageHeading title={heading} subtitle="Manage your profile, orders and preferences." />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_1fr] lg:gap-6 2xl:grid-cols-[18.5rem_1fr] 2xl:gap-8">
+        <nav
+          aria-label="Account sections"
+          className="rounded-md border border-[#2e2e2e] bg-[#070707] p-1.5"
+        >
+          <ul className="m-0 flex list-none gap-1.5 overflow-x-auto p-0 lg:flex-col">
             {TABS.map((t) => (
               <li key={t.id} className="shrink-0">
                 <button
                   type="button"
                   onClick={() => go(t.id)}
                   aria-current={tab === t.id ? "page" : undefined}
-                  className={`w-full rounded-md border px-4 py-2 font-sans text-xs transition-colors ${
-                    tab === t.id
-                      ? "border-red text-paper"
-                      : "border-white/10 text-paper/70 hover:border-white/30 hover:text-paper"
-                  }`}
+                  className={`${navItemClass} ${tab === t.id ? "border-[#f21b1b]" : "border-[#2e2e2e] hover:border-white/30"}`}
                 >
                   {t.label}
                 </button>
               </li>
             ))}
+            <li className="shrink-0">
+              <button type="button" onClick={logout} className={`${navItemClass} border-[#2e2e2e] hover:border-white/30`}>
+                Log Out
+              </button>
+            </li>
           </ul>
         </nav>
 
         <div className="min-w-0">
           {tab === "overview" && <OverviewTab onShowOrders={() => go("orders")} />}
-          {tab === "orders" && <OrdersTab />}
+          {tab === "orders" &&
+            (orderId ? <OrderDetail orderId={orderId} onBack={() => openOrder(null)} /> : <OrdersTab onOpenOrder={openOrder} />)}
           {tab === "wishlist" && <WishlistTab />}
           {tab === "addresses" && <AddressesTab />}
           {tab === "profile" && <ProfileTab onEditAddresses={() => go("addresses")} />}
@@ -104,7 +122,7 @@ export default function AccountPageClient() {
   }, [status, returnTo, router]);
 
   return (
-    <main className="mx-auto flex max-w-360 flex-col gap-6 px-4 pt-8 pb-24 sm:px-6 lg:px-8">
+    <main className="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 pt-[calc(var(--navbar-h)+0.25rem)] pb-24 sm:px-6 lg:px-12.5 lg:pt-[calc(var(--navbar-h)+0.5rem)]">
       {status === "loading" ? (
         <p className="m-0 py-24 text-center font-sans text-sm text-paper/40">Loading…</p>
       ) : status === "guest" ? (
