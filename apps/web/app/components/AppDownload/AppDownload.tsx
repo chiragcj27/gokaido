@@ -5,9 +5,10 @@ export interface AppDownloadProps {
   appStoreUrl: string;
 }
 
-// Native size of /app-download-bg.png, now used only for the mobile crop below.
-const IMG_W = 3200;
-const IMG_H = 1816;
+// /app-download-mobile.png is the mobile art: mascot beside the three phones on the
+// rock, composed tighter (near-square) so it fills the phone width.
+const MOBILE_ART_W = 856;
+const MOBILE_ART_H = 688;
 
 // /app-download-mascot.png is the desktop art (mascot, phones, belt, rock), trimmed
 // to its content on black. The belt runs off its right edge, so it sits flush right
@@ -18,10 +19,6 @@ const DESKTOP_ART_H = 515;
 // /gokaido-wordmark.png is the GOKAIDO wordmark from the footer logo (2718×600).
 const WORDMARK_W = 2718;
 const WORDMARK_H = 600;
-
-// Mobile shows only the phones/belt/rock part of the banner, cropped larger
-// (source px).
-const CROP = { x: 1420, y: 400, w: 1450, h: 1100 };
 
 // Same store badges as the footer (/footer/app-badge-*.png, 300×90).
 function StoreBadges({ playStoreUrl, appStoreUrl, className }: AppDownloadProps & { className: string }) {
@@ -41,8 +38,8 @@ function StoreBadges({ playStoreUrl, appStoreUrl, className }: AppDownloadProps 
 
 // On desktop the copy + store badges sit on the left with the banner art to their
 // right. Sizes are in cqw so everything scales together. Below `md` there's no room
-// for both side by side, so the copy sits above a cropped close-up of the phones,
-// with the badges underneath.
+// for both side by side, so the copy sits above the mascot + phones art, with the
+// badges underneath.
 // Store URLs come in as props — placeholders until the real links are supplied.
 export default function AppDownload({ playStoreUrl, appStoreUrl }: AppDownloadProps) {
   const copy = (
@@ -98,21 +95,14 @@ export default function AppDownload({ playStoreUrl, appStoreUrl }: AppDownloadPr
 
       <div className="pt-10 pb-10 md:hidden">
         <div className="px-6">{copy}</div>
-        <div className="relative mt-6 w-full overflow-hidden" style={{ aspectRatio: `${CROP.w} / ${CROP.h}` }}>
-          <Image
-            src="/app-download-bg.png"
-            alt="The Gokaido app on three phones"
-            width={IMG_W}
-            height={IMG_H}
-            sizes="175vw"
-            className="absolute h-auto max-w-none"
-            style={{
-              width: `${(IMG_W / CROP.w) * 100}%`,
-              left: `${(-CROP.x / CROP.w) * 100}%`,
-              top: `${(-CROP.y / CROP.h) * 100}%`,
-            }}
-          />
-        </div>
+        <Image
+          src="/app-download-mobile.png"
+          alt="The Gokaido mascot beside the Gokaido app on three phones"
+          width={MOBILE_ART_W}
+          height={MOBILE_ART_H}
+          sizes="100vw"
+          className="mt-6 block h-auto w-full"
+        />
         <p className="m-0 mt-2 text-center font-heading text-lg font-bold text-red uppercase">Download the Gokaido App</p>
         <StoreBadges
           playStoreUrl={playStoreUrl}
