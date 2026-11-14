@@ -544,16 +544,21 @@ export async function checkPaymentStatus(req: Request, res: Response): Promise<v
     return;
   }
 
-  if (order.payment.status !== "pending" || !order.payment.txnID) {
+  // No txnID is required: this endpoint exists for orders whose return/advice
+  // callback never arrived, and txnID only comes from that callback.
+  if (order.payment.status !== "pending" || !order.payment.merchantTxnNo) {
     res.json({ order });
     return;
   }
 
-  const statusResult = await checkTransactionStatus(gatewayTxnNo(order.orderNumber, "S"), order.payment.txnID);
+  // Spec §12.1: originalTxnNo is *our* merchantTxnNo for the attempt, and
+  // merchantTxnNo is "same as originalTxnNo" (verified live against UAT:
+  // P0030 "Awaiting user action" for an attempt the customer abandoned).
+  const statusResult = await checkTransactionStatus(order.payment.merchantTxnNo, order.payment.merchantTxnNo);
   if (statusResult.txnStatus === "SUC") {
     await applyGatewayResult(order, {
       responseCode: "000",
-      txnID: order.payment.txnID,
+      txnID: statusResult.txnID ?? order.payment.txnID,
       paymentID: statusResult.txnAuthID,
     });
   } else if (statusResult.txnStatus === "REJ" || statusResult.txnStatus === "ERR") {

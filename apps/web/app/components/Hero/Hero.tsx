@@ -407,8 +407,8 @@ export default function Hero({
               Nudged up off true centre (vw, so it stays proportional at every
               size) — further on phones, to clear the floor ring in the mobile
               art. The morph reads the slots' live rects, so the video follows. */}
-          <div className="relative z-10 flex w-full max-w-[90vw] flex-col items-center gap-[1vw] translate-y-[-7vw] md:translate-y-[-5vw] text-center font-heading font-bold uppercase leading-[0.9]">
-            <div className="flex w-full items-center justify-center gap-[3vw] text-[11vw] md:text-[7vw]">
+          <div className="relative z-10 flex w-full max-w-[90vw] flex-col items-center gap-[1vw] translate-y-[-13vw] md:translate-y-[-5vw] text-center font-heading font-bold uppercase leading-[0.9]">
+            <div className="flex w-full items-center justify-center gap-[3vw] text-[13vw] md:text-[7vw]">
               <span className="shimmer-text">Made</span>
               {showcaseImages && showcaseImages.length > 0 && (
                 // White card holding square product tiles side by side. The
@@ -426,10 +426,10 @@ export default function Hero({
                 To
               </span>
             </div>
-            <div className="shimmer-text text-[16vw] md:text-[14vw]" style={{ animationDelay: "0.24s" }}>
+            <div className="shimmer-text text-[19vw] md:text-[14vw]" style={{ animationDelay: "0.24s" }}>
               Change
             </div>
-            <div className="flex w-full items-center justify-center gap-[3vw] text-[11vw] md:text-[7vw]">
+            <div className="flex w-full items-center justify-center gap-[3vw] text-[13vw] md:text-[7vw]">
               <span className="shimmer-text" style={{ animationDelay: "0.36s" }}>
                 The
               </span>
@@ -453,7 +453,7 @@ export default function Hero({
             <div
               ref={mobileSlotRef}
               aria-hidden="true"
-              className="mt-[8vw] aspect-video w-[64vw] shrink-0 outline-solid outline-[3px] outline-[#8D1518] md:hidden"
+              className="mt-[8vw] aspect-video w-[76vw] shrink-0 outline-solid outline-[3px] outline-[#8D1518] md:hidden"
             />
             {/* Phones' scroll cue, just under the slot. Absolute so it doesn't
                 join the centred column and push the headline and slot up; the

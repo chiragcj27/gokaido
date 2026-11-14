@@ -10,7 +10,7 @@ function ReviewBlock({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 border-b border-white/10 py-5 first:pt-0 last:border-b-0 last:pb-0">
+    <div className="flex flex-col gap-3 border-b border-white/10 py-6 first:pt-0 last:border-b-0 last:pb-0">
       <div className="flex items-center justify-between">
         <h3 className="m-0 font-heading text-xs font-bold tracking-[0.08em] text-paper/50 uppercase">{title}</h3>
         {onEdit && (
@@ -36,7 +36,7 @@ export default function OrderReviewStep({
   onEditCustomer: () => void;
 }) {
   return (
-    <div className="flex flex-col rounded-2xl border border-white/10 bg-panel px-6">
+    <div className="flex flex-col rounded-2xl border border-white/10 bg-panel p-6">
       <ReviewBlock title="Delivery Address" onEdit={onEditCustomer}>
         <p className="m-0">{customerInfo.fullName}</p>
         <p className="m-0 text-paper/60">

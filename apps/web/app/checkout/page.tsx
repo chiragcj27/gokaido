@@ -211,7 +211,9 @@ export default function CheckoutPage() {
           <CustomerInfoStep
             value={customerInfo}
             onChange={setCustomerInfo}
-            savedAddresses={isLoggedIn ? savedAddresses : undefined}
+            // Only a confirmed guest gets the guest form; while the session is still being restored
+            // this stays null ("loading") so a returning customer doesn't see the guest form flash first.
+            savedAddresses={authStatus === "guest" ? undefined : savedAddresses}
             addressChoice={addressChoice}
             onAddressChoice={(choice) => chooseAddress(choice)}
             saveAddress={saveAddress}

@@ -70,7 +70,7 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [x] Promo/coupon codes — backend (admin CRUD + cart apply/remove, all limits enforced)
 - [ ] Coupon entry in cart/checkout UI — not wired to the cart coupon API
 - [x] Multiple saved addresses — backend + account Addresses tab
-- [ ] Saved-address picker in checkout — `CustomerInfoStep` doesn't load `/api/addresses`
+- [x] Saved-address picker in checkout — logged-in customers pick a saved address (default preselected) or type a new one and optionally save it; order is placed by `addressId`
 - [x] Payment integration — **ICICI Bank PG, not Razorpay**. Standard/redirect flow, secureHash verified live against UAT. See "Payment Gateway" in CLAUDE.md
 - [x] Order creation from cart — atomic stock reservation (race-tested), guest + authenticated checkout, coupon consumption on payment success
 - [x] Payment return pages — `/orders/{orderNumber}?status=…` (clears bag on success) + `/checkout/failed`
