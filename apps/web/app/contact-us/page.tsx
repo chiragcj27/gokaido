@@ -254,7 +254,7 @@ export default function ContactUsPage() {
           ))}
           <p className="m-0">
             {FOUNDER_SIGN_OFF.map((line, i) => (
-              <span key={line}>
+              <span key={line} className={i === FOUNDER_SIGN_OFF.length - 1 ? "italic" : undefined}>
                 {i > 0 && <br />}
                 {line}
               </span>
