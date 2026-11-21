@@ -14,6 +14,8 @@ interface Props {
 export default function EventForm({ event, onDone, onCancel }: Props) {
   const isEdit = event !== null;
   const [name, setName] = useState(event?.name ?? "");
+  const [slug, setSlug] = useState(event?.slug ?? "");
+  const [link, setLink] = useState(event?.link ?? "");
   const [year, setYear] = useState(event?.year ?? "");
   const [category, setCategory] = useState(event?.category ?? "");
   const [about, setAbout] = useState(event?.about ?? "");
@@ -40,6 +42,8 @@ export default function EventForm({ event, onDone, onCancel }: Props) {
     // "" is sent explicitly for cleared optionals so the API unsets them.
     const payload = {
       name,
+      slug,
+      link,
       year,
       category,
       about,
@@ -140,6 +144,31 @@ export default function EventForm({ event, onDone, onCancel }: Props) {
           />
         </label>
         <label>
+          URL slug (optional)
+          <input
+            value={slug}
+            onChange={(e) => setSlug(e.target.value.toLowerCase())}
+            placeholder={isEdit ? "" : "Generated from name + year"}
+            maxLength={120}
+            pattern="[a-z0-9]+(-[a-z0-9]+)*"
+          />
+          <p className="form-hint">
+            The event page lives at /events/<strong>{slug || "…"}</strong>. Leave empty to generate it. Changing it
+            later breaks links already shared.
+          </p>
+        </label>
+        <label>
+          Event link (optional)
+          <input
+            type="url"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="https://…"
+            maxLength={500}
+          />
+          <p className="form-hint">Federation site, results or a social post — “Visit event site” on the event page.</p>
+        </label>
+        <label>
           Display order
           <input type="number" min="0" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
           <p className="form-hint">Lower numbers appear first — the lowest is “01” on the Events page.</p>
@@ -163,8 +192,9 @@ export default function EventForm({ event, onDone, onCancel }: Props) {
         Photos
         <MultiImageUpload purpose="event" values={images} onChange={setImages} reorderable />
         <p className="form-hint">
-          The first photo is the cover; the next two fan out behind it. Landscape (about 5:4) works best — photos
-          are centre-cropped. Use ← to change the order.
+          The first photo is the cover on the Events page (cropped to about 5:4), and the next two fan out behind it.
+          All photos (up to 40) make the gallery on the event’s own page, shown uncropped in this order. Use ← to
+          change the order.
         </p>
       </label>
 

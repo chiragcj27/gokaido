@@ -112,6 +112,8 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
   const listRef = useRef<HTMLOListElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
   const triggerRef = useRef<ScrollTrigger | null>(null);
+  const slugsRef = useRef<string[]>([]);
+  slugsRef.current = events.map((e) => e.slug);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -176,6 +178,16 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       onRefresh: measure,
     });
     triggerRef.current = trigger;
+
+    // "← All events" on a detail page links to /events#{slug}: open at that event
+    // instead of the top (instant jump, no animation through the ones before it).
+    const fromHash = decodeURIComponent(window.location.hash.slice(1));
+    const startAt = fromHash ? slugsRef.current.indexOf(fromHash) : -1;
+    if (startAt > 0) {
+      target = current = startAt;
+      apply(current);
+      window.scrollTo({ top: trigger.start + (trigger.end - trigger.start) * (startAt / (n - 1)), behavior: "instant" });
+    }
 
     const tick = () => {
       const diff = target - current;
@@ -308,16 +320,25 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
                       <Image src={img.src} alt="" fill sizes="(min-width: 1024px) 24rem, 72vw" className="object-cover" />
                     </div>
                   ))}
-                  <div className="absolute inset-0 overflow-hidden bg-panel shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]">
+                  {/* Any photo opens that event's page, as on the reference site. */}
+                  <Link
+                    href={`/events/${e.slug}`}
+                    aria-label={`View ${e.name}`}
+                    tabIndex={i === active ? 0 : -1}
+                    className="group/card absolute inset-0 block overflow-hidden bg-panel shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)] outline-offset-4 focus-visible:outline-2 focus-visible:outline-gold"
+                  >
                     <Image
                       src={e.images[0]?.src ?? "/dummy/product-placeholder.png"}
                       alt={e.images[0]?.alt ?? e.name}
                       fill
                       priority={i < 2}
                       sizes="(min-width: 1024px) 24rem, 72vw"
-                      className="object-cover"
+                      className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-[1.04]"
                     />
-                  </div>
+                    <span className="absolute right-3 bottom-3 bg-ink/80 px-2.5 py-1.5 text-[11px] tracking-wide text-paper opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 group-focus-visible/card:opacity-100">
+                      View event →
+                    </span>
+                  </Link>
                 </div>
               ))}
             </div>
@@ -344,7 +365,9 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
                       {e.year}{e.category ? ` · ${e.category}` : ""}
                     </p>
                     <h2 className="m-0 mt-2 font-heading text-xl leading-tight font-medium tracking-wide text-paper uppercase">
-                      {e.name}
+                      <Link href={`/events/${e.slug}`} tabIndex={i === active ? 0 : -1} className="hover:text-gold">
+                        {e.name}
+                      </Link>
                     </h2>
                     <span className="mx-auto mt-3 block h-px w-4 bg-paper/70" />
                     <p className="m-0 mt-3 text-xs leading-relaxed text-paper/80">{e.about}</p>
@@ -374,7 +397,9 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
                     {e.year}{e.category ? ` · ${e.category}` : ""}
                   </p>
                   <h2 className="m-0 mt-1.5 font-heading text-lg leading-tight font-medium tracking-wide text-paper uppercase">
-                    {e.name}
+                    <Link href={`/events/${e.slug}`} tabIndex={i === active ? 0 : -1}>
+                      {e.name} <span className="text-gold">→</span>
+                    </Link>
                   </h2>
                   <p className="m-0 mt-2 line-clamp-3 text-xs leading-relaxed text-paper/75">{e.about}</p>
                   <div className="mt-4">

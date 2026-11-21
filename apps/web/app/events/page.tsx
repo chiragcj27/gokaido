@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { getEvents } from "../lib/events";
-import { DUMMY_EVENTS } from "../lib/fallbacks";
+import { loadEvents } from "../lib/events";
 import EventsScroller from "./EventsScroller";
 
 export const metadata: Metadata = {
@@ -11,10 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function EventsPage() {
-  const fetched = await getEvents();
-  // Events come from Admin → Events; placeholders stand in while the API is
-  // down or empty (tracked in DUMMY_DATA.md).
-  const events = fetched.length > 0 ? fetched : DUMMY_EVENTS;
+  const events = await loadEvents();
   return (
     <main className="bg-ink">
       <EventsScroller events={events} />

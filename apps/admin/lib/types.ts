@@ -241,6 +241,7 @@ export interface Store {
 export interface GokaidoEvent {
   _id: string;
   name: string;
+  slug: string;
   year: string;
   category?: string;
   about: string;
@@ -249,6 +250,7 @@ export interface GokaidoEvent {
   sport: string;
   recognition?: string;
   hostedBy?: string;
+  link?: string;
   images: string[];
   sortOrder: number;
   isActive: boolean;

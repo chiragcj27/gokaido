@@ -160,6 +160,7 @@ const LOREM_ABOUT =
 export const DUMMY_EVENTS: GokaidoEvent[] = [
   {
     id: "dummy-wgkf-2026",
+    slug: "8th-wgkf-world-goju-ryu-championship-2026",
     year: "2026",
     category: "World Championship",
     name: "8th WGKF World Goju Ryu Championship",
@@ -175,10 +176,16 @@ export const DUMMY_EVENTS: GokaidoEvent[] = [
       { src: "/about/timeline/photo-2003.png", alt: "Karate athletes on the championship stage" },
       { src: "/about/timeline/photo-2017.png", alt: "Championship crowd" },
       { src: "/about/timeline/photo-2022.png", alt: "Gokaido stall at the championship" },
+      { src: "/about/founders.jpg", alt: "Gokaido team at the championship" },
+      { src: "/about/timeline/photo-2025.png", alt: "Championship felicitation" },
+      { src: "/about/timeline/photo-2005.png", alt: "Gokaido equipment on display" },
+      { src: "/about/timeline/photo-1990.png", alt: "Athletes with Gokaido gear" },
+      { src: "/about/timeline/photo-2014.png", alt: "Award presentation" },
     ],
   },
   {
     id: "dummy-event-1",
+    slug: "sample-event-1",
     year: "2025",
     category: "National Championship",
     name: "Event Name",
@@ -193,6 +200,7 @@ export const DUMMY_EVENTS: GokaidoEvent[] = [
   },
   {
     id: "dummy-event-2",
+    slug: "sample-event-2",
     year: "2022",
     category: "Open Tournament",
     name: "Event Name",
@@ -204,6 +212,7 @@ export const DUMMY_EVENTS: GokaidoEvent[] = [
   },
   {
     id: "dummy-event-3",
+    slug: "sample-event-3",
     year: "2017",
     category: "State Championship",
     name: "Event Name",
@@ -218,6 +227,7 @@ export const DUMMY_EVENTS: GokaidoEvent[] = [
   },
   {
     id: "dummy-event-4",
+    slug: "sample-event-4",
     year: "2014",
     category: "Felicitation",
     name: "Event Name",
