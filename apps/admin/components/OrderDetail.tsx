@@ -143,6 +143,7 @@ export default function OrderDetail({ order, onBack, onUpdated }: Props) {
                           )}
                           <div>
                             {item.productName}
+                            {item.isGift && <span className="pill pill-active" style={{ marginLeft: 6 }}>Gift</span>}
                             <div className="cell-sub mono">{item.variantSku}</div>
                           </div>
                         </div>
@@ -151,7 +152,7 @@ export default function OrderDetail({ order, onBack, onUpdated }: Props) {
                         {item.variantColor} / {item.variantSize}
                       </td>
                       <td className="mono">{item.quantity}</td>
-                      <td className="mono">₹{item.unitPrice}</td>
+                      <td className="mono">{item.isGift ? `${item.pointsCost} pts` : `₹${item.unitPrice}`}</td>
                       <td className="mono">₹{item.totalPrice}</td>
                     </tr>
                   ))}
@@ -177,6 +178,21 @@ export default function OrderDetail({ order, onBack, onUpdated }: Props) {
                 <span>Total</span>
                 <span className="mono">₹{order.total}</span>
               </div>
+              {(order.rewardPointsUsed ?? 0) > 0 && (
+                <div className="summary-row">
+                  <span>Points redeemed for gifts</span>
+                  <span className="mono">{order.rewardPointsUsed} pts</span>
+                </div>
+              )}
+              {(order.rewardPointsEarned ?? 0) > 0 && (
+                <div className="summary-row">
+                  <span>
+                    Points earned{order.rewardTier ? ` (${order.rewardTier})` : ""}
+                    <div className="cell-sub">Spendable once the order is shipped</div>
+                  </span>
+                  <span className="mono">{order.rewardPointsEarned} pts</span>
+                </div>
+              )}
             </div>
           </div>
 

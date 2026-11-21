@@ -17,6 +17,7 @@ import { ApiRequestError, apiRequest } from "../auth/authStore";
 import type { CartItem } from "../cartStore";
 import type { Address } from "../../components/Account/AddressesTab";
 import type { CustomerInfo } from "../../components/Checkout/CustomerInfoStep";
+import type { GiftPick } from "../rewards";
 
 const GUEST_ID_KEY = "gokaido:guest-id";
 const PENDING_ORDER_KEY = "gokaido:pending-order";
@@ -114,6 +115,7 @@ export async function placeOrderAndPay({
   addressId,
   saveAddress = false,
   onAddressSaved,
+  gifts = [],
 }: {
   request: Request;
   isGuest: boolean;
@@ -123,6 +125,8 @@ export async function placeOrderAndPay({
   saveAddress?: boolean;
   /** Called with the new saved address, so a retry after a later failure reuses it instead of saving a duplicate. */
   onAddressSaved?: (address: Address) => void;
+  /** Reward gifts to add at ₹0, paid for in points (logged-in only). */
+  gifts?: GiftPick[];
 }): Promise<void> {
   if (!isGuest && !addressId && saveAddress) {
     try {
@@ -145,6 +149,9 @@ export async function placeOrderAndPay({
     body: JSON.stringify({
       ...(addressId ? { addressId } : { shippingAddress: toShippingAddress(customer) }),
       ...(isGuest && { guestName: customer.fullName.trim(), guestEmail: customer.email.trim() }),
+      ...(!isGuest && gifts.length > 0 && {
+        gifts: gifts.map(({ productId, variantSku }) => ({ productId, variantSku })),
+      }),
     }),
   });
 

@@ -141,10 +141,13 @@ export interface Product {
   isFeatured: boolean;
   isNewArrival: boolean;
   isBestseller: boolean;
+  gift?: { enabled: boolean; minTier: RewardTier };
   avgRating: number;
   reviewCount: number;
   createdAt: string;
 }
+
+export type RewardTier = "prime" | "elite" | "gold";
 
 export type OrderStatus =
   | "placed"
@@ -167,6 +170,9 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  /** Reward gift: ₹0 line paid for with `pointsCost` points. */
+  isGift?: boolean;
+  pointsCost?: number;
 }
 
 export interface AddressSnapshot {
@@ -193,6 +199,9 @@ export interface Order {
   deliveryCharge: number;
   couponCode?: string;
   couponDiscount: number;
+  rewardPointsUsed?: number;
+  rewardPointsEarned?: number;
+  rewardTier?: RewardTier;
   total: number;
   payment: {
     merchantTxnNo?: string;

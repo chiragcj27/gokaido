@@ -65,8 +65,7 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [x] Cart page — `/cart`. Save-for-later and discount code inputs only `console.log`; "You May Also Like" is dummy
 - [x] One-page checkout — `/checkout` with Customer info → Review → Payment steps
 - [x] Progress indicator — `CheckoutStepper`
-- [x] Reward points redemption — backend, redeemed via `rewardPointsToRedeem`, capped/atomic/race-tested. Rate & cap are placeholder defaults, not a client-confirmed spec — see "Reward Points" in CLAUDE.md
-- [ ] Reward points redemption in checkout UI — `placeOrder.ts` never sends `rewardPointsToRedeem`
+- [x] Reward points redemption — gifts only (₹0 lines paid in points, `gifts` on `POST /api/orders`), per the client's rewards doc; atomic/race-tested. Checkout review step has the gift picker — see "Reward Points" in CLAUDE.md
 - [x] Promo/coupon codes — backend (admin CRUD + cart apply/remove, all limits enforced)
 - [ ] Coupon entry in cart/checkout UI — not wired to the cart coupon API
 - [x] Multiple saved addresses — backend + account Addresses tab
@@ -85,8 +84,9 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 - [x] Registration — backend + UI
 - [x] My Orders (track + cancel) — backend + Orders tab (status, cancel for placed/confirmed)
 - [x] My Addresses — backend + Addresses tab
-- [x] Reward Points dashboard — backend `GET /api/users/me/reward-transactions`. Point *expiry* sweep not built (no scheduler)
-- [ ] Reward Points ledger UI — Overview tab shows the balance only, no transaction history
+- [x] Reward Points dashboard — `GET /api/users/me/rewards` (tier, available/pending/expiring) + `/reward-transactions`; account "Rewards" tab (no Figma frame yet). Expiry runs lazily + hourly in-process sweep
+- [ ] Rewards tab + checkout gift picker — restyle when Figma frames arrive
+- [ ] Gift columns in product bulk upload (gift is admin-form only for now)
 - [x] Refer & Earn — backend `GET /api/users/me/referrals`
 - [ ] Refer & Earn UI — no referral code/history screen
 - [x] Edit Profile (mutable fields only) — backend + Profile tab
@@ -164,7 +164,7 @@ Tracks Phase 1 (must-have) and Phase 2 (post-launch) scope from `CLAUDE.md`. Che
 
 - [x] AWS S3 bucket + upload plumbing — `gokaido-web-storage` (versioned, SSE-S3, public reads under `public/*`), browser presigned uploads, scoped `gokaido-api-runtime` IAM user. Verified live end-to-end
 - [ ] Gokaido's own OpenAI key + own MongoDB Atlas cluster before launch — search currently runs on ChandraPO's OpenAI key (shared bill) and the Atlas cluster is shared with Chandra (another client's data; its 2 vector indexes leave Gokaido 1 of the free tier's 3 search-index slots). After switching: set `OPENAI_API_KEY`/`MONGODB_URI`, run `pnpm --filter @gokaido/api search:indexes` then `search:backfill`
-- [ ] Job scheduler (cron/queue) — needed for abandoned-cart recovery and reward-point expiry
+- [ ] Job scheduler (cron/queue) — needed for abandoned-cart recovery (reward-point expiry uses an in-process hourly sweep, fine for one EC2 instance)
 - [ ] AWS EC2 deployment pipeline
 - [ ] CI (lint/type-check on push)
 - [ ] Replace remaining placeholder data — see `DUMMY_DATA.md`

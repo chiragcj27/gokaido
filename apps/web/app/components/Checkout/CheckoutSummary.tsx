@@ -1,5 +1,8 @@
+import type { GiftPick } from "../../lib/rewards";
+
 export interface CheckoutSummaryProps {
   itemCount: number;
+  gifts?: GiftPick[];
   subtotal: number;
   shippingCost: number;
   shippingLabel?: string;
@@ -14,6 +17,7 @@ function formatInr(amount: number) {
 
 export default function CheckoutSummary({
   itemCount,
+  gifts = [],
   subtotal,
   shippingCost,
   shippingLabel,
@@ -34,6 +38,17 @@ export default function CheckoutSummary({
           </span>
           <span>{formatInr(subtotal)}</span>
         </div>
+        {gifts.map((gift) => (
+          <div key={gift.variantSku} className="flex items-start justify-between gap-3 text-paper">
+            <span className="flex flex-col">
+              <span>Gift: {gift.name}</span>
+              <span className="text-xs text-paper/40">
+                {gift.label} · {gift.pointsCost.toLocaleString("en-IN")} pts
+              </span>
+            </span>
+            <span className="text-gold">Free</span>
+          </div>
+        ))}
         <div className="flex items-center justify-between text-paper/50">
           <span>Shipping</span>
           <span>{shippingLabel ?? (shippingCost > 0 ? formatInr(shippingCost) : "Free")}</span>

@@ -28,6 +28,8 @@ import franchiseEnquiryRouter from "./routes/franchiseEnquiry.js";
 import adminFranchiseEnquiryRouter from "./routes/adminFranchiseEnquiry.js";
 import adminDashboardRouter from "./routes/adminDashboard.js";
 import adminCustomerRouter from "./routes/adminCustomer.js";
+import rewardsRouter from "./routes/rewards.js";
+import { startRewardExpirySweep } from "./services/rewards.js";
 
 const app: Express = express();
 
@@ -96,6 +98,7 @@ app.use("/api/franchise-enquiries", franchiseEnquiryRouter);
 app.use("/api/admin/franchise-enquiries", adminFranchiseEnquiryRouter);
 app.use("/api/admin/dashboard", adminDashboardRouter);
 app.use("/api/admin/customers", adminCustomerRouter);
+app.use("/api/rewards", rewardsRouter);
 
 const mongoUri = process.env.MONGODB_URI;
 
@@ -112,6 +115,7 @@ if (!process.env.VERCEL) {
   connectDB(mongoUri)
     .then(() => {
       console.log("Connected to MongoDB");
+      startRewardExpirySweep();
       app.listen(port, () => {
         console.log(`API running on http://localhost:${port}`);
       });

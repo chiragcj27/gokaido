@@ -11,7 +11,7 @@ import { ErrorText, Panel, PanelTitle, formatDate, outlineButtonClass } from "./
 // Overview
 // ---------------------------------------------------------------------------
 
-export function OverviewTab({ onShowOrders }: { onShowOrders: () => void }) {
+export function OverviewTab({ onShowOrders, onShowRewards }: { onShowOrders: () => void; onShowRewards: () => void }) {
   const { user } = useAuth();
   const { orders } = useOrders();
   const [copied, setCopied] = useState(false);
@@ -28,7 +28,10 @@ export function OverviewTab({ onShowOrders }: { onShowOrders: () => void }) {
         <Panel className="flex flex-col gap-2">
           <span className="font-sans text-[0.65rem] tracking-[0.06em] text-paper/50 uppercase">Reward Points</span>
           <span className="font-heading text-2xl font-extrabold text-gold">{user.rewardPoints}</span>
-          <span className="font-sans text-[0.65rem] text-paper/40">1 point = ₹1 at checkout</span>
+          <span className="font-sans text-[0.65rem] text-paper/40">1 point = ₹1 worth of gifts</span>
+          <button type="button" onClick={onShowRewards} className="self-start font-sans text-[0.65rem] text-paper/60 underline hover:text-paper">
+            View rewards
+          </button>
         </Panel>
         <Panel className="flex flex-col gap-2">
           <span className="font-sans text-[0.65rem] tracking-[0.06em] text-paper/50 uppercase">Orders</span>

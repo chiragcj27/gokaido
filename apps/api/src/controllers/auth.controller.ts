@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { User, Referral, RewardTransaction, mongoose, type IUser } from "@gokaido/database";
+import { User, Referral, mongoose, type IUser } from "@gokaido/database";
 import { generateOtp, hashOtp, generateReferralCode } from "../utils/otp.js";
 import {
   signAccessToken,
@@ -17,8 +17,6 @@ import {
   adminLoginSchema,
 } from "../schemas/auth.schema.js";
 
-const REFERRER_POINTS = 100;
-const REFEREE_POINTS = 50;
 const OTP_TTL_MS = 10 * 60 * 1000;
 
 export async function sendOtp(req: Request, res: Response): Promise<void> {
@@ -228,39 +226,20 @@ export async function getMe(req: Request, res: Response): Promise<void> {
 // Helpers
 // ---------------------------------------------------------------------------
 
+// Links the new customer to whoever referred them. Nobody gets points at
+// signup: the referrer's bonus is credited when this customer pays for a
+// qualifying order (see creditOrderPoints in services/rewards.ts).
 async function applyReferral(
   usedCode: string,
   newUser: mongoose.HydratedDocument<IUser>
 ) {
-  const referrer = await User.findOne({ referralCode: usedCode });
+  const referrer = await User.findOne({ referralCode: usedCode }).select("_id");
   if (!referrer || String(referrer._id) === String(newUser._id)) return;
 
   await Referral.create({
     referrer: referrer._id,
     referee: newUser._id,
     referralCode: usedCode,
-    referrerPointsAwarded: REFERRER_POINTS,
-    refereePointsAwarded: REFEREE_POINTS,
-  });
-
-  referrer.rewardPoints += REFERRER_POINTS;
-  await referrer.save();
-  await RewardTransaction.create({
-    user: referrer._id,
-    points: REFERRER_POINTS,
-    type: "referral_bonus",
-    description: `Referral bonus — ${newUser.name} joined using your code`,
-    balance: referrer.rewardPoints,
-  });
-
-  newUser.rewardPoints += REFEREE_POINTS;
-  await newUser.save();
-  await RewardTransaction.create({
-    user: newUser._id,
-    points: REFEREE_POINTS,
-    type: "referral_bonus",
-    description: `Welcome bonus — joined via referral code ${usedCode}`,
-    balance: newUser.rewardPoints,
   });
 }
 

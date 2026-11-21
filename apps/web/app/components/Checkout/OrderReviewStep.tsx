@@ -1,4 +1,6 @@
 import type { CustomerInfo } from "./CustomerInfoStep";
+import GiftPicker from "./GiftPicker";
+import type { GiftPick, GiftProduct, RewardsSummary } from "../../lib/rewards";
 
 function ReviewBlock({
   title,
@@ -31,9 +33,17 @@ function ReviewBlock({
 export default function OrderReviewStep({
   customerInfo,
   onEditCustomer,
+  rewards,
+  gifts,
+  giftPicks,
+  onGiftPicksChange,
 }: {
   customerInfo: CustomerInfo;
   onEditCustomer: () => void;
+  rewards: RewardsSummary | null;
+  gifts: GiftProduct[] | null;
+  giftPicks: GiftPick[];
+  onGiftPicksChange: (picks: GiftPick[]) => void;
 }) {
   return (
     <div className="flex flex-col rounded-2xl border border-white/10 bg-panel p-6">
@@ -44,6 +54,13 @@ export default function OrderReviewStep({
         </p>
         <p className="m-0 text-paper/60">{customerInfo.phone}</p>
       </ReviewBlock>
+
+      {/* Hidden entirely until the customer has points or there's a catalogue to show. */}
+      {(rewards?.balance ?? 0) > 0 && gifts && gifts.length > 0 && (
+        <ReviewBlock title="Redeem a Reward Gift">
+          <GiftPicker summary={rewards} gifts={gifts} picks={giftPicks} onChange={onGiftPicksChange} />
+        </ReviewBlock>
+      )}
 
       {/* The method is picked on ICICI's hosted page (Standard/redirect flow — see CLAUDE.md
           "Payment Gateway"), so there's nothing to choose or collect here. */}

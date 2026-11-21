@@ -125,6 +125,14 @@ export const createProductSchema = z.object({
   isFeatured: z.boolean().optional(),
   isNewArrival: z.boolean().optional(),
   isBestseller: z.boolean().optional(),
+
+  // Reward gift: redeemable for points (1 point = ₹1 of the variant's price).
+  gift: z
+    .object({
+      enabled: z.boolean(),
+      minTier: z.enum(["prime", "elite", "gold"]).default("prime"),
+    })
+    .optional(),
 });
 
 export const updateProductSchema = createProductSchema.partial();

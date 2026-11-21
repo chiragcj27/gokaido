@@ -17,6 +17,7 @@ import OrderReviewStep from "../components/Checkout/OrderReviewStep";
 import { useCart } from "../lib/cartStore";
 import { useAuth } from "../lib/auth/authStore";
 import { guestRequest, placeOrderAndPay, validateCustomerInfo } from "../lib/checkout/placeOrder";
+import { useGiftCatalogue, useRewardsSummary, type GiftPick } from "../lib/rewards";
 
 const STEP_COPY: Record<CheckoutStep, { title: string; subtitle: string }> = {
   customer: { title: "Customer Information", subtitle: "Enter your contact details and delivery address" },
@@ -42,6 +43,9 @@ export default function CheckoutPage() {
   const [saveAddress, setSaveAddress] = useState(true);
   const isLoggedIn = authStatus === "authenticated";
   const router = useRouter();
+  const { summary: rewards } = useRewardsSummary();
+  const giftCatalogue = useGiftCatalogue();
+  const [giftPicks, setGiftPicks] = useState<GiftPick[]>([]);
 
   // Checkout requires an account. Guests (direct link, "Try again" from /checkout/failed, …)
   // are sent to Login / Sign Up and come back here once signed in via `?next=`.
@@ -116,6 +120,7 @@ export default function CheckoutPage() {
           setSavedAddresses((prev) => [...(prev ?? []), address]);
           setAddressChoice(address._id);
         },
+        gifts: giftPicks,
       });
       // Browser is now navigating to ICICI — leave the button disabled.
     } catch (err) {
@@ -237,12 +242,20 @@ export default function CheckoutPage() {
           />
         )}
         {step === "review" && (
-          <OrderReviewStep customerInfo={customerInfo} onEditCustomer={() => goToStep("customer")} />
+          <OrderReviewStep
+            customerInfo={customerInfo}
+            onEditCustomer={() => goToStep("customer")}
+            rewards={rewards}
+            gifts={giftCatalogue}
+            giftPicks={giftPicks}
+            onGiftPicksChange={setGiftPicks}
+          />
         )}
 
         <div className="lg:sticky lg:top-6">
           <CheckoutSummary
             itemCount={itemCount}
+            gifts={giftPicks}
             subtotal={subtotal}
             shippingCost={0}
             ctaLabel={ctaLabel}

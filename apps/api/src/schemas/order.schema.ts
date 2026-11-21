@@ -4,6 +4,7 @@ import { pincodeSchema } from "./address.schema.js";
 import { dateRangeQuerySchema } from "./dateRange.schema.js";
 
 const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid id");
+const MAX_GIFTS_PER_ORDER = 5;
 
 const inlineAddressSchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -24,12 +25,20 @@ export const createOrderSchema = z
     guestName: z.string().trim().min(1).max(100).optional(),
     guestEmail: z.string().trim().toLowerCase().email().optional(),
     deliveryInstructions: z.string().trim().max(300).optional(),
-    // Ignored for guest checkout — only an authenticated account has a points balance.
-    rewardPointsToRedeem: z.coerce.number().int().min(0).optional(),
+    // Reward gifts to add at ₹0, paid for in points (logged-in only). One of
+    // each SKU; see apps/api/src/utils/rewardPoints.ts.
+    gifts: z
+      .array(z.object({ productId: objectIdSchema, variantSku: z.string().trim().min(1) }))
+      .max(MAX_GIFTS_PER_ORDER, `At most ${MAX_GIFTS_PER_ORDER} gifts per order`)
+      .optional(),
   })
   .refine((data) => data.addressId ?? data.shippingAddress, {
     message: "Either addressId or shippingAddress is required",
     path: ["addressId"],
+  })
+  .refine((data) => new Set(data.gifts?.map((g) => g.variantSku)).size === (data.gifts?.length ?? 0), {
+    message: "Each gift can only be picked once",
+    path: ["gifts"],
   });
 
 export const cancelOrderSchema = z.object({

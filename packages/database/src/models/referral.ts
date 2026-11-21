@@ -1,6 +1,12 @@
 import { mongoose } from "../client.js";
 
-export type ReferralStatus = "pending" | "completed";
+// pending   — referee signed up, no qualifying purchase yet
+// qualified — referee paid for a qualifying order; referrer's bonus is a
+//             pending batch until that order ships
+// completed — that order shipped, bonus released
+// A qualifying order that's cancelled/refunded sends the referral back to
+// pending, so a later order can still qualify.
+export type ReferralStatus = "pending" | "qualified" | "completed";
 
 export interface IReferral {
   referrer: mongoose.Types.ObjectId;
@@ -8,6 +14,8 @@ export interface IReferral {
   referralCode: string;
 
   status: ReferralStatus;
+  // The referee's order that qualified the referral.
+  order?: mongoose.Types.ObjectId;
 
   referrerPointsAwarded: number;
   refereePointsAwarded: number;
@@ -34,9 +42,10 @@ const referralSchema = new mongoose.Schema<IReferral>(
 
     status: {
       type: String,
-      enum: ["pending", "completed"],
+      enum: ["pending", "qualified", "completed"],
       default: "pending",
     },
+    order: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
 
     referrerPointsAwarded: { type: Number, default: 0 },
     refereePointsAwarded: { type: Number, default: 0 },

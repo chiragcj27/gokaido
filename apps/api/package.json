@@ -12,7 +12,8 @@
     "seed:admin": "tsx src/scripts/seedAdmin.ts",
     "seed:stores": "tsx src/scripts/seedStores.ts",
     "search:indexes": "tsx src/scripts/setupSearchIndexes.ts",
-    "search:backfill": "tsx src/scripts/backfillEmbeddings.ts"
+    "search:backfill": "tsx src/scripts/backfillEmbeddings.ts",
+    "rewards:migrate": "tsx src/scripts/migrateRewardBalances.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1131.0",

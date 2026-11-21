@@ -1,7 +1,7 @@
 export { connectDB, disconnectDB, mongoose } from "./client.js";
 
 export { Product } from "./models/product.js";
-export type { IProduct, IProductVariant, IProtectionStat, Sport, ProductType } from "./models/product.js";
+export type { IProduct, IProductVariant, IProductGift, IProtectionStat, Sport, ProductType } from "./models/product.js";
 
 export { Category } from "./models/category.js";
 export type { ICategory } from "./models/category.js";
@@ -38,8 +38,14 @@ export type { IReview, ReviewStatus } from "./models/review.js";
 export { Coupon } from "./models/coupon.js";
 export type { ICoupon, CouponType } from "./models/coupon.js";
 
-export { RewardTransaction } from "./models/reward-transaction.js";
-export type { IRewardTransaction, RewardTransactionType } from "./models/reward-transaction.js";
+export { RewardTransaction, REWARD_TIERS } from "./models/reward-transaction.js";
+export type {
+  IRewardTransaction,
+  IRewardAllocation,
+  RewardTransactionType,
+  RewardBatchStatus,
+  RewardTier,
+} from "./models/reward-transaction.js";
 
 export { Referral } from "./models/referral.js";
 export type { IReferral, ReferralStatus } from "./models/referral.js";

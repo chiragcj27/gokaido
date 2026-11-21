@@ -15,6 +15,9 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  /** Reward gift: ships at ₹0, paid for with `pointsCost` points. */
+  isGift?: boolean;
+  pointsCost?: number;
 }
 
 export interface OrderAddress {
@@ -40,6 +43,8 @@ export interface Order {
   couponCode?: string;
   couponDiscount: number;
   rewardPointsValue: number;
+  rewardPointsUsed?: number;
+  rewardPointsEarned?: number;
   total: number;
   items: OrderItem[];
   shippingAddress: OrderAddress;

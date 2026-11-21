@@ -19,7 +19,6 @@ type LeanCart = {
   items: ICartItem[];
   appliedCoupon?: string;
   couponDiscount: number;
-  rewardPointsToRedeem: number;
 };
 
 type OwnerFilter = { user: string } | { guestId: string };
@@ -39,7 +38,6 @@ function serializeCart(cart: LeanCart | null) {
     items,
     appliedCoupon: cart?.appliedCoupon,
     couponDiscount,
-    rewardPointsToRedeem: cart?.rewardPointsToRedeem ?? 0,
     subtotal,
     total: Math.max(subtotal - couponDiscount, 0),
     itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
@@ -219,7 +217,7 @@ export async function clearCart(req: Request, res: Response): Promise<void> {
 
   const cart = (await Cart.findOneAndUpdate(
     filter,
-    { $set: { items: [], rewardPointsToRedeem: 0, couponDiscount: 0 }, $unset: { appliedCoupon: "" } },
+    { $set: { items: [], couponDiscount: 0 }, $unset: { appliedCoupon: "" } },
     { new: true }
   ).lean()) as LeanCart | null;
 

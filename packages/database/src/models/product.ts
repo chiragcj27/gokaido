@@ -1,4 +1,5 @@
 import { mongoose } from "../client.js";
+import { REWARD_TIERS, type RewardTier } from "./reward-transaction.js";
 
 export type Sport = "karate" | "taekwondo" | "kickboxing" | "boxing" | "mma";
 export type ProductType = "uniform" | "equipment";
@@ -16,6 +17,16 @@ export interface IProductVariant {
   regionPrices: Map<string, number>;
   images: string[];
   isActive: boolean;
+}
+
+// Reward-gift settings. A gift is the product itself (same SKUs, same
+// stock), added to an order at ₹0 and paid for with points — 1 point per ₹1
+// of the variant's basePrice.
+export interface IProductGift {
+  enabled: boolean;
+  // Lowest membership tier that may redeem it. "prime" = everyone. Not used
+  // yet by the client; here so tier-exclusive gifts can be switched on later.
+  minTier: RewardTier;
 }
 
 // One of the (up to 3) stats in the PDP's Protection Level section, e.g.
@@ -80,6 +91,8 @@ export interface IProduct {
   isFeatured: boolean;
   isNewArrival: boolean;
   isBestseller: boolean;
+
+  gift: IProductGift;
 
   // Denormalized — updated when reviews are approved/rejected
   avgRating: number;
@@ -177,6 +190,11 @@ const productSchema = new mongoose.Schema<IProduct>(
     isNewArrival: { type: Boolean, default: false },
     isBestseller: { type: Boolean, default: false },
 
+    gift: {
+      enabled: { type: Boolean, default: false },
+      minTier: { type: String, enum: [...REWARD_TIERS], default: "prime" },
+    },
+
     avgRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
 
@@ -190,6 +208,7 @@ productSchema.index({ sport: 1, category: 1 });
 // Collection pages: active products of a category, grouped by subcategory.
 productSchema.index({ category: 1, isActive: 1, subcategory: 1 });
 productSchema.index({ isActive: 1, isFeatured: 1 });
+productSchema.index({ "gift.enabled": 1, isActive: 1 });
 productSchema.index({ name: "text", description: "text", tags: "text" });
 
 export const Product =

@@ -8,7 +8,6 @@ import {
   Address,
   Coupon,
   User,
-  RewardTransaction,
   mongoose,
   type ICartItem,
   type IOrder,
@@ -24,7 +23,18 @@ import {
 import { addSheet, EXPORT_ROW_LIMIT, istDateRange, sendWorkbook } from "../utils/excel.js";
 import { escapeRegex } from "../utils/regex.js";
 import { gatewayTxnNo, generateOrderNumber } from "../utils/orderNumber.js";
-import { calculatePointsEarned, calculateMaxRedeemableValue } from "../utils/rewardPoints.js";
+import {
+  GiftUnavailableError,
+  InsufficientPointsError,
+  buildGiftItems,
+  creditOrderPoints,
+  expireDuePoints,
+  getMembership,
+  redeemPoints,
+  releaseOrderPoints,
+  restoreRedeemedPoints,
+  reverseOrderPoints,
+} from "../services/rewards.js";
 import {
   initiateSale,
   checkTransactionStatus,
@@ -53,12 +63,6 @@ class InsufficientStockError extends Error {
   }
 }
 
-class InsufficientPointsError extends Error {
-  constructor() {
-    super("Not enough reward points available");
-  }
-}
-
 async function restoreStock(order: { items: IOrder["items"] }): Promise<void> {
   await Promise.all(
     order.items.map((item) =>
@@ -70,64 +74,8 @@ async function restoreStock(order: { items: IOrder["items"] }): Promise<void> {
   );
 }
 
-// Returns points spent at checkout back to the customer's balance — mirrors
-// restoreStock and is called alongside it: a failed payment or a cancelled/
-// refunded order means the customer never actually "spent" those points.
-async function restoreRewardPoints(order: {
-  user?: mongoose.Types.ObjectId;
-  orderNumber: string;
-  rewardPointsUsed: number;
-  _id: mongoose.Types.ObjectId;
-}): Promise<void> {
-  if (!order.user || order.rewardPointsUsed <= 0) return;
-
-  const user = await User.findByIdAndUpdate(
-    order.user,
-    { $inc: { rewardPoints: order.rewardPointsUsed } },
-    { new: true }
-  ).select("rewardPoints");
-  if (!user) return;
-
-  await RewardTransaction.create({
-    user: order.user,
-    points: order.rewardPointsUsed,
-    type: "redemption_reversed",
-    description: `Points returned — order ${order.orderNumber} did not complete`,
-    order: order._id,
-    balance: user.rewardPoints,
-  });
-}
-
-// Awards points on a successfully paid order. Guest orders have no account to
-// credit. See apps/api/src/utils/rewardPoints.ts for the (placeholder) rate.
-async function earnRewardPoints(order: {
-  user?: mongoose.Types.ObjectId;
-  orderNumber: string;
-  total: number;
-  _id: mongoose.Types.ObjectId;
-}): Promise<void> {
-  if (!order.user) return;
-  const earned = calculatePointsEarned(order.total);
-  if (earned <= 0) return;
-
-  const user = await User.findByIdAndUpdate(
-    order.user,
-    { $inc: { rewardPoints: earned } },
-    { new: true }
-  ).select("rewardPoints");
-  if (!user) return;
-
-  await RewardTransaction.create({
-    user: order.user,
-    points: earned,
-    type: "earned_order",
-    description: `Earned on order ${order.orderNumber}`,
-    order: order._id,
-    balance: user.rewardPoints,
-  });
-}
-
-// Reserves stock and, if applicable, deducts reward points for an order —
+// Reserves stock (paid and gift lines alike) and deducts the points spent on
+// gifts for an order —
 // shared by createOrder and retryPayment so both attempts get the identical
 // atomicity guarantee: the $gte guard in the stock/points update filters
 // means a concurrent request racing the same inventory or balance can't
@@ -153,28 +101,7 @@ async function reserveStockAndPoints(
   }
 
   if (order.rewardPointsUsed > 0 && userId) {
-    const deduction = await User.updateOne(
-      { _id: userId, rewardPoints: { $gte: order.rewardPointsUsed } },
-      { $inc: { rewardPoints: -order.rewardPointsUsed } },
-      { session }
-    );
-    if (deduction.modifiedCount === 0) {
-      throw new InsufficientPointsError();
-    }
-    const updatedUser = await User.findById(userId).select("rewardPoints").session(session);
-    await RewardTransaction.create(
-      [
-        {
-          user: userId,
-          points: -order.rewardPointsUsed,
-          type: "redeemed",
-          description: `Redeemed on order ${order.orderNumber}`,
-          order: order._id,
-          balance: updatedUser?.rewardPoints ?? 0,
-        },
-      ],
-      { session }
-    );
+    await redeemPoints(order, userId, order.rewardPointsUsed, session);
   }
 }
 
@@ -213,14 +140,14 @@ async function applyGatewayResult(
     if (order.couponCode) {
       await Coupon.updateOne({ code: order.couponCode }, { $inc: { usedCount: 1 } });
     }
-    await earnRewardPoints(order);
+    await creditOrderPoints(order);
   } else if (isPending) {
     order.payment.responseCode = responseCode;
   } else if (order.payment.status !== "failed") {
     order.payment.status = "failed";
     order.payment.responseCode = responseCode || undefined;
     await restoreStock(order);
-    await restoreRewardPoints(order);
+    await restoreRedeemedPoints(order);
   }
 
   await order.save();
@@ -275,11 +202,12 @@ async function refundAndCancel(
     order.payment.status = "refunded";
     order.status = "refunded";
     await restoreStock(order);
-    await restoreRewardPoints(order);
+    await restoreRedeemedPoints(order);
+    await reverseOrderPoints(order);
   } else {
     if (order.payment.status === "pending") {
       await restoreStock(order);
-      await restoreRewardPoints(order);
+      await restoreRedeemedPoints(order);
     }
     order.payment.status = "cancelled";
     order.status = "cancelled";
@@ -365,28 +293,39 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
   const couponDiscount = cart.couponDiscount ?? 0;
   const deliveryCharge = 0; // TODO: real shipping-cost policy, not yet specified by client
 
-  // Points redemption is auth-only (guests have no balance) and capped —
-  // see apps/api/src/utils/rewardPoints.ts for the rate/cap and why.
-  let rewardPointsUsed = 0;
-  let rewardPointsValue = 0;
-  if (req.user && parsed.data.rewardPointsToRedeem) {
-    const requestingUser = (await User.findById(req.user.id).select("rewardPoints").lean()) as
-      | { rewardPoints: number }
-      | null;
-    const available = requestingUser?.rewardPoints ?? 0;
-    const maxRedeemableValue = calculateMaxRedeemableValue(subtotal - couponDiscount);
-    rewardPointsValue = Math.max(
-      0,
-      Math.min(parsed.data.rewardPointsToRedeem, available, maxRedeemableValue)
-    );
-    rewardPointsUsed = rewardPointsValue; // 1 point = ₹1
+  // Reward gifts: picked at checkout, shipped at ₹0, paid for in points —
+  // never a discount on the bill (see apps/api/src/utils/rewardPoints.ts).
+  const cartItems = cart.items as ICartItem[];
+  const giftSelections = parsed.data.gifts ?? [];
+  let giftItems: IOrder["items"] = [];
+  if (giftSelections.length > 0) {
+    if (!req.user) {
+      res.status(400).json({ error: "Log in to redeem reward gifts" });
+      return;
+    }
+    if (!cartItems.some((i) => i.unitPrice > 0)) {
+      res.status(400).json({ error: "A gift can only be redeemed together with a purchase" });
+      return;
+    }
+    try {
+      const membership = await getMembership(req.user.id);
+      giftItems = await buildGiftItems(giftSelections, membership.tier);
+    } catch (err) {
+      if (err instanceof GiftUnavailableError) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      throw err;
+    }
+    // Expired batches must be swept before spending, or the balance overstates.
+    await expireDuePoints({ userId: req.user.id });
   }
+  const rewardPointsUsed = giftItems.reduce((sum, i) => sum + (i.pointsCost ?? 0), 0);
 
-  const total = Math.max(subtotal - couponDiscount + deliveryCharge - rewardPointsValue, 0);
+  const total = Math.max(subtotal - couponDiscount + deliveryCharge, 0);
 
   const orderNumber = await generateOrderNumber();
   const merchantTxnNo = gatewayTxnNo(orderNumber);
-  const cartItems = cart.items as ICartItem[];
 
   const order = new Order({
     orderNumber,
@@ -404,7 +343,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalPrice: item.quantity * item.unitPrice,
-    })),
+    })).concat(giftItems),
     shippingAddress,
     deliveryInstructions: parsed.data.deliveryInstructions,
     subtotal,
@@ -412,7 +351,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     couponCode: cart.appliedCoupon,
     couponDiscount,
     rewardPointsUsed,
-    rewardPointsValue,
+    rewardPointsValue: 0,
     total,
     payment: { gateway: "icici", merchantTxnNo, status: "pending" },
     status: "placed",
@@ -459,7 +398,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
   if (saleResult.responseCode !== "R1000" || !saleResult.redirectURI || !saleResult.tranCtx) {
     order.payment.status = "failed";
     await restoreStock(order);
-    await restoreRewardPoints(order);
+    await restoreRedeemedPoints(order);
     await order.save();
     res.status(502).json({
       error: saleResult.responseDescription ?? "Could not initiate payment. Please try again.",
@@ -585,6 +524,8 @@ export async function retryPayment(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  if (order.rewardPointsUsed > 0) await expireDuePoints({ userId: req.user!.id });
+
   const session = await mongoose.startSession();
   try {
     await session.withTransaction(async () => {
@@ -620,7 +561,7 @@ export async function retryPayment(req: Request, res: Response): Promise<void> {
 
   if (saleResult.responseCode !== "R1000" || !saleResult.redirectURI || !saleResult.tranCtx) {
     await restoreStock(order);
-    await restoreRewardPoints(order);
+    await restoreRedeemedPoints(order);
     res.status(502).json({
       error: saleResult.responseDescription ?? "Could not initiate payment. Please try again.",
     });
@@ -763,7 +704,9 @@ export async function adminExportOrders(req: Request, res: Response): Promise<vo
       { header: "Delivery", format: "money", value: (o) => o.deliveryCharge },
       { header: "Coupon", value: (o) => o.couponCode },
       { header: "Coupon discount", format: "money", value: (o) => o.couponDiscount },
-      { header: "Points redeemed", format: "money", value: (o) => o.rewardPointsValue },
+      { header: "Gift points redeemed", value: (o) => o.rewardPointsUsed },
+      { header: "Points earned", value: (o) => o.rewardPointsEarned },
+      { header: "Tier", value: (o) => o.rewardTier },
       { header: "Total", format: "money", value: (o) => o.total },
       {
         header: "Ship to",
@@ -792,6 +735,7 @@ export async function adminExportOrders(req: Request, res: Response): Promise<vo
       { header: "Colour", value: (i) => i.variantColor },
       { header: "Size", value: (i) => i.variantSize },
       { header: "Qty", value: (i) => i.quantity },
+      { header: "Gift", value: (i) => (i.isGift ? `Yes (${i.pointsCost} pts)` : "") },
       { header: "Unit price", format: "money", value: (i) => i.unitPrice },
       { header: "Line total", format: "money", value: (i) => i.totalPrice },
       { header: "Image", width: 50, value: (i) => i.variantImage },
@@ -857,6 +801,10 @@ export async function adminUpdateOrder(req: Request, res: Response): Promise<voi
       }
     } else {
       order.status = parsed.data.status;
+      // Shipped = past the point the customer can cancel, so its points can be spent.
+      if (order.status === "shipped" || order.status === "delivered") {
+        await releaseOrderPoints(order);
+      }
     }
 
     order.statusHistory.push({

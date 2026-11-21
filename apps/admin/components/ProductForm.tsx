@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api";
-import type { Category, Color, Product, ProductVariant, ProtectionStat, Subcategory } from "../lib/types";
+import type { Category, Color, Product, ProductVariant, ProtectionStat, RewardTier, Subcategory } from "../lib/types";
 import MultiImageUpload from "./MultiImageUpload";
 import ImageUpload from "./ImageUpload";
 
@@ -104,6 +104,8 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
   const [isFeatured, setIsFeatured] = useState(product?.isFeatured ?? false);
   const [isNewArrival, setIsNewArrival] = useState(product?.isNewArrival ?? false);
   const [isBestseller, setIsBestseller] = useState(product?.isBestseller ?? false);
+  const [giftEnabled, setGiftEnabled] = useState(product?.gift?.enabled ?? false);
+  const [giftMinTier, setGiftMinTier] = useState<RewardTier>(product?.gift?.minTier ?? "prime");
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [cardImage, setCardImage] = useState(product?.cardImage ?? "");
   const [competitorImage, setCompetitorImage] = useState(product?.competitorImage ?? "");
@@ -235,6 +237,7 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
       isFeatured,
       isNewArrival,
       isBestseller,
+      gift: { enabled: giftEnabled, minTier: giftMinTier },
       variants: colorGroups.flatMap((g) =>
         g.sizes.map((s) => ({
           sku: s.sku,
@@ -472,6 +475,33 @@ export default function ProductForm({ product, onDone, onCancel }: Props) {
           Bestseller
         </label>
       </div>
+
+      <h2>Reward gift</h2>
+      <small className="form-hint">
+        Lets customers pick this product as a free gift at checkout, paid for with reward points instead of
+        money — 1 point per ₹1 of each size&apos;s price (a ₹999 size costs 999 points). It ships at ₹0 alongside
+        at least one paid item and uses the same SKUs and stock as normal sales.
+      </small>
+      <div className="checkbox-row">
+        <label>
+          <input type="checkbox" checked={giftEnabled} onChange={(e) => setGiftEnabled(e.target.checked)} />
+          Available as a reward gift
+        </label>
+      </div>
+      {giftEnabled && (
+        <label>
+          Who can redeem it
+          <small className="form-hint">
+            Membership tier is based on the customer&apos;s purchases over the last year. Leave on &quot;All
+            members&quot; unless this gift is meant to be exclusive.
+          </small>
+          <select value={giftMinTier} onChange={(e) => setGiftMinTier(e.target.value as RewardTier)}>
+            <option value="prime">All members (Prime and above)</option>
+            <option value="elite">Elite and Gold only</option>
+            <option value="gold">Gold only</option>
+          </select>
+        </label>
+      )}
 
       <h2>Colours &amp; sizes</h2>
       <small className="form-hint">

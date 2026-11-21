@@ -319,7 +319,7 @@ export default function OrderDetail({ orderId, onBack }: { orderId: string; onBa
         <ul className="m-0 flex list-none flex-col gap-4 border-t border-[#3a3a3a] p-0 pt-4">
           {order.items.map((item) => (
             <li
-              key={item.variantSku}
+              key={`${item.variantSku}${item.isGift ? "-gift" : ""}`}
               className="grid grid-cols-[1fr_auto] items-center gap-x-4 font-sans text-sm leading-5 text-paper md:grid-cols-[1fr_7.75rem_7.75rem_12rem] md:gap-x-6 md:px-6"
             >
               <div className="flex min-w-0 items-center gap-4">
@@ -333,15 +333,20 @@ export default function OrderDetail({ orderId, onBack }: { orderId: string; onBa
                     {item.variantColor} · {item.variantSize}
                   </span>
                   <span>{item.productName}</span>
+                  {item.isGift && (
+                    <span className="self-start rounded-sm bg-gold/15 px-1.5 py-0.5 text-[0.65rem] font-semibold tracking-[0.04em] text-gold uppercase">
+                      Reward gift · {item.pointsCost?.toLocaleString("en-IN")} pts
+                    </span>
+                  )}
                   {/* Phones: price × qty under the name; the columns take over from md. */}
                   <span className="text-xs text-[#c9c9c9] md:hidden">
-                    {formatInr(item.unitPrice)} × {item.quantity}
+                    {item.isGift ? "Free" : formatInr(item.unitPrice)} × {item.quantity}
                   </span>
                 </div>
               </div>
-              <span className="hidden font-medium md:block">{formatInr(item.unitPrice)}</span>
+              <span className="hidden font-medium md:block">{item.isGift ? "Free" : formatInr(item.unitPrice)}</span>
               <span className="hidden md:block">x{item.quantity}</span>
-              <span className="font-medium whitespace-nowrap">{formatInr(item.totalPrice)}</span>
+              <span className="font-medium whitespace-nowrap">{item.isGift ? "Free" : formatInr(item.totalPrice)}</span>
             </li>
           ))}
         </ul>

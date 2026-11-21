@@ -16,12 +16,15 @@ import WishlistTab from "./WishlistTab";
 import AddressesTab from "./AddressesTab";
 import LoginSignup from "./LoginSignup";
 import ProfileTab from "./ProfileTab";
+import RewardsTab from "./RewardsTab";
 
 const TABS = [
   { id: "overview", label: "Overview", heading: "My Account" },
   { id: "orders", label: "Orders", heading: "My Orders" },
   { id: "wishlist", label: "Wishlist", heading: "My Wishlist" },
   { id: "addresses", label: "Addresses", heading: "My Addresses" },
+  // Not in the Figma sidebar yet — reward points/tier dashboard (Phase 1 requirement).
+  { id: "rewards", label: "Rewards", heading: "My Rewards" },
   { id: "profile", label: "Profile", heading: "My Profile" },
   // Not in the Figma sidebar, but language + notification preferences are a Phase 1 requirement.
   { id: "settings", label: "Settings", heading: "Settings" },
@@ -87,7 +90,8 @@ function MyAccount() {
         </nav>
 
         <div className="min-w-0">
-          {tab === "overview" && <OverviewTab onShowOrders={() => go("orders")} />}
+          {tab === "overview" && <OverviewTab onShowOrders={() => go("orders")} onShowRewards={() => go("rewards")} />}
+          {tab === "rewards" && <RewardsTab />}
           {tab === "orders" &&
             (orderId ? <OrderDetail orderId={orderId} onBack={() => openOrder(null)} /> : <OrdersTab onOpenOrder={openOrder} />)}
           {tab === "wishlist" && <WishlistTab />}

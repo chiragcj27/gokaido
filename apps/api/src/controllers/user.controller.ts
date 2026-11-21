@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { User, Product, Referral, RewardTransaction, mongoose } from "@gokaido/database";
 import { updateProfileSchema, rewardTransactionsQuerySchema } from "../schemas/user.schema.js";
+import { expireDuePoints, getRewardsSummary } from "../services/rewards.js";
+import { REFERRAL_BONUS_POINTS, REFERRAL_MIN_ORDER_VALUE } from "../utils/rewardPoints.js";
 
 export async function updateProfile(req: Request, res: Response): Promise<void> {
   const parsed = updateProfileSchema.safeParse(req.body);
@@ -79,10 +81,12 @@ export async function getRewardTransactions(req: Request, res: Response): Promis
   }
   const { page, limit } = parsed.data;
   const userId = req.user!.id;
+  await expireDuePoints({ userId });
 
   const [user, transactions, total] = await Promise.all([
     User.findById(userId).select("rewardPoints").lean() as Promise<{ rewardPoints: number } | null>,
     RewardTransaction.find({ user: userId })
+      .select("-allocations")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -95,6 +99,11 @@ export async function getRewardTransactions(req: Request, res: Response): Promis
     transactions,
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
+}
+
+// Balance, pending/expiring points, membership tier and the rule card.
+export async function getRewards(req: Request, res: Response): Promise<void> {
+  res.json(await getRewardsSummary(req.user!.id));
 }
 
 export async function getReferralDashboard(req: Request, res: Response): Promise<void> {
@@ -113,6 +122,8 @@ export async function getReferralDashboard(req: Request, res: Response): Promise
   res.json({
     referralCode: user?.referralCode,
     totalReferrals: referrals.length,
+    bonusPoints: REFERRAL_BONUS_POINTS,
+    minOrderValue: REFERRAL_MIN_ORDER_VALUE,
     totalPointsEarned: referrals.reduce((sum, r) => sum + r.referrerPointsAwarded, 0),
     referrals: (referrals as PopulatedReferral[]).map((r) => ({
       refereeName: r.referee?.name,

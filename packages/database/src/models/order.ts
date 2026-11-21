@@ -1,4 +1,5 @@
 import { mongoose } from "../client.js";
+import { REWARD_TIERS, type RewardTier } from "./reward-transaction.js";
 
 export type OrderStatus =
   | "placed"
@@ -21,6 +22,10 @@ export interface IOrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  // Reward gift: shipped at ₹0 (unitPrice/totalPrice 0), paid for with
+  // `pointsCost` points. Same SKU and stock as the sellable product.
+  isGift?: boolean;
+  pointsCost?: number;
 }
 
 export interface IAddressSnapshot {
@@ -49,8 +54,14 @@ export interface IOrder {
   deliveryCharge: number;
   couponCode?: string;
   couponDiscount: number;
+  // Points spent on gift items (sum of their pointsCost). Points are never
+  // a bill discount, so rewardPointsValue is always 0 on new orders — it
+  // only holds the ₹ discount on orders from the old redemption model.
   rewardPointsUsed: number;
   rewardPointsValue: number;
+  // Points this order earned, and the tier they were earned at.
+  rewardPointsEarned: number;
+  rewardTier?: RewardTier;
   total: number;
 
   payment: {
@@ -110,6 +121,8 @@ const orderItemSchema = new mongoose.Schema<IOrderItem>(
     quantity: { type: Number, required: true, min: 1 },
     unitPrice: { type: Number, required: true },
     totalPrice: { type: Number, required: true },
+    isGift: { type: Boolean, default: undefined },
+    pointsCost: Number,
   },
   { _id: false }
 );
@@ -132,6 +145,8 @@ const orderSchema = new mongoose.Schema<IOrder>(
     couponDiscount: { type: Number, default: 0 },
     rewardPointsUsed: { type: Number, default: 0 },
     rewardPointsValue: { type: Number, default: 0 },
+    rewardPointsEarned: { type: Number, default: 0 },
+    rewardTier: { type: String, enum: [...REWARD_TIERS] },
     total: { type: Number, required: true },
 
     payment: {
@@ -181,6 +196,8 @@ const orderSchema = new mongoose.Schema<IOrder>(
 
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
+// Trailing-year spend for the membership tier.
+orderSchema.index({ user: 1, "payment.status": 1, "payment.paidAt": -1 });
 orderSchema.index({ "payment.txnID": 1 });
 
 export const Order =
