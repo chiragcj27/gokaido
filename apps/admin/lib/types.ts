@@ -238,6 +238,22 @@ export interface Store {
   isActive: boolean;
 }
 
+export interface GokaidoEvent {
+  _id: string;
+  name: string;
+  year: string;
+  category?: string;
+  about: string;
+  dates?: string;
+  place: string;
+  sport: string;
+  recognition?: string;
+  hostedBy?: string;
+  images: string[];
+  sortOrder: number;
+  isActive: boolean;
+}
+
 export interface Reel {
   _id: string;
   title: string;

@@ -2,6 +2,7 @@
 // bestsellers flagged, nothing saved in admin). Every dynamic section falls back to these instead of
 // rendering empty — they go away on their own once real data exists. Tracked in DUMMY_DATA.md.
 import type { RelatedProduct } from "./pdp/types";
+import type { GokaidoEvent } from "./events";
 import type { Store } from "./stores";
 
 const DUMMY_IMAGE = "/card/card-sample.png";
@@ -151,3 +152,79 @@ export const DUMMY_BLOG_POSTS = DUMMY_BLOG_TITLES.map((title, i) => {
     metaDescription: null,
   };
 });
+
+const LOREM_ABOUT =
+  "About event: lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.";
+
+/** /events placeholders: WGKF 2026 has real text (borrowed photos); the rest are "Event Name" filler. */
+export const DUMMY_EVENTS: GokaidoEvent[] = [
+  {
+    id: "dummy-wgkf-2026",
+    year: "2026",
+    category: "World Championship",
+    name: "8th WGKF World Goju Ryu Championship",
+    about:
+      "The world of Goju Ryu comes to India. A global celebration of karate, discipline, technique and the spirit of Goju Ryu, bringing athletes and karate communities together on one stage. Gokaido is proud to sponsor the championship.",
+    dates: "5–10 October 2026",
+    place: "Shree Shiv Chhatrapati Sports Complex, Mahalunge, Pune, Maharashtra",
+    sport: "Karate (Goju Ryu)",
+    recognition: "Official sponsor",
+    hostedBy: "Indian Goju Ryu Karate Do Association",
+    // Placeholder photos until the WGKF shoot is uploaded.
+    images: [
+      { src: "/about/timeline/photo-2003.png", alt: "Karate athletes on the championship stage" },
+      { src: "/about/timeline/photo-2017.png", alt: "Championship crowd" },
+      { src: "/about/timeline/photo-2022.png", alt: "Gokaido stall at the championship" },
+    ],
+  },
+  {
+    id: "dummy-event-1",
+    year: "2025",
+    category: "National Championship",
+    name: "Event Name",
+    about: LOREM_ABOUT,
+    place: "Address — India",
+    sport: "Karate",
+    recognition: "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+    images: [
+      { src: "/about/timeline/photo-2025.png", alt: "Sample event photo" },
+      { src: "/about/timeline/photo-2005.png", alt: "Sample event photo" },
+    ],
+  },
+  {
+    id: "dummy-event-2",
+    year: "2022",
+    category: "Open Tournament",
+    name: "Event Name",
+    about: LOREM_ABOUT,
+    place: "Address — Global",
+    sport: "Taekwondo",
+    recognition: "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+    images: [{ src: "/about/timeline/photo-2014.png", alt: "Sample event photo" }],
+  },
+  {
+    id: "dummy-event-3",
+    year: "2017",
+    category: "State Championship",
+    name: "Event Name",
+    about: LOREM_ABOUT,
+    place: "Address — India",
+    sport: "Boxing",
+    recognition: "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+    images: [
+      { src: "/about/timeline/photo-1990.png", alt: "Sample event photo" },
+      { src: "/about/timeline/photo-1975.png", alt: "Sample event photo" },
+    ],
+  },
+  {
+    id: "dummy-event-4",
+    year: "2014",
+    category: "Felicitation",
+    name: "Event Name",
+    about: LOREM_ABOUT,
+    place: "Address — India",
+    sport: "Karate",
+    recognition: "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+    images: [{ src: "/about/founders.jpg", alt: "Sample event photo" }],
+  },
+];

@@ -563,6 +563,11 @@ input.position-input {
   justify-content: center;
   font-size: 0.75rem;
 }
+/* MultiImageUpload `reorderable`: ← sits top-left, opposite the × remove button. */
+.image-upload-item .link-button.image-upload-move {
+  right: auto;
+  left: -6px;
+}
 .image-upload-compact input[type="file"] {
   font-size: 0.75rem;
   max-width: 140px;

@@ -8,9 +8,11 @@ interface Props {
   values: string[];
   onChange: (urls: string[]) => void;
   compact?: boolean;
+  /** Show a ← button to move a photo earlier — for forms where order matters (first = cover). */
+  reorderable?: boolean;
 }
 
-export default function MultiImageUpload({ purpose, values, onChange, compact }: Props) {
+export default function MultiImageUpload({ purpose, values, onChange, compact, reorderable }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,11 +37,22 @@ export default function MultiImageUpload({ purpose, values, onChange, compact }:
     onChange(values.filter((_, i) => i !== index));
   }
 
+  function moveEarlier(index: number) {
+    const next = [...values];
+    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+    onChange(next);
+  }
+
   return (
     <div className={`image-upload ${compact ? "image-upload-compact" : ""}`}>
       {values.map((url, i) => (
         <div key={url} className="image-upload-item">
           <img src={url} alt="" className={compact ? "thumb" : "image-upload-preview"} />
+          {reorderable && i > 0 && (
+            <button type="button" className="link-button image-upload-move" title="Move earlier" onClick={() => moveEarlier(i)}>
+              ←
+            </button>
+          )}
           <button type="button" className="link-button" onClick={() => removeAt(i)}>
             ×
           </button>

@@ -162,6 +162,12 @@ Admin → **Blog** (`apps/admin/app/(dashboard)/blog`, `components/BlogPostForm.
 
 **The API sanitizes every body on save** (`apps/api/src/utils/sanitizeBlogHtml.ts`, `sanitize-html`): no scripts/`<style>`/event handlers/`javascript:`, inline CSS restricted to a property allowlist without `url()` or `position`, iframes only from YouTube/Vimeo. The storefront renders the stored HTML as-is inside `.blog-content`, so that sanitizer is the XSS boundary — widen it deliberately. `.blog-content` styles exist twice and must stay in sync: `apps/web/app/globals.css` and `apps/admin/components/BlogEditor/blogContentCss.ts`.
 
+## Events page
+
+Storefront `/events` (`apps/web/app/events/EventsScroller.tsx`) is a pinned scroll section after huyml.co: GSAP ScrollTrigger pins it for ~0.9 viewport heights per event (with snap), and one eased progress value drives the 3D-tilted photo stack, the right-hand event list, the rolling counter and the left meta, written straight to the DOM each frame (React only re-renders when the nearest event changes). Phones get a stacked layout off the same progress value.
+
+Data: `GET /api/events` (active only, `sortOrder` asc) → `lib/events.ts` (5 min cache, tag `events`), dummy fallback per `DUMMY_DATA.md`. Admin → **Events** (`apps/admin/app/(dashboard)/events`, `components/EventForm.tsx`): name, year, event type, about, dates (free text), place, sport, recognition, hosted by, photos (`event` upload purpose; first = cover, next two fan out behind it, reordered with ←), display order, visibility. API admin routes: `GET /api/events/admin`, `POST /api/events`, `PATCH|DELETE /api/events/:id`.
+
 ## Notifications (MSG91)
 
 All SMS, WhatsApp and email go through **MSG91** (replaced Twilio for OTP and Resend for email), with one `MSG91_AUTH_KEY`. With the key unset, sends are logged to the console instead (local dev).
