@@ -80,6 +80,7 @@ export default function DashboardPage() {
     },
     { label: "Reviews to moderate", count: attention.pendingReviews, href: "/reviews" },
     { label: "New franchise enquiries", count: attention.newEnquiries, href: "/franchise-enquiries" },
+    { label: "New contact enquiries", count: attention.newContactEnquiries, href: "/contact-enquiries" },
   ];
 
   return (

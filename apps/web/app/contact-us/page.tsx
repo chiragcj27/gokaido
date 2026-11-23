@@ -199,6 +199,7 @@ export default function ContactUsPage() {
             </div>
             <div className="rounded-xl border border-paper/20 bg-panel p-4 shadow-[0_0_80px_-20px] shadow-red/30 sm:p-6">
               <EnquiryForm
+                form="contact"
                 intro="Tell us what you’re looking for and our team will get back to you with pricing or franchise details."
                 thanks="We’ve got your enquiry. Our team will be in touch soon."
               />

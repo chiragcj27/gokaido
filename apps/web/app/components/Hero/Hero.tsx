@@ -2,8 +2,6 @@
 
 import Image, { getImageProps } from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createHeroReelGL, type HeroReelGL } from "./heroReelGL";
 
 export interface HeroProps {
@@ -206,8 +204,6 @@ export default function Hero({
     const canvas = canvasRef.current;
     if (!stack || !slot || !mobileSlot || !card || !videoWrap || !video || !canvas) return;
 
-    gsap.registerPlugin(ScrollTrigger);
-
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // GL only where it's a genuine upgrade — touch/small screens keep the
@@ -250,7 +246,7 @@ export default function Hero({
     if (usingGL) canvas.style.visibility = "visible";
     else videoWrap.style.visibility = "visible";
 
-    // Blend factor between the two slots, scrubbed by scroll.
+    // Blend factor between the two slots, derived from scroll every frame.
     const morph = { t: 0 };
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -258,6 +254,17 @@ export default function Hero({
     function paint() {
       const a = (phone.matches ? mobileSlot! : slot!).getBoundingClientRect();
       const b = card!.getBoundingClientRect();
+      // Progress is computed from the SAME live rects, in the same frame, not
+      // from a smoothed/scrubbed tween. Starts when the hero's top hits the
+      // viewport top, finishes exactly when the end box's top does (i.e. the
+      // moment it fills the screen). Both rects move 1:1 with scroll, so any
+      // lag in `t` (GSAP `scrub: 1` used to trail by ~1s) made the video
+      // ride along with the page on a fast scroll and then slide back down
+      // into place as `t` caught up — scroll fast and it visibly "dropped"
+      // before morphing. Deriving `t` here keeps rect and blend in lockstep.
+      const s = stack!.getBoundingClientRect().top;
+      const span = b.top - s;
+      morph.t = span > 0 ? Math.min(1, Math.max(0, -s / span)) : 0;
       const t = morph.t;
 
       // Straight lerp of the two rects. On the GL path this is only used for
@@ -340,37 +347,6 @@ export default function Hero({
     }
     rafId = requestAnimationFrame(frame);
 
-    const ctx = gsap.context(() => {
-      // Reduced motion still gets the morph: it's driven 1:1 by the visitor's
-      // own scroll, not motion that plays on its own, and switching it off
-      // left phones (where iOS "Reduce Motion" is a common setting) with a
-      // stuck video and a broken layout. What reduced motion drops is the GL
-      // twist (see wantsGL) and the scrub smoothing below, so nothing moves
-      // except in lockstep with the finger.
-      // No pinning: the headline scrolls away naturally while the video
-      // morphs down into the reel card. Linear ease + `scrub` smoothing is
-      // what gives the weighted, premium feel — an ease curve on top of a
-      // scrub reads as lag, not polish.
-      // Finishes exactly when the end box's top reaches the viewport top,
-      // i.e. the moment it fills the screen — on phones too, now that their
-      // end box is full-screen rather than a short strip. A fixed
-      // `+=innerHeight` overshot (the hero's height isn't the viewport's), so
-      // the reel looked full-screen at t≈0.9 with the last-staggered corner
-      // (bottom-left) still peeling in until you scrolled further.
-      gsap.to(morph, {
-        t: 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: stack,
-          start: "top top",
-          endTrigger: card,
-          end: "top top",
-          scrub: reduceMotion ? true : 1,
-          invalidateOnRefresh: true,
-        },
-      });
-    }, stack);
-
     const handleResize = () => {
       glRenderer?.resize();
       paint();
@@ -382,7 +358,6 @@ export default function Hero({
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(rafId);
       glRenderer?.destroy();
-      ctx.revert();
     };
   }, [videoUrl, mobileVideoUrl]);
 

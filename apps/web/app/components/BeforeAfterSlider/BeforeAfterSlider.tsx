@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 
 export interface BeforeAfterSliderProps {
   beforeSrc: string;
@@ -9,7 +9,8 @@ export interface BeforeAfterSliderProps {
   beforeAlt: string;
   afterAlt: string;
   beforeLabel: string;
-  afterLabel: string;
+  /** Text, or an element such as the brand logo. */
+  afterLabel: ReactNode;
 }
 
 export default function BeforeAfterSlider({
@@ -101,7 +102,11 @@ export default function BeforeAfterSlider({
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between border-t border-white/10 bg-ink/70 px-5 py-4 backdrop-blur-sm max-lg:border-0 max-lg:bg-transparent max-lg:px-2.5 max-lg:py-2 max-lg:backdrop-blur-none">
         <span className="font-heading text-[28px] font-semibold text-paper/60 max-lg:font-sans max-lg:text-[22px] max-lg:font-normal max-lg:text-paper">{beforeLabel}</span>
-        <span className="font-heading text-[28px] font-bold text-gold max-lg:font-sans max-lg:text-[22px] max-lg:font-normal max-lg:text-paper">{afterLabel}</span>
+        {typeof afterLabel === "string" ? (
+          <span className="font-heading text-[28px] font-bold text-gold max-lg:font-sans max-lg:text-[22px] max-lg:font-normal max-lg:text-paper">{afterLabel}</span>
+        ) : (
+          afterLabel
+        )}
       </div>
     </div>
   );

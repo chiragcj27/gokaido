@@ -40,6 +40,7 @@ export default function FranchiseSignup() {
         <div className="rounded-xl border border-paper/30 bg-panel/95 p-4 backdrop-blur-sm sm:p-5">
           {/* Placeholder copy (tracked in DUMMY_DATA.md). */}
           <EnquiryForm
+            form="franchise"
             intro="Fill out the form below and we’ll get you started on bringing Gokaido to your city."
             thanks="We’ve got your details. Our team will be in touch soon."
           />

@@ -16,13 +16,15 @@ function istStartOfDay(daysAgo: number): Date {
 
 // Counts behind the sidebar badges — things waiting on an admin.
 async function attentionCounts() {
-  const [toShip, refundsPending, pendingReviews, newEnquiries] = await Promise.all([
+  const [toShip, refundsPending, pendingReviews, newEnquiries, newContactEnquiries] = await Promise.all([
     Order.countDocuments({ status: "confirmed" }),
     Order.countDocuments({ status: "refund_initiated" }),
     Review.countDocuments({ status: "pending" }),
-    FranchiseEnquiry.countDocuments({ status: "new" }),
+    // Franchise = no `form` too (enquiries saved before contact-page ones were told apart).
+    FranchiseEnquiry.countDocuments({ form: { $ne: "contact" }, status: "new" }),
+    FranchiseEnquiry.countDocuments({ form: "contact", status: "new" }),
   ]);
-  return { toShip, refundsPending, pendingReviews, newEnquiries };
+  return { toShip, refundsPending, pendingReviews, newEnquiries, newContactEnquiries };
 }
 
 async function paidRevenueSince(since: Date): Promise<{ revenue: number; orders: number }> {

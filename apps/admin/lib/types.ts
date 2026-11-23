@@ -279,14 +279,18 @@ export interface Reel {
 
 export type FranchiseEnquiryStatus = "new" | "contacted" | "closed";
 
+export type EnquiryForm = "franchise" | "contact";
+
 export interface FranchiseEnquiry {
   _id: string;
+  /** Absent on enquiries saved before the contact page's were told apart (→ franchise). */
+  form?: EnquiryForm;
   name: string;
   email: string;
   phone: string;
   city: string;
   country?: string;
-  businessName: string;
+  businessName?: string;
   source?: string;
   message?: string;
   status: FranchiseEnquiryStatus;
@@ -316,7 +320,10 @@ export interface AttentionCounts {
   toShip: number;
   refundsPending: number;
   pendingReviews: number;
+  /** New enquiries from the franchise page. */
   newEnquiries: number;
+  /** New enquiries from the contact page. */
+  newContactEnquiries: number;
 }
 
 export type BlogLanguage = "en" | "hi" | "mr" | "ta";

@@ -1,8 +1,10 @@
 import { z } from "zod";
-import { FRANCHISE_ENQUIRY_SOURCES, FRANCHISE_ENQUIRY_STATUSES } from "@gokaido/database";
+import { FRANCHISE_ENQUIRY_FORMS, FRANCHISE_ENQUIRY_SOURCES, FRANCHISE_ENQUIRY_STATUSES } from "@gokaido/database";
 import { dateRangeQuerySchema } from "./dateRange.schema.js";
 
 export const createFranchiseEnquirySchema = z.object({
+  // Which page's form was used; omitted by older clients → franchise.
+  form: z.enum(FRANCHISE_ENQUIRY_FORMS).default("franchise"),
   name: z.string({ error: "Name is required" }).trim().min(1, "Name is required").max(120),
   email: z.string({ error: "Email is required" }).trim().email("Enter a valid email").max(200),
   // Digits with optional leading + and common separators; 7–15 digits covers Indian and international numbers.
@@ -17,14 +19,19 @@ export const createFranchiseEnquirySchema = z.object({
   country: z.string({ error: "Country is required" }).trim().min(1, "Country is required").max(120),
   // Not checked against the storefront's list: towns that aren't listed can be typed in.
   city: z.string({ error: "City is required" }).trim().min(1, "City is required").max(120),
-  businessName: z.string({ error: "Business name is required" }).trim().min(1, "Business name is required").max(160),
+  // Required for franchise enquiries only (checked below); optional on the contact page.
+  businessName: z.string().trim().max(160).optional(),
   // "" = the dropdown was left on its placeholder.
   source: z.union([z.enum(FRANCHISE_ENQUIRY_SOURCES), z.literal("")], { error: "Invalid option" }).optional(),
   message: z.string().trim().max(2000).optional(),
+}).refine((d) => d.form !== "franchise" || !!d.businessName, {
+  message: "Business name is required",
+  path: ["businessName"],
 });
 
 // Filters shared by the admin enquiry list and its Excel export.
 export const adminFranchiseEnquiryFilterSchema = dateRangeQuerySchema.extend({
+  form: z.enum(FRANCHISE_ENQUIRY_FORMS).default("franchise"),
   status: z.enum([...FRANCHISE_ENQUIRY_STATUSES, "all"]).optional(),
   search: z.string().trim().max(100).optional(),
 });

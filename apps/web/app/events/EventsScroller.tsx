@@ -34,6 +34,54 @@ function cardStyle(d: number, reduced: boolean): CSSProperties {
   };
 }
 
+// Phones, after huyml.co's mobile view (measured off a 60fps screencast of it): the photos
+// sit on one straight diagonal track — the previous event's parked off the top-right
+// corner, the next one peeking from the bottom-left, the rest further out along the same
+// line — and keep their size, rotating from ~2° in the middle to ~9° in the corners.
+// Offsets are in vw / svh because the track runs between the screen's corners.
+const M_NEXT = [-60, 57] as const; // where photo d = +1 sits — only its corner shows
+const M_PREV = [46, -45] as const; // where photo d = -1 sits
+
+function mobileCardStyle(d: number, reduced: boolean): CSSProperties {
+  const a = Math.abs(d);
+  const [vx, vy] = d > 0 ? M_NEXT : M_PREV;
+  const opacity = a < 2.2 ? 1 : 0; // beyond that they're off-screen anyway
+  const zIndex = 100 - Math.round(a * 10);
+  if (reduced) return { transform: `translate3d(${vx * a}vw, ${vy * a}svh, 0)`, opacity, zIndex };
+  return {
+    transform:
+      `translate3d(${vx * a}vw, ${vy * a}svh, 0) perspective(900px) ` +
+      `rotateY(${-d * 10}deg) rotateZ(${2 + Math.min(a, 1) * 7}deg)`,
+    opacity,
+    zIndex,
+  };
+}
+
+// Phones don't follow the finger: a small scroll commits to the next / previous event
+// and the photos then travel on their own, on huyml's curve (fitted to its frames).
+const M_COMMIT = 0.06; // fraction of one event's scroll that commits the step
+const M_DURATION = 0.75; // s
+function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
+  const at = (p1: number, p2: number, t: number) => 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t * t * p2 + t ** 3;
+  return (x: number) => {
+    let lo = 0;
+    let hi = 1;
+    for (let k = 0; k < 24; k++) {
+      const t = (lo + hi) / 2;
+      if (at(x1, x2, t) < x) lo = t;
+      else hi = t;
+    }
+    return at(y1, y2, (lo + hi) / 2);
+  };
+}
+const M_EASE = cubicBezier(0.4, 0.05, 0.4, 1);
+
+// Phone counter + text: the outgoing one vanishes at once (no transition on the way out),
+// the incoming one fades in fast and sharpens slowly out of a heavy blur.
+const BLUR_IN =
+  "opacity-100 blur-none transition-[opacity,filter] duration-[300ms,950ms] ease-[cubic-bezier(0.2,0.6,0.3,1)]";
+const BLURRED = "opacity-0 blur-[10px]";
+
 // Extra photos of an event fan out up-and-right behind its cover.
 const FAN = [
   "translate3d(9%, -5%, -40px) scale(0.95)",
@@ -108,6 +156,7 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
 
   const sectionRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const mCardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listWrapRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
@@ -121,8 +170,10 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
     gsap.registerPlugin(ScrollTrigger);
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    const phone = window.matchMedia("(max-width: 1023.98px)");
     let target = 0;
-    let current = 0;
+    let current = 0; // desktop: eased toward the scroll position every frame
+    const m = { p: 0, idx: 0 }; // phones: committed event + its tweened visual position
     let lastActive = 0;
     let centers: number[] = [];
     let wrapH = 0;
@@ -132,7 +183,15 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       wrapH = listWrapRef.current?.clientHeight ?? 0;
     };
 
-    const apply = (p: number) => {
+    const setNearest = (p: number) => {
+      const nearest = Math.round(p);
+      if (nearest !== lastActive) {
+        lastActive = nearest;
+        setActive(nearest);
+      }
+    };
+
+    const applyDesktop = (p: number) => {
       cardRefs.current.forEach((el, i) => {
         if (!el) return;
         const s = cardStyle(i - p, reduced);
@@ -149,12 +208,51 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       itemRefs.current.forEach((li, i) => {
         if (li) li.style.opacity = String(Math.max(0.12, 1 - Math.abs(i - p) * 0.88));
       });
+      if (!phone.matches) setNearest(p);
+    };
 
-      const nearest = Math.round(p);
-      if (nearest !== lastActive) {
-        lastActive = nearest;
-        setActive(nearest);
-      }
+    const applyMobile = () => {
+      mCardRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const s = mobileCardStyle(i - m.p, reduced);
+        el.style.transform = String(s.transform);
+        el.style.opacity = String(s.opacity);
+        el.style.zIndex = String(s.zIndex);
+        // Only the photo in the middle is tappable — the corner ones are decoration.
+        el.style.pointerEvents = Math.abs(i - m.p) < 0.5 ? "auto" : "none";
+      });
+      // The text and counter swap at the midpoint, as on the reference.
+      if (phone.matches) setNearest(m.p);
+    };
+
+    const apply = (p: number) => {
+      applyDesktop(p);
+      applyMobile();
+    };
+
+    // Phones: commit to an event once the scroll has moved a little past the current one
+    // in the direction of travel, then tween there. Direction matters: right after a commit
+    // the scroll is still short of the new event (the directional snap below brings it
+    // along), which must not read as a step back.
+    const commitMobile = (direction: number) => {
+      let idx = m.idx;
+      if (direction > 0 && target > m.idx + M_COMMIT) idx = Math.min(n - 1, Math.ceil(target - M_COMMIT));
+      else if (direction < 0 && target < m.idx - M_COMMIT) idx = Math.max(0, Math.floor(target + M_COMMIT));
+      if (idx === m.idx) return;
+      goMobile(idx);
+    };
+
+    const goMobile = (idx: number) => {
+      if (idx === m.idx) return;
+      const steps = Math.abs(idx - m.idx);
+      m.idx = idx;
+      gsap.to(m, {
+        p: idx,
+        duration: reduced ? 0 : M_DURATION + 0.12 * (steps - 1),
+        ease: M_EASE,
+        overwrite: true,
+        onUpdate: applyMobile,
+      });
     };
 
     measure();
@@ -168,12 +266,16 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       invalidateOnRefresh: true,
       snap: {
         snapTo: 1 / (n - 1),
+        directional: true, // a small scroll settles on the next event, not back — phones commit to it
         duration: { min: 0.25, max: 0.7 },
         delay: 0.08,
         ease: "power2.inOut",
+        // Safety net: wherever the scroll finally settles is the event phones show.
+        onComplete: () => goMobile(Math.round(target)),
       },
       onUpdate: (self) => {
         target = self.progress * (n - 1);
+        commitMobile(self.direction);
       },
       onRefresh: measure,
     });
@@ -184,7 +286,7 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
     const fromHash = decodeURIComponent(window.location.hash.slice(1));
     const startAt = fromHash ? slugsRef.current.indexOf(fromHash) : -1;
     if (startAt > 0) {
-      target = current = startAt;
+      target = current = m.p = m.idx = startAt;
       apply(current);
       window.scrollTo({ top: trigger.start + (trigger.end - trigger.start) * (startAt / (n - 1)), behavior: "instant" });
     }
@@ -194,12 +296,12 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       if (Math.abs(diff) < 0.0005) {
         if (current !== target) {
           current = target;
-          apply(current);
+          applyDesktop(current);
         }
         return;
       }
       current = reduced ? target : current + diff * (1 - Math.pow(1 - EASE, gsap.ticker.deltaRatio()));
-      apply(current);
+      applyDesktop(current);
     };
     gsap.ticker.add(tick);
 
@@ -209,7 +311,13 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
     });
     if (listWrapRef.current) ro.observe(listWrapRef.current);
 
+    // Crossing the breakpoint hands the active event to the other layout's progress.
+    const onBreakpoint = () => setNearest(phone.matches ? m.p : current);
+    phone.addEventListener("change", onBreakpoint);
+
     return () => {
+      phone.removeEventListener("change", onBreakpoint);
+      gsap.killTweensOf(m);
       gsap.ticker.remove(tick);
       ro.disconnect();
       trigger.kill();
@@ -250,7 +358,7 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
     >
       <div className="relative mx-auto flex h-full max-w-384 flex-col px-4 pt-[calc(var(--navbar-h)+1.25rem)] pb-5 sm:px-8 lg:px-10 lg:pb-8">
         {/* Top strip */}
-        <div className="relative z-30 flex items-start justify-between gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-10">
+        <div className="relative z-30 hidden items-start justify-between gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-10">
           <div className="hidden lg:block" />
           <div>
             <h1 className="m-0 font-heading text-[11px] font-semibold tracking-wide text-paper uppercase">
@@ -272,7 +380,7 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
         </div>
 
         {/* Body */}
-        <div className="relative flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-10">
+        <div className="relative hidden min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-10">
           {/* Left: meta + counter (desktop) */}
           <div className="relative z-20 hidden min-h-0 flex-col lg:flex">
             <div className="relative mt-[18vh] min-h-56">
@@ -299,9 +407,8 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
           </div>
 
           {/* Centre: 3D photo stack */}
-          {/* Phones clip + fade the stack so neighbours can't run into the details below. */}
-          <div className="relative z-10 min-h-0 flex-1 overflow-hidden perspective-[1400px] mask-[linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)] lg:h-full lg:overflow-visible lg:mask-none">
-            <div className="absolute top-1/2 left-1/2 aspect-5/4 w-[min(72vw,20rem,38svh)] -translate-x-1/2 -translate-y-1/2 transform-3d lg:w-[min(100%,24rem,40svh)]">
+          <div className="relative z-10 h-full perspective-[1400px]">
+            <div className="absolute top-1/2 left-1/2 aspect-5/4 w-[min(100%,24rem,40svh)] -translate-x-1/2 -translate-y-1/2 transform-3d">
               {events.map((e, i) => (
                 <div
                   key={e.id}
@@ -317,7 +424,7 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
                       className="absolute inset-0 overflow-hidden bg-panel brightness-[0.55]"
                       style={{ transform: FAN[k], zIndex: -1 - k }}
                     >
-                      <Image src={img.src} alt="" fill sizes="(min-width: 1024px) 24rem, 72vw" className="object-cover" />
+                      <Image src={img.src} alt="" fill sizes="(min-width: 1024px) 24rem, 60vw" className="object-cover" />
                     </div>
                   ))}
                   {/* Any photo opens that event's page, as on the reference site. */}
@@ -331,8 +438,7 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
                       src={e.images[0]?.src ?? "/dummy/product-placeholder.png"}
                       alt={e.images[0]?.alt ?? e.name}
                       fill
-                      priority={i < 2}
-                      sizes="(min-width: 1024px) 24rem, 72vw"
+                      sizes="(min-width: 1024px) 24rem, 60vw"
                       className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-[1.04]"
                     />
                     <span className="absolute right-3 bottom-3 bg-ink/80 px-2.5 py-1.5 text-[11px] tracking-wide text-paper opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 group-focus-visible/card:opacity-100">
@@ -378,38 +484,82 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
             <div className="absolute top-1/2 right-0 -translate-y-1/2">{pager}</div>
           </div>
 
-          {/* Mobile: active event details */}
-          <div className="relative z-20 shrink-0 lg:hidden">
-            <div className="mb-3 flex items-end justify-between">
-              <Counter active={active} total={n} className="text-[clamp(3rem,15vw,4.5rem)] text-paper" />
-              <div className="pb-2">{pager}</div>
+        </div>
+      </div>
+
+      {/* Phones — after huyml.co's mobile view: big counter, one photo, the active event's
+          text and the pager, everything else crossfading through a blur. */}
+      <div className="absolute inset-0 flex flex-col px-5 pt-[calc(var(--navbar-h)+0.75rem)] pb-6 lg:hidden">
+        <div className="relative z-20 grid">
+          {events.map((e, i) => (
+            <div
+              key={e.id}
+              aria-hidden
+              className={`col-start-1 row-start-1 flex items-start gap-3 ${i === active ? BLUR_IN : BLURRED}`}
+            >
+              <span className="font-heading text-[clamp(4.5rem,24vw,7rem)] leading-[0.85] font-light tracking-tight text-paper tabular-nums">
+                {pad(i + 1)}
+              </span>
+              <span className="mt-1 text-sm text-paper/70">/{pad(n)}</span>
             </div>
-            <div className="grid">
-              {events.map((e, i) => (
-                <div
-                  key={e.id}
-                  aria-hidden={i !== active}
-                  className={`col-start-1 row-start-1 transition-all duration-500 ease-out ${
-                    i === active ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
-                  }`}
+          ))}
+        </div>
+
+        {/* Photo stage */}
+        <div className="relative z-30 min-h-0 flex-1">
+          <div className="absolute top-1/2 left-1/2 aspect-3/2 w-[min(66vw,22rem,45svh)] -translate-x-1/2 -translate-y-1/2">
+            {events.map((e, i) => (
+              <div
+                key={e.id}
+                ref={(el) => {
+                  mCardRefs.current[i] = el;
+                }}
+                className="absolute inset-0 will-change-transform"
+                style={mobileCardStyle(i, false)}
+              >
+                <Link
+                  href={`/events/${e.slug}`}
+                  aria-label={`View ${e.name}`}
+                  tabIndex={i === active ? 0 : -1}
+                  className="absolute inset-0 block overflow-hidden bg-panel shadow-[0_24px_48px_-16px_rgba(0,0,0,0.9)]"
                 >
-                  <p className="m-0 text-[11px] tracking-wide text-paper/70">
-                    {e.year}{e.category ? ` · ${e.category}` : ""}
-                  </p>
-                  <h2 className="m-0 mt-1.5 font-heading text-lg leading-tight font-medium tracking-wide text-paper uppercase">
-                    <Link href={`/events/${e.slug}`} tabIndex={i === active ? 0 : -1}>
-                      {e.name} <span className="text-gold">→</span>
-                    </Link>
-                  </h2>
-                  <p className="m-0 mt-2 line-clamp-3 text-xs leading-relaxed text-paper/75">{e.about}</p>
-                  <div className="mt-4">
-                    <MetaFields event={e} />
-                  </div>
-                </div>
-              ))}
-            </div>
+                  <Image
+                    src={e.images[0]?.src ?? "/dummy/product-placeholder.png"}
+                    alt={e.images[0]?.alt ?? e.name}
+                    fill
+                    priority={i < 2}
+                    sizes="(min-width: 1024px) 24rem, 60vw"
+                    className="object-cover"
+                  />
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
+
+        <div className="relative z-20 grid shrink-0">
+          {events.map((e, i) => (
+            <div
+              key={e.id}
+              aria-hidden={i !== active}
+              className={`col-start-1 row-start-1 text-center ${i === active ? BLUR_IN : `pointer-events-none ${BLURRED}`}`}
+            >
+              <p className="m-0 text-xs text-paper/50">
+                {e.year}
+                {e.category ? ` · ${e.category}` : ""}
+              </p>
+              <h2 className="m-0 mt-2 font-heading text-[clamp(1.4rem,6.5vw,1.9rem)] leading-[1.05] font-medium tracking-tight text-balance text-paper uppercase">
+                <Link href={`/events/${e.slug}`} tabIndex={i === active ? 0 : -1}>
+                  {e.name}
+                </Link>
+              </h2>
+              <span className="mx-auto mt-4 block h-px w-5 bg-paper/30" />
+              <p className="m-0 mx-auto mt-4 line-clamp-3 max-w-80 text-[13px] leading-snug text-paper/80">{e.about}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="relative z-20 mt-6 flex shrink-0 justify-center">{pager}</div>
       </div>
       <p className="sr-only" aria-live="polite">
         {current ? `${current.name}, ${current.year}` : ""}

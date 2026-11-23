@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { FranchiseEnquiry } from "@gokaido/database";
 import { createFranchiseEnquirySchema } from "../schemas/franchiseEnquiry.schema.js";
 
-// Public — the storefront franchise page's "Sign up today" form posts here unauthenticated.
+// Public — the storefront enquiry form (franchise page and contact page) posts here unauthenticated.
 export async function createFranchiseEnquiry(req: Request, res: Response): Promise<void> {
   const parsed = createFranchiseEnquirySchema.safeParse(req.body);
   if (!parsed.success) {
@@ -10,7 +10,12 @@ export async function createFranchiseEnquiry(req: Request, res: Response): Promi
     return;
   }
 
-  const { source, message, ...rest } = parsed.data;
-  await FranchiseEnquiry.create({ ...rest, ...(source && { source }), ...(message && { message }) });
+  const { source, message, businessName, ...rest } = parsed.data;
+  await FranchiseEnquiry.create({
+    ...rest,
+    ...(source && { source }),
+    ...(message && { message }),
+    ...(businessName && { businessName }),
+  });
   res.status(201).json({ ok: true });
 }

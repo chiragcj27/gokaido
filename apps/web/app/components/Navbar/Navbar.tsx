@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import SearchModal, { type SearchModalProduct } from "../SearchModal/SearchModal";
 import { useAuth } from "../../lib/auth/authStore";
 import { useCart } from "../../lib/cartStore";
@@ -39,6 +39,9 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
   const [searchOpen, setSearchOpen] = useState(false);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const categoryRef = useRef<HTMLDivElement>(null);
+  // Mouse users get the Category menu on hover; touch and keyboard keep click-to-toggle.
+  const categoryCloseTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const lastPointerType = useRef("");
   const headerRef = useRef<HTMLElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
@@ -118,6 +121,20 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
   useEffect(() => {
     document.documentElement.style.setProperty("--navbar-offset", hidden ? "0px" : "var(--navbar-h)");
   }, [hidden]);
+
+  // Short grace period so crossing the gap between button and menu doesn't close it.
+  const CATEGORY_CLOSE_DELAY_MS = 150;
+  const openCategoryOnHover = (event: ReactPointerEvent) => {
+    if (event.pointerType !== "mouse") return;
+    clearTimeout(categoryCloseTimer.current);
+    setCategoryOpen(true);
+  };
+  const closeCategoryOnLeave = (event: ReactPointerEvent) => {
+    if (event.pointerType !== "mouse") return;
+    clearTimeout(categoryCloseTimer.current);
+    categoryCloseTimer.current = setTimeout(() => setCategoryOpen(false), CATEGORY_CLOSE_DELAY_MS);
+  };
+  useEffect(() => () => clearTimeout(categoryCloseTimer.current), []);
 
   useEffect(() => {
     if (!categoryOpen) return;
@@ -201,13 +218,26 @@ export default function Navbar({ categories, trendingSearches, bestsellers }: Na
           </Link>
 
           <nav className={styles.navLinks} aria-label="Primary">
-            <div className={styles.categoryWrap} ref={categoryRef}>
+            <div
+              className={styles.categoryWrap}
+              ref={categoryRef}
+              onPointerEnter={openCategoryOnHover}
+              onPointerLeave={closeCategoryOnLeave}
+            >
               <button
                 type="button"
                 className={styles.categoryButton}
                 aria-expanded={categoryOpen}
                 aria-haspopup="true"
-                onClick={() => setCategoryOpen((open) => !open)}
+                onPointerDown={(event) => {
+                  lastPointerType.current = event.pointerType;
+                }}
+                onClick={(event) => {
+                  // Hover already opened it for a mouse, so a click there shouldn't close it again.
+                  // Keyboard clicks (detail 0) and touch still toggle.
+                  const mouseClick = event.detail > 0 && lastPointerType.current === "mouse";
+                  setCategoryOpen((open) => (mouseClick ? true : !open));
+                }}
               >
                 <Image
                   src="/navbar/category-text.png"

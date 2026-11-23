@@ -75,9 +75,10 @@ export type { IEvent } from "./models/event.js";
 export { Reel } from "./models/reel.js";
 export type { IReel } from "./models/reel.js";
 
-export { FranchiseEnquiry, FRANCHISE_ENQUIRY_SOURCES, FRANCHISE_ENQUIRY_STATUSES } from "./models/franchise-enquiry.js";
+export { FranchiseEnquiry, FRANCHISE_ENQUIRY_FORMS, FRANCHISE_ENQUIRY_SOURCES, FRANCHISE_ENQUIRY_STATUSES } from "./models/franchise-enquiry.js";
 export type {
   IFranchiseEnquiry,
+  FranchiseEnquiryForm,
   FranchiseEnquirySource,
   FranchiseEnquiryStatus,
 } from "./models/franchise-enquiry.js";

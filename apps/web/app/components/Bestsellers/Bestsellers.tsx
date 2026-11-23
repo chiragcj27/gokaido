@@ -36,6 +36,8 @@ export interface BestsellersProps {
   mobileTitle?: string;
   /** Smaller heading for pages where the title is long (e.g. search results). */
   compactTitle?: boolean;
+  /** Grid only: show this many placeholder cards instead of `products` (results still loading). */
+  loadingCount?: number;
 }
 
 function formatInr(amount: number) {
@@ -57,6 +59,7 @@ export default function Bestsellers({
   shopAllHref,
   mobileTitle = title,
   compactTitle = false,
+  loadingCount = 0,
 }: BestsellersProps) {
   const mobileHeader = Boolean(shopAllHref);
   return (
@@ -89,7 +92,9 @@ export default function Bestsellers({
               "-mx-4 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 md:mx-0 md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0 lg:mt-10 lg:grid-cols-4 lg:gap-6"
         }
       >
-        {products.map((product) => (
+        {loadingCount > 0
+          ? Array.from({ length: loadingCount }, (_, i) => <CardSkeleton key={i} />)
+          : products.map((product) => (
           <div key={product.slug} className={layout === "grid" ? undefined : "w-[70vw] shrink-0 snap-start md:w-auto"}>
             <PoppedCard
               variant="product"
@@ -111,5 +116,25 @@ export default function Bestsellers({
       </div>
       {footer && <div className="mt-12 lg:mt-16">{footer}</div>}
     </section>
+  );
+}
+
+/** Same proportions as PoppedCard's product variant (image, title/price row, swatches). */
+function CardSkeleton() {
+  return (
+    <div aria-hidden="true" className="flex animate-pulse flex-col motion-reduce:animate-none">
+      <div className="aspect-594/470 bg-panel" />
+      <div className="mt-3 flex items-start justify-between gap-3">
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="h-3.5 w-3/4 rounded-sm bg-white/10" />
+          <div className="h-3 w-1/2 rounded-sm bg-white/6" />
+        </div>
+        <div className="h-3.5 w-14 rounded-sm bg-white/10" />
+      </div>
+      <div className="mt-3.5 flex gap-2">
+        <div className="h-4 w-4 rounded-full bg-white/8" />
+        <div className="h-4 w-4 rounded-full bg-white/8" />
+      </div>
+    </div>
   );
 }

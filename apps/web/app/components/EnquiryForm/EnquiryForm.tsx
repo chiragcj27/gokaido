@@ -22,6 +22,8 @@ const FIELD =
 type Status = { kind: "idle" } | { kind: "submitting" } | { kind: "done" } | { kind: "error"; message: string };
 
 interface Props {
+  /** Which page this is on — admin lists franchise and contact-page enquiries separately. */
+  form: "franchise" | "contact";
   /** Line above the fields. */
   intro: string;
   /** Body of the thank-you state shown after a successful submit. */
@@ -33,7 +35,7 @@ interface Props {
  * POST /api/franchise-enquiries (stored as FranchiseEnquiry documents).
  * Used by /become-a-distributor ("Sign up today") and /contact-us.
  */
-export default function EnquiryForm({ intro, thanks }: Props) {
+export default function EnquiryForm({ form: formType, intro, thanks }: Props) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [source, setSource] = useState("");
 
@@ -71,6 +73,7 @@ export default function EnquiryForm({ intro, thanks }: Props) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-2">
+      <input type="hidden" name="form" value={formType} />
       <p className="m-0 mx-auto mb-2 max-w-xs text-center font-sans text-sm leading-relaxed text-paper/90">{intro}</p>
 
       <input name="name" required maxLength={120} autoComplete="name" placeholder="Name" aria-label="Name" className={FIELD} />
@@ -91,11 +94,12 @@ export default function EnquiryForm({ intro, thanks }: Props) {
       <CountryCityFields fieldClassName={FIELD} />
       <input
         name="businessName"
-        required
+        // Distributors must name their business; on the contact page it's optional.
+        required={formType === "franchise"}
         maxLength={160}
         autoComplete="organization"
-        placeholder="Business Name"
-        aria-label="Business name"
+        placeholder={formType === "franchise" ? "Business Name" : "Business Name (optional)"}
+        aria-label={formType === "franchise" ? "Business name" : "Business name (optional)"}
         className={FIELD}
       />
 

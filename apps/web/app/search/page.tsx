@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import Bestsellers from "../components/Bestsellers/Bestsellers";
 import Pagination from "../components/Pagination/Pagination";
 import ProductFAQ from "../components/ProductFAQ/ProductFAQ";
@@ -69,7 +70,60 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const page = readPage(params.page);
   const interpret = first(params.ai) !== "0";
 
-  const faqsPromise = getStoreFaqs();
+  // The shell renders straight away and results stream in: an uncached search
+  // waits on OpenAI (query parsing + embedding), which can take a couple of seconds.
+  return (
+    <main>
+      <RecordRecentSearch query={query} />
+      <Suspense key={`${query}|${page}|${interpret}`} fallback={<SearchingSkeleton query={query} />}>
+        <SearchResultsSection query={query} page={page} interpret={interpret} />
+      </Suspense>
+      {/* Same full-width FAQ wrapper as the Best Sellers page. */}
+      <div className="px-6 lg:px-10">
+        <Suspense fallback={null}>
+          <StoreFaqs />
+        </Suspense>
+      </div>
+    </main>
+  );
+}
+
+const resultsTitle = (query: string) => (query ? `Results for “${query}”` : "Search");
+
+function SearchingSkeleton({ query }: { query: string }) {
+  return (
+    <Bestsellers
+      layout="grid"
+      title={resultsTitle(query)}
+      compactTitle
+      subtitle={
+        <p role="status" className="m-0 inline-flex items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className="h-4 w-4 animate-spin rounded-full border-2 border-paper/20 border-t-red motion-reduce:animate-none"
+          />
+          Searching…
+        </p>
+      }
+      products={[]}
+      loadingCount={query ? 8 : 0}
+    />
+  );
+}
+
+async function StoreFaqs() {
+  return <ProductFAQ faqs={await getStoreFaqs()} />;
+}
+
+async function SearchResultsSection({
+  query,
+  page,
+  interpret,
+}: {
+  query: string;
+  page: number;
+  interpret: boolean;
+}) {
   let results: SearchResults = { products: [], total: 0, page, totalPages: 0 };
   let failed = false;
   if (query) {
@@ -85,8 +139,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     redirect(searchHref(query, results.totalPages, interpret));
   }
 
-  const faqs = await faqsPromise;
-  const title = query ? `Results for “${query}”` : "Search";
+  const title = resultsTitle(query);
   const summary = !query
     ? "Type something in the search bar to find products."
     : failed
@@ -130,26 +183,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     );
 
   return (
-    <main>
-      <RecordRecentSearch query={query} />
-      <Bestsellers
-        layout="grid"
-        title={title}
-        compactTitle
-        subtitle={subtitle}
-        products={results.products}
-        footer={
-          <Pagination
-            page={page}
-            totalPages={results.totalPages}
-            hrefFor={(p) => searchHref(query, p, interpret)}
-          />
-        }
-      />
-      {/* Same full-width FAQ wrapper as the Best Sellers page. */}
-      <div className="px-6 lg:px-10">
-        <ProductFAQ faqs={faqs} />
-      </div>
-    </main>
+    <Bestsellers
+      layout="grid"
+      title={title}
+      compactTitle
+      subtitle={subtitle}
+      products={results.products}
+      footer={
+        <Pagination
+          page={page}
+          totalPages={results.totalPages}
+          hrefFor={(p) => searchHref(query, p, interpret)}
+        />
+      }
+    />
   );
 }

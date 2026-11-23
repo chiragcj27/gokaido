@@ -12,7 +12,9 @@ export const metadata: Metadata = {
 export default async function EventsPage() {
   const events = await loadEvents();
   return (
-    <main className="bg-ink">
+    // Pulled up under the sticky navbar: the section is exactly one screen tall and pads
+    // for the navbar itself, so in flow its bottom would sit off-screen until you scroll.
+    <main className="-mt-(--navbar-h) bg-ink">
       <EventsScroller events={events} />
     </main>
   );

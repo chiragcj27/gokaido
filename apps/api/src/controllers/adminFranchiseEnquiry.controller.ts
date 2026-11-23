@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import ExcelJS from "exceljs";
-import { FranchiseEnquiry, mongoose, type IFranchiseEnquiry } from "@gokaido/database";
+import { FranchiseEnquiry, mongoose, type FranchiseEnquiryForm, type IFranchiseEnquiry } from "@gokaido/database";
 import type { z } from "zod";
 import {
   adminFranchiseEnquiryFilterSchema,
@@ -21,13 +21,19 @@ const SOURCE_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+// Enquiries saved before `form` existed have none; they all came from the franchise page's form era.
+function formFilter(form: FranchiseEnquiryForm): Record<string, unknown> {
+  return form === "contact" ? { form: "contact" } : { form: { $ne: "contact" } };
+}
+
 function buildFilter({
+  form,
   status,
   search,
   from,
   to,
 }: z.infer<typeof adminFranchiseEnquiryFilterSchema>): Record<string, unknown> {
-  const filter: Record<string, unknown> = {};
+  const filter: Record<string, unknown> = formFilter(form);
   if (status && status !== "all") filter.status = status;
   if (search) {
     const re = new RegExp(escapeRegex(search), "i");
@@ -54,7 +60,7 @@ export async function listFranchiseEnquiries(req: Request, res: Response): Promi
       .skip((page - 1) * limit)
       .limit(limit),
     FranchiseEnquiry.countDocuments(filter),
-    FranchiseEnquiry.countDocuments({ status: "new" }),
+    FranchiseEnquiry.countDocuments({ ...formFilter(parsed.data.form), status: "new" }),
   ]);
 
   res.json({
@@ -106,10 +112,11 @@ export async function exportFranchiseEnquiries(req: Request, res: Response): Pro
     .limit(EXPORT_ROW_LIMIT)
     .lean<IFranchiseEnquiry[]>();
 
+  const contact = parsed.data.form === "contact";
   const workbook = new ExcelJS.Workbook();
   addSheet(
     workbook,
-    "Franchise enquiries",
+    contact ? "Contact enquiries" : "Franchise enquiries",
     [
       { header: "Received", format: "date", width: 18, value: (e) => e.createdAt },
       { header: "Name", width: 22, value: (e) => e.name },
@@ -125,5 +132,5 @@ export async function exportFranchiseEnquiries(req: Request, res: Response): Pro
     ],
     enquiries
   );
-  await sendWorkbook(res, workbook, "franchise-enquiries");
+  await sendWorkbook(res, workbook, contact ? "contact-enquiries" : "franchise-enquiries");
 }

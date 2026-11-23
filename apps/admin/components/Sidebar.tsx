@@ -22,6 +22,7 @@ const NAV_GROUPS: { title?: string; items: NavItem[] }[] = [
       { href: "/coupons", label: "Coupons" },
       { href: "/reviews", label: "Reviews", badge: (c) => c.pendingReviews },
       { href: "/franchise-enquiries", label: "Franchise enquiries", badge: (c) => c.newEnquiries },
+      { href: "/contact-enquiries", label: "Contact enquiries", badge: (c) => c.newContactEnquiries },
     ],
   },
   {

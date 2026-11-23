@@ -65,7 +65,18 @@ export default function SizeGuide({
           beforeAlt="Other company protection"
           afterAlt="Gokaido protection"
           beforeLabel="Other company"
-          afterLabel="Gokaido"
+          afterLabel={
+            // The gold embroidered logo; the PNG has transparent padding around the letters,
+            // so the negative margin keeps the label bar the same height as the text label.
+            <Image
+              src="/navbar/logo.png"
+              alt="Gokaido"
+              width={2368}
+              height={803}
+              sizes="160px"
+              className="-my-2 h-12 w-auto max-lg:-my-1.5 max-lg:h-10"
+            />
+          }
         />
       )}
 
