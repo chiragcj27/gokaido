@@ -7,28 +7,53 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { GokaidoEvent } from "../lib/events";
 
-// Pinned "selected work" scroller, after huyml.co: the section pins for a screen of
-// scroll per event, and one eased progress value (0 … n-1) drives everything — the 3D
-// photo stack in the middle, the event list on the right, the counter and the meta.
-// Transforms are written straight to the DOM each frame; React only re-renders when
-// the active (nearest) event changes.
+// Pinned "selected work" scroller, after huyml.co (desktop and phone layouts both
+// measured off its page and a 60fps screencast of it). The section pins for most of a
+// screen of scroll per event, but the visuals don't follow the scroll: a small scroll
+// commits one step and a timed tween carries one progress value (0 … n-1) there, which
+// drives the photo track, the event list, the counter and the meta. Transforms are written
+// straight to the DOM; React only re-renders when the nearest event changes.
 
 const SCROLL_PER_EVENT = 0.9; // viewport heights of scroll per event
-const EASE = 0.1; // per-60fps-frame lerp toward the scroll position (lower = floatier)
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-// Photo card `d` steps from the active one (fractional mid-scroll): neighbours tilt
-// away through the perspective like pages on a drum, the rest fade out.
+// Desktop photo track, measured at 1440×900 — [d, x vw, y vh, rotateY°, rotateZ°, scaleX,
+// brightness] with the active photo at d = 0. Coming events stack at the bottom-left under
+// the counter; past ones leave to the top-right and fold into thin strips that fan up
+// into the corner, each a step right *and* higher (bottom edges ~175 → 120 → 70px at 900
+// tall). The folding is a flat scaleX, not a real rotateY: in true perspective a card
+// turned edge-on that far from the vanishing point projects tall and low, nothing like the
+// reference's short strips.
+const D_TRACK: [number, number, number, number, number, number, number][] = [
+  [-5, 30.5, -65.5, 0, 9, 0.12, 0.75],
+  [-4, 28.6, -59.5, 0, 9, 0.12, 0.75],
+  [-3, 26.7, -54, 0, 9, 0.12, 0.75],
+  [-2, 24.6, -52.7, 0, 9, 0.13, 0.8],
+  [-1, 12, -45, -6, 9, 1, 1],
+  [0, 0, 0, 0, 1, 1, 1],
+  [1, -19.3, 54.4, 0, 9, 1, 1],
+  [2, -21.1, 60.1, 0, 9, 1, 1],
+  [3, -23, 65.8, 0, 9, 1, 1],
+  [4, -24.9, 71.5, 0, 9, 1, 1],
+];
+
 function cardStyle(d: number, reduced: boolean): CSSProperties {
-  const a = Math.abs(d);
-  const opacity = a <= 1 ? 1 : Math.max(0, 1 - (a - 1) * 1.6);
-  const zIndex = 100 - Math.round(a * 10);
-  if (reduced) return { transform: `translate3d(0, ${d * 135}%, 0)`, opacity, zIndex };
+  const first = D_TRACK[0];
+  const last = D_TRACK[D_TRACK.length - 1];
+  const c = Math.min(Math.max(d, first[0]), last[0]);
+  const k = Math.min(Math.floor(c - first[0]), D_TRACK.length - 2);
+  const [d0, x0, y0, ry0, rz0, sx0, b0] = D_TRACK[k];
+  const [, x1, y1, ry1, rz1, sx1, b1] = D_TRACK[k + 1];
+  const t = c - d0;
+  const lerp = (u: number, v: number) => u + (v - u) * t;
+  const opacity = d < -4 ? Math.max(0, 1 - (-4 - d)) : d > 3.5 ? 0 : 1;
+  const zIndex = 100 - Math.round(Math.abs(d) * 10);
+  const move = `translate3d(${lerp(x0, x1)}vw, ${lerp(y0, y1)}vh, 0)`;
+  if (reduced) return { transform: move, opacity, zIndex };
   return {
-    transform:
-      `translate3d(${d * 6}%, ${d * 135}%, ${-a * 160}px) ` +
-      `rotateX(${-d * 38}deg) rotateY(${d * 14}deg) rotateZ(${-d * 6}deg)`,
+    transform: `${move} rotateY(${lerp(ry0, ry1)}deg) rotateZ(${lerp(rz0, rz1)}deg) scaleX(${lerp(sx0, sx1)})`,
+    filter: `brightness(${lerp(b0, b1)})`,
     opacity,
     zIndex,
   };
@@ -57,8 +82,8 @@ function mobileCardStyle(d: number, reduced: boolean): CSSProperties {
   };
 }
 
-// Phones don't follow the finger: a small scroll commits to the next / previous event
-// and the photos then travel on their own, on huyml's curve (fitted to its frames).
+// A small scroll commits to the next / previous event and the photos then travel on
+// their own, on huyml's curve (fitted to its frames) — same on desktop and phones.
 const M_COMMIT = 0.06; // fraction of one event's scroll that commits the step
 const M_DURATION = 0.75; // s
 function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
@@ -76,17 +101,11 @@ function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
 }
 const M_EASE = cubicBezier(0.4, 0.05, 0.4, 1);
 
-// Phone counter + text: the outgoing one vanishes at once (no transition on the way out),
+// Counter, meta + text: the outgoing one vanishes at once (no transition on the way out),
 // the incoming one fades in fast and sharpens slowly out of a heavy blur.
 const BLUR_IN =
   "opacity-100 blur-none transition-[opacity,filter] duration-[300ms,950ms] ease-[cubic-bezier(0.2,0.6,0.3,1)]";
 const BLURRED = "opacity-0 blur-[10px]";
-
-// Extra photos of an event fan out up-and-right behind its cover.
-const FAN = [
-  "translate3d(9%, -5%, -40px) scale(0.95)",
-  "translate3d(17%, -10%, -80px) scale(0.9)",
-];
 
 function useIstClock() {
   const [time, setTime] = useState<string | null>(null);
@@ -105,47 +124,28 @@ function useIstClock() {
   return time;
 }
 
-function MetaFields({ event }: { event: GokaidoEvent }) {
-  const rows: [string, string | undefined][] = [
-    ["Event place", event.place],
-    ["Dates", event.dates],
-    ["Sport", event.sport],
-    ["Recognition", event.recognition],
-    ["Hosted by", event.hostedBy],
-  ];
-  return (
-    <dl className="m-0 grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-4 lg:gap-y-6">
-      {rows
-        .filter(([, v]) => v)
-        .map(([label, value]) => (
-          <div key={label} className="contents">
-            <dt className="text-[11px] leading-snug text-paper/45">{label}</dt>
-            <dd className="m-0 text-xs leading-snug text-paper">{value}</dd>
-          </div>
-        ))}
-    </dl>
-  );
-}
-
-function Counter({ active, total, className = "" }: { active: number; total: number; className?: string }) {
-  return (
-    <div className={`flex items-start gap-2 ${className}`}>
-      {/* A column of every number, slid up 1em per step — leading-none makes each line exactly 1em. */}
-      <div className="h-[1em] overflow-hidden font-heading leading-none font-light tabular-nums" aria-hidden>
-        <div
-          className="transition-transform duration-700 ease-[cubic-bezier(0.7,0,0.2,1)]"
-          style={{ transform: `translateY(-${active}em)` }}
-        >
-          {Array.from({ length: total }, (_, i) => (
-            <div key={i}>{pad(i + 1)}</div>
-          ))}
-        </div>
+// Desktop meta, laid out like the reference's: a short first column (label + value 5vw
+// apart) and a wider second one from 13.75vw.
+function DeskMeta({ event }: { event: GokaidoEvent }) {
+  const pair = (label: string, value?: string) =>
+    value ? (
+      <div key={label} className="flex">
+        <dt className="w-[6.25vw] shrink-0 text-[11px] leading-[1.3] text-paper/50">{label}</dt>
+        <dd className="m-0 text-[11px] leading-[1.3] text-paper">{value}</dd>
       </div>
-      <span className="mt-[0.4em] text-xs text-paper/60">/{pad(total)}</span>
-      <span className="sr-only">
-        Event {active + 1} of {total}
-      </span>
-    </div>
+    ) : null;
+  return (
+    <dl className="m-0 flex text-[11px]">
+      <div className="flex w-[13.75vw] shrink-0 flex-col gap-y-14 pr-4 [&_dt]:w-[3.75vw]">
+        {pair("Sport", event.sport)}
+        {pair("Dates", event.dates)}
+      </div>
+      <div className="flex min-w-0 flex-col gap-y-14">
+        {pair("Event place", event.place)}
+        {pair("Recognition", event.recognition)}
+        {pair("Hosted by", event.hostedBy)}
+      </div>
+    </dl>
   );
 }
 
@@ -170,10 +170,8 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
     gsap.registerPlugin(ScrollTrigger);
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const phone = window.matchMedia("(max-width: 1023.98px)");
-    let target = 0;
-    let current = 0; // desktop: eased toward the scroll position every frame
-    const m = { p: 0, idx: 0 }; // phones: committed event + its tweened visual position
+    let target = 0; // scroll position, in events
+    const m = { p: 0, idx: 0 }; // committed event + its tweened visual position
     let lastActive = 0;
     let centers: number[] = [];
     let wrapH = 0;
@@ -183,7 +181,37 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       wrapH = listWrapRef.current?.clientHeight ?? 0;
     };
 
-    const setNearest = (p: number) => {
+    const apply = () => {
+      const p = m.p;
+      cardRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const s = cardStyle(i - p, reduced);
+        el.style.transform = String(s.transform);
+        el.style.filter = s.filter ? String(s.filter) : "";
+        el.style.opacity = String(s.opacity);
+        el.style.zIndex = String(s.zIndex);
+        el.style.pointerEvents = Math.abs(i - p) < 0.5 ? "auto" : "none";
+      });
+      mCardRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const s = mobileCardStyle(i - p, reduced);
+        el.style.transform = String(s.transform);
+        el.style.opacity = String(s.opacity);
+        el.style.zIndex = String(s.zIndex);
+        // Only the photo in the middle is tappable — the corner ones are decoration.
+        el.style.pointerEvents = Math.abs(i - p) < 0.5 ? "auto" : "none";
+      });
+
+      // Desktop list: keep the interpolated position centred in its column.
+      const lo = Math.floor(p);
+      const hi = Math.min(lo + 1, n - 1);
+      const c = (centers[lo] ?? 0) + ((centers[hi] ?? 0) - (centers[lo] ?? 0)) * (p - lo);
+      if (listRef.current) listRef.current.style.transform = `translate3d(0, ${wrapH / 2 - c}px, 0)`;
+      itemRefs.current.forEach((li, i) => {
+        if (li) li.style.opacity = String(Math.max(0.2, 1 - Math.abs(i - p) * 0.8));
+      });
+
+      // Text, meta and counter swap at the midpoint, as on the reference.
       const nearest = Math.round(p);
       if (nearest !== lastActive) {
         lastActive = nearest;
@@ -191,58 +219,7 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       }
     };
 
-    const applyDesktop = (p: number) => {
-      cardRefs.current.forEach((el, i) => {
-        if (!el) return;
-        const s = cardStyle(i - p, reduced);
-        el.style.transform = String(s.transform);
-        el.style.opacity = String(s.opacity);
-        el.style.zIndex = String(s.zIndex);
-      });
-
-      // Keep the list's interpolated position centred in its column.
-      const lo = Math.floor(p);
-      const hi = Math.min(lo + 1, n - 1);
-      const c = (centers[lo] ?? 0) + ((centers[hi] ?? 0) - (centers[lo] ?? 0)) * (p - lo);
-      if (listRef.current) listRef.current.style.transform = `translate3d(0, ${wrapH / 2 - c}px, 0)`;
-      itemRefs.current.forEach((li, i) => {
-        if (li) li.style.opacity = String(Math.max(0.12, 1 - Math.abs(i - p) * 0.88));
-      });
-      if (!phone.matches) setNearest(p);
-    };
-
-    const applyMobile = () => {
-      mCardRefs.current.forEach((el, i) => {
-        if (!el) return;
-        const s = mobileCardStyle(i - m.p, reduced);
-        el.style.transform = String(s.transform);
-        el.style.opacity = String(s.opacity);
-        el.style.zIndex = String(s.zIndex);
-        // Only the photo in the middle is tappable — the corner ones are decoration.
-        el.style.pointerEvents = Math.abs(i - m.p) < 0.5 ? "auto" : "none";
-      });
-      // The text and counter swap at the midpoint, as on the reference.
-      if (phone.matches) setNearest(m.p);
-    };
-
-    const apply = (p: number) => {
-      applyDesktop(p);
-      applyMobile();
-    };
-
-    // Phones: commit to an event once the scroll has moved a little past the current one
-    // in the direction of travel, then tween there. Direction matters: right after a commit
-    // the scroll is still short of the new event (the directional snap below brings it
-    // along), which must not read as a step back.
-    const commitMobile = (direction: number) => {
-      let idx = m.idx;
-      if (direction > 0 && target > m.idx + M_COMMIT) idx = Math.min(n - 1, Math.ceil(target - M_COMMIT));
-      else if (direction < 0 && target < m.idx - M_COMMIT) idx = Math.max(0, Math.floor(target + M_COMMIT));
-      if (idx === m.idx) return;
-      goMobile(idx);
-    };
-
-    const goMobile = (idx: number) => {
+    const go = (idx: number) => {
       if (idx === m.idx) return;
       const steps = Math.abs(idx - m.idx);
       m.idx = idx;
@@ -251,12 +228,20 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
         duration: reduced ? 0 : M_DURATION + 0.12 * (steps - 1),
         ease: M_EASE,
         overwrite: true,
-        onUpdate: applyMobile,
+        onUpdate: apply,
       });
     };
 
+    // Commit once the scroll has moved a little past the current event in the direction of
+    // travel. Direction matters: right after a commit the scroll is still short of the new
+    // event (the directional snap below brings it along), which must not read as a step back.
+    const commit = (direction: number) => {
+      if (direction > 0 && target > m.idx + M_COMMIT) go(Math.min(n - 1, Math.ceil(target - M_COMMIT)));
+      else if (direction < 0 && target < m.idx - M_COMMIT) go(Math.max(0, Math.floor(target + M_COMMIT)));
+    };
+
     measure();
-    apply(0);
+    apply();
 
     const trigger = ScrollTrigger.create({
       trigger: section,
@@ -266,16 +251,16 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       invalidateOnRefresh: true,
       snap: {
         snapTo: 1 / (n - 1),
-        directional: true, // a small scroll settles on the next event, not back — phones commit to it
+        directional: true, // a small scroll settles on the next event, not back — matching the commit
         duration: { min: 0.25, max: 0.7 },
         delay: 0.08,
         ease: "power2.inOut",
-        // Safety net: wherever the scroll finally settles is the event phones show.
-        onComplete: () => goMobile(Math.round(target)),
+        // Safety net: wherever the scroll finally settles is the event shown.
+        onComplete: () => go(Math.round(target)),
       },
       onUpdate: (self) => {
         target = self.progress * (n - 1);
-        commitMobile(self.direction);
+        commit(self.direction);
       },
       onRefresh: measure,
     });
@@ -286,39 +271,19 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
     const fromHash = decodeURIComponent(window.location.hash.slice(1));
     const startAt = fromHash ? slugsRef.current.indexOf(fromHash) : -1;
     if (startAt > 0) {
-      target = current = m.p = m.idx = startAt;
-      apply(current);
+      target = m.p = m.idx = startAt;
+      apply();
       window.scrollTo({ top: trigger.start + (trigger.end - trigger.start) * (startAt / (n - 1)), behavior: "instant" });
     }
 
-    const tick = () => {
-      const diff = target - current;
-      if (Math.abs(diff) < 0.0005) {
-        if (current !== target) {
-          current = target;
-          applyDesktop(current);
-        }
-        return;
-      }
-      current = reduced ? target : current + diff * (1 - Math.pow(1 - EASE, gsap.ticker.deltaRatio()));
-      applyDesktop(current);
-    };
-    gsap.ticker.add(tick);
-
     const ro = new ResizeObserver(() => {
       measure();
-      apply(current);
+      apply();
     });
     if (listWrapRef.current) ro.observe(listWrapRef.current);
 
-    // Crossing the breakpoint hands the active event to the other layout's progress.
-    const onBreakpoint = () => setNearest(phone.matches ? m.p : current);
-    phone.addEventListener("change", onBreakpoint);
-
     return () => {
-      phone.removeEventListener("change", onBreakpoint);
       gsap.killTweensOf(m);
-      gsap.ticker.remove(tick);
       ro.disconnect();
       trigger.kill();
       triggerRef.current = null;
@@ -356,158 +321,142 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
       aria-label="Gokaido events"
       className="relative h-svh overflow-hidden bg-ink"
     >
-      <div className="relative mx-auto flex h-full max-w-384 flex-col px-4 pt-[calc(var(--navbar-h)+1.25rem)] pb-5 sm:px-8 lg:px-10 lg:pb-8">
-        {/* Top strip */}
-        <div className="relative z-30 hidden items-start justify-between gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-10">
-          <div className="hidden lg:block" />
-          <div>
-            <h1 className="m-0 font-heading text-[11px] font-semibold tracking-wide text-paper uppercase">
-              Gokaido Events
-            </h1>
-            <p className="m-0 mt-0.5 text-[11px] text-paper/50">
-              Mumbai{clock ? `, ${clock}` : ""}
-            </p>
-          </div>
-          <p className="m-0 text-right text-[11px] text-paper/50">
-            For enquiries
-            <Link
-              href="/contact-us"
-              className="ml-3 text-paper underline underline-offset-4 hover:text-gold"
-            >
-              Contact us
-            </Link>
-          </p>
+      {/* Desktop — huyml.co's layout, positions measured at 1440×900 and scaled in vw / vh. */}
+      <div className="absolute inset-0 hidden lg:block">
+        {/* Top strip (below the site navbar while it shows) */}
+        <div className="absolute top-[calc(var(--navbar-h)+1.25rem)] left-[50.8vw] z-40">
+          <h1 className="m-0 font-heading text-[11px] font-semibold tracking-wide text-paper uppercase">Gokaido Events</h1>
+          <p className="m-0 mt-0.5 text-[11px] text-paper/50">Mumbai{clock ? `, ${clock}` : ""}</p>
         </div>
+        <p className="absolute top-[calc(var(--navbar-h)+1.25rem)] right-5 z-40 m-0 text-[11px] text-paper/50">
+          For enquiries
+          <Link href="/contact-us" className="ml-3 text-paper underline underline-offset-4 hover:text-gold">
+            Contact us
+          </Link>
+        </p>
 
-        {/* Body */}
-        <div className="relative hidden min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-10">
-          {/* Left: meta + counter (desktop) */}
-          <div className="relative z-20 hidden min-h-0 flex-col lg:flex">
-            <div className="relative mt-[18vh] min-h-56">
-              {events.map((e, i) => (
-                <div
-                  key={e.id}
-                  aria-hidden={i !== active}
-                  className={`absolute inset-x-0 top-0 max-w-md transition-all duration-500 ease-out ${
-                    i === active ? "translate-y-0 opacity-100 delay-150" : "pointer-events-none translate-y-3 opacity-0"
-                  }`}
-                >
-                  <MetaFields event={e} />
-                </div>
-              ))}
-            </div>
-            <div className="mt-auto flex items-end justify-between gap-6">
-              <span className="pb-2 text-[11px] text-paper/50">Scroll</span>
-              <div className="flex flex-col">
-                <span className="text-[11px] text-paper/45">Event</span>
-                {/* Over-sized on purpose: it overlaps the photo stack, as in the design. */}
-                <Counter active={active} total={n} className="mr-[-30%] text-[clamp(6rem,10.5vw,10.5rem)] text-paper" />
-              </div>
-            </div>
-          </div>
-
-          {/* Centre: 3D photo stack */}
-          <div className="relative z-10 h-full perspective-[1400px]">
-            <div className="absolute top-1/2 left-1/2 aspect-5/4 w-[min(100%,24rem,40svh)] -translate-x-1/2 -translate-y-1/2 transform-3d">
-              {events.map((e, i) => (
-                <div
-                  key={e.id}
-                  ref={(el) => {
-                    cardRefs.current[i] = el;
-                  }}
-                  className="absolute inset-0 transform-3d will-change-transform"
-                  style={cardStyle(i, false)}
-                >
-                  {e.images.slice(1, 3).map((img, k) => (
-                    <div
-                      key={img.src + k}
-                      className="absolute inset-0 overflow-hidden bg-panel brightness-[0.55]"
-                      style={{ transform: FAN[k], zIndex: -1 - k }}
-                    >
-                      <Image src={img.src} alt="" fill sizes="(min-width: 1024px) 24rem, 60vw" className="object-cover" />
-                    </div>
-                  ))}
-                  {/* Any photo opens that event's page, as on the reference site. */}
-                  <Link
-                    href={`/events/${e.slug}`}
-                    aria-label={`View ${e.name}`}
-                    tabIndex={i === active ? 0 : -1}
-                    className="group/card absolute inset-0 block overflow-hidden bg-panel shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)] outline-offset-4 focus-visible:outline-2 focus-visible:outline-gold"
-                  >
-                    <Image
-                      src={e.images[0]?.src ?? "/dummy/product-placeholder.png"}
-                      alt={e.images[0]?.alt ?? e.name}
-                      fill
-                      sizes="(min-width: 1024px) 24rem, 60vw"
-                      className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-[1.04]"
-                    />
-                    <span className="absolute right-3 bottom-3 bg-ink/80 px-2.5 py-1.5 text-[11px] tracking-wide text-paper opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 group-focus-visible/card:opacity-100">
-                      View event →
-                    </span>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: event list (desktop) */}
-          <div className="relative z-20 hidden min-h-0 lg:block">
-            <div
-              ref={listWrapRef}
-              className="absolute inset-0 right-16 overflow-hidden mask-[linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)]"
-            >
-              <ol ref={listRef} className="absolute inset-x-0 top-0 m-0 list-none p-0 will-change-transform">
-                {events.map((e, i) => (
-                  <li
-                    key={e.id}
-                    ref={(el) => {
-                      itemRefs.current[i] = el;
-                    }}
-                    aria-current={i === active ? "true" : undefined}
-                    className="mx-auto max-w-88 py-7 text-center"
-                    style={{ opacity: i === 0 ? 1 : 0.12 }}
-                  >
-                    <p className="m-0 text-[11px] tracking-wide text-paper/70">
-                      {e.year}{e.category ? ` · ${e.category}` : ""}
-                    </p>
-                    <h2 className="m-0 mt-2 font-heading text-xl leading-tight font-medium tracking-wide text-paper uppercase">
-                      <Link href={`/events/${e.slug}`} tabIndex={i === active ? 0 : -1} className="hover:text-gold">
-                        {e.name}
-                      </Link>
-                    </h2>
-                    <span className="mx-auto mt-3 block h-px w-4 bg-paper/70" />
-                    <p className="m-0 mt-3 text-xs leading-relaxed text-paper/80">{e.about}</p>
-                  </li>
-                ))}
-              </ol>
-            </div>
-            <div className="absolute top-1/2 right-0 -translate-y-1/2">{pager}</div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Phones — after huyml.co's mobile view: big counter, one photo, the active event's
-          text and the pager, everything else crossfading through a blur. */}
-      <div className="absolute inset-0 flex flex-col px-5 pt-[calc(var(--navbar-h)+0.75rem)] pb-6 lg:hidden">
-        <div className="relative z-20 grid">
+        {/* Left: meta */}
+        <div className="absolute top-[41.5vh] left-5 z-20 grid w-[calc(35vw-1.25rem)]">
           {events.map((e, i) => (
             <div
               key={e.id}
-              aria-hidden
-              className={`col-start-1 row-start-1 flex items-start gap-3 ${i === active ? BLUR_IN : BLURRED}`}
+              aria-hidden={i !== active}
+              className={`col-start-1 row-start-1 ${i === active ? BLUR_IN : `pointer-events-none ${BLURRED}`}`}
             >
-              <span className="font-heading text-[clamp(4.5rem,24vw,7rem)] leading-[0.85] font-light tracking-tight text-paper tabular-nums">
+              <DeskMeta event={e} />
+            </div>
+          ))}
+        </div>
+        <span className="absolute bottom-5 left-5 z-20 text-[11px] text-paper/50">Scroll</span>
+
+        {/* Centre: photo track */}
+        <div className="absolute inset-0 z-20 perspective-[1400px]">
+          <div className="absolute top-[50.5%] left-[49vw] aspect-5/4 w-[min(26vw,41vh)] -translate-x-1/2 -translate-y-1/2 transform-3d">
+            {events.map((e, i) => (
+              <div
+                key={e.id}
+                ref={(el) => {
+                  cardRefs.current[i] = el;
+                }}
+                className="absolute inset-0 transform-3d will-change-transform"
+                style={cardStyle(i, false)}
+              >
+                {/* Any photo opens that event's page, as on the reference site. */}
+                <Link
+                  href={`/events/${e.slug}`}
+                  aria-label={`View ${e.name}`}
+                  tabIndex={i === active ? 0 : -1}
+                  className="group/card absolute inset-0 block overflow-hidden bg-panel outline-offset-4 focus-visible:outline-2 focus-visible:outline-gold"
+                >
+                  <Image
+                    src={e.images[0]?.src ?? "/dummy/product-placeholder.png"}
+                    alt={e.images[0]?.alt ?? e.name}
+                    fill
+                    sizes="(min-width: 1024px) 26vw, 60vw"
+                    className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-[1.04]"
+                  />
+                  <span className="absolute right-3 bottom-3 bg-ink/80 px-2.5 py-1.5 text-[11px] tracking-wide text-paper opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 group-focus-visible/card:opacity-100">
+                    View event →
+                  </span>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Counter, bottom-left over the coming photos (difference blend shows them through it) */}
+        <div className="pointer-events-none absolute bottom-[2.7vh] left-[13.75vw] z-30 mix-blend-difference">
+          <span className="absolute top-1 left-0 text-[11px] text-paper/60">Event</span>
+          <div className="ml-[5.75vw] grid">
+            {events.map((e, i) => (
+              <span
+                key={e.id}
+                aria-hidden
+                className={`col-start-1 row-start-1 font-(family-name:--font-geist) text-[min(12.5vw,20vh)] leading-[0.85] tracking-[-0.04em] text-paper tabular-nums ${
+                  i === active ? BLUR_IN : BLURRED
+                }`}
+              >
                 {pad(i + 1)}
               </span>
-              <span className="mt-1 text-sm text-paper/70">/{pad(n)}</span>
+            ))}
+          </div>
+          <span className="absolute top-1 left-[22.25vw] text-[11px] text-paper">/{pad(n)}</span>
+        </div>
+
+        {/* Right: event list, the active one level with the photo */}
+        <div
+          ref={listWrapRef}
+          className="absolute inset-y-0 left-[80vw] z-10 w-62 -translate-x-1/2 overflow-hidden mask-[linear-gradient(to_bottom,transparent,black_18%,black_85%,transparent)]"
+        >
+          <ol ref={listRef} className="absolute inset-x-0 top-0 m-0 list-none p-0 will-change-transform">
+            {events.map((e, i) => (
+              <li
+                key={e.id}
+                ref={(el) => {
+                  itemRefs.current[i] = el;
+                }}
+                aria-current={i === active ? "true" : undefined}
+                className="flex min-h-[19.2vh] flex-col items-center justify-center py-3 text-center"
+                style={{ opacity: i === 0 ? 1 : 0.2 }}
+              >
+                <p className="m-0 text-[11px] text-paper/52">
+                  {e.year}
+                  {e.category ? ` · ${e.category}` : ""}
+                </p>
+                <h2 className="m-0 mt-2 font-heading text-lg leading-tight font-medium text-paper uppercase">
+                  <Link href={`/events/${e.slug}`} tabIndex={i === active ? 0 : -1} className="hover:text-gold">
+                    {e.name}
+                  </Link>
+                </h2>
+                <span className="mt-3 block h-px w-3 bg-paper/60" />
+                <p className="m-0 mt-3 line-clamp-3 text-[11px] leading-[1.25] text-paper">{e.about}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="absolute top-1/2 right-5 z-20 -translate-y-1/2 [&_button]:size-3.75 [&>div]:gap-0.75">{pager}</div>
+      </div>
+
+      {/* Phones — huyml.co's mobile layout, measured off its page at 390×664 and 320×568:
+          counter fixed 134px from the top, text + pager anchored to the bottom, the photo
+          centred in the gap between them. */}
+      <div className="absolute inset-0 flex flex-col px-5 pt-[134px] pb-6 lg:hidden">
+        <div className="relative z-20 grid">
+          {events.map((e, i) => (
+            <div key={e.id} aria-hidden className={`relative col-start-1 row-start-1 ${i === active ? BLUR_IN : BLURRED}`}>
+              <span className="font-(family-name:--font-geist) text-[90px] leading-[0.85] tracking-[-0.04em] text-paper tabular-nums">
+                {pad(i + 1)}
+              </span>
+              <span className="absolute top-0.5 left-[114px] text-xs font-medium text-paper">/{pad(n)}</span>
             </div>
           ))}
         </div>
 
         {/* Photo stage */}
-        <div className="relative z-30 min-h-0 flex-1">
-          <div className="absolute top-1/2 left-1/2 aspect-3/2 w-[min(66vw,22rem,45svh)] -translate-x-1/2 -translate-y-1/2">
+        {/* Sized against the gap it sits in (container units), so a long name that wraps to
+            three lines on a small phone shrinks the photo instead of overlapping the text. */}
+        <div className="relative z-30 my-4 min-h-0 flex-1 [container-type:size]">
+          <div className="absolute top-1/2 left-1/2 aspect-3/2 w-[min(66vw,22rem,150cqh)] -translate-x-1/2 -translate-y-1/2">
             {events.map((e, i) => (
               <div
                 key={e.id}
@@ -542,24 +491,25 @@ export default function EventsScroller({ events }: { events: GokaidoEvent[] }) {
             <div
               key={e.id}
               aria-hidden={i !== active}
-              className={`col-start-1 row-start-1 text-center ${i === active ? BLUR_IN : `pointer-events-none ${BLURRED}`}`}
+              className={`col-start-1 row-start-1 flex flex-col items-center text-center ${i === active ? BLUR_IN : `pointer-events-none ${BLURRED}`}`}
             >
-              <p className="m-0 text-xs text-paper/50">
+              <p className="m-0 text-xs leading-[1.3] font-medium text-paper/52">
                 {e.year}
                 {e.category ? ` · ${e.category}` : ""}
               </p>
-              <h2 className="m-0 mt-2 font-heading text-[clamp(1.4rem,6.5vw,1.9rem)] leading-[1.05] font-medium tracking-tight text-balance text-paper uppercase">
+              <h2 className="m-0 mt-2 font-heading text-[clamp(1.25rem,6.2vw,1.5rem)] leading-none font-medium tracking-[0.01em] text-balance text-paper uppercase">
                 <Link href={`/events/${e.slug}`} tabIndex={i === active ? 0 : -1}>
                   {e.name}
                 </Link>
               </h2>
-              <span className="mx-auto mt-4 block h-px w-5 bg-paper/30" />
-              <p className="m-0 mx-auto mt-4 line-clamp-3 max-w-80 text-[13px] leading-snug text-paper/80">{e.about}</p>
+              <span className="mt-4 block h-px w-3 bg-paper/30" />
+              <p className="m-0 mt-4 line-clamp-3 max-w-75 text-xs leading-[1.3] font-medium text-paper">{e.about}</p>
             </div>
           ))}
         </div>
 
-        <div className="relative z-20 mt-6 flex shrink-0 justify-center">{pager}</div>
+        {/* Pager — where the reference has its colour swatches */}
+        <div className="relative z-20 mt-5.5 flex shrink-0 justify-center [&_button]:size-3.75 [&>div]:gap-0.75">{pager}</div>
       </div>
       <p className="sr-only" aria-live="polite">
         {current ? `${current.name}, ${current.year}` : ""}
